@@ -3,18 +3,20 @@ import { payrollApi } from '../../api/payroll';
 import { PageHeader } from '../../components/shared/page-header';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import { StatusBadge } from '../../components/shared/status-badge';
+import { useTranslation } from '../../context/language-context';
 import { formatCurrency } from '../../lib/utils';
 
 export default function MyPayrollPage() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
 
   return (
     <div>
-      <PageHeader title="My Payroll" />
-      <div className="bg-white rounded-lg border">
+      <PageHeader title={t('payroll.title')} />
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Period</TableHead><TableHead>Basic Salary</TableHead><TableHead>Bonus</TableHead><TableHead>Deductions</TableHead><TableHead>Net Pay</TableHead><TableHead>Status</TableHead></TableRow>
+            <TableRow><TableHead>{t('payroll.period')}</TableHead><TableHead>{t('payroll.basic_salary')}</TableHead><TableHead>{t('payroll.bonus')}</TableHead><TableHead>{t('payroll.deductions')}</TableHead><TableHead>{t('payroll.net_pay')}</TableHead><TableHead>{t('payroll.status')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={6} className="text-center">Loading...</TableCell></TableRow> :
@@ -28,7 +30,7 @@ export default function MyPayrollPage() {
                   <TableCell><StatusBadge status={p.status} /></TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No payroll records</TableCell></TableRow>}
+            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{t('payroll.no_records')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

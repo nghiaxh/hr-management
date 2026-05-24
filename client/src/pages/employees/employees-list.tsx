@@ -7,12 +7,14 @@ import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Label } from '../../components/ui/label';
 import { StatusBadge } from '../../components/shared/status-badge';
+import { useTranslation } from '../../context/language-context';
 import { Plus, Search } from 'lucide-react';
 
 export default function EmployeesListPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -33,23 +35,23 @@ export default function EmployeesListPage() {
 
   return (
     <div>
-      <PageHeader title="Employees" action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Add Employee</Button>} />
+      <PageHeader title={t('employees.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('employees.add')}</Button>} />
       <div className="flex items-center gap-2 mb-4">
         <Search className="h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search employees..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+        <Input placeholder={t('employees.search')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
       </div>
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Salary</TableHead>
+              <TableHead>{t('employees.name')}</TableHead>
+              <TableHead>{t('employees.position')}</TableHead>
+              <TableHead>{t('employees.department')}</TableHead>
+              <TableHead>{t('employees.salary')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> :
+            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">{t('common.loading')}</TableCell></TableRow> :
               data?.data?.map((emp: any) => (
                 <TableRow key={emp._id}>
                   <TableCell><Link to={`/employees/${emp._id}`} className="text-primary hover:underline">{emp.firstName} {emp.lastName}</Link></TableCell>
@@ -58,28 +60,29 @@ export default function EmployeesListPage() {
                   <TableCell>${emp.salary?.toLocaleString()}</TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No employees found</TableCell></TableRow>}
+            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('employees.no_results')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Employee</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('employees.add')}</DialogTitle></DialogHeader>
+          <DialogDescription className="sr-only">Create a new employee record</DialogDescription>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>First Name</Label><Input name="firstName" required /></div>
-            <div><Label>Last Name</Label><Input name="lastName" required /></div>
-            <div><Label>Position</Label><Input name="position" required /></div>
-            <div><Label>Salary</Label><Input name="salary" type="number" required /></div>
-            <div><Label>Department</Label>
+            <div><Label>{t('employees.first_name')}</Label><Input name="firstName" required /></div>
+            <div><Label>{t('employees.last_name')}</Label><Input name="lastName" required /></div>
+            <div><Label>{t('employees.position')}</Label><Input name="position" required /></div>
+            <div><Label>{t('employees.salary')}</Label><Input name="salary" type="number" required /></div>
+            <div><Label>{t('employees.department')}</Label>
               <select name="departmentId" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 {departments?.data?.map((d: any) => <option key={d._id} value={d._id}>{d.name}</option>)}
               </select>
             </div>
-            <div><Label>Hire Date</Label><Input name="hireDate" type="date" required /></div>
-            <div><Label>Phone</Label><Input name="phone" /></div>
-            <div><Label>User ID</Label><Input name="userId" required placeholder="User ID from registration" /></div>
-            <Button type="submit" className="w-full">Create</Button>
+            <div><Label>{t('employees.hire_date')}</Label><Input name="hireDate" type="date" required /></div>
+            <div><Label>{t('employees.phone')}</Label><Input name="phone" /></div>
+            <div><Label>{t('employees.user_id')}</Label><Input name="userId" required placeholder={t('employees.user_id_placeholder')} /></div>
+            <Button type="submit" className="w-full">{t('employees.create')}</Button>
           </form>
         </DialogContent>
       </Dialog>

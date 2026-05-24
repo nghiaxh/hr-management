@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/auth-context';
+import { useTranslation } from '../context/language-context';
 import { employeesApi } from '../api/employees';
 import { leavesApi } from '../api/leaves';
 import { attendanceApi } from '../api/attendance';
@@ -11,13 +12,14 @@ function StatCard({ title, value, subtitle }: { title: string; value: string | n
   return (
     <Card>
       <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle></CardHeader>
-      <CardContent><div className="text-3xl font-bold">{value}</div>{subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}</CardContent>
+      <CardContent><div className="text-2xl md:text-3xl font-bold">{value}</div>{subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}</CardContent>
     </Card>
   );
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager';
 
@@ -33,17 +35,17 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {!isEmployee && <StatCard title="Total Employees" value={totalEmployees} />}
-        <StatCard title="Pending Leaves" value={pendingLeaves} />
-        <StatCard title="Present Today" value={presentToday} />
-        {!isEmployee && <StatCard title="Monthly Payroll" value={`$${totalPayroll.toLocaleString()}`} />}
+      <h1 className="text-3xl font-bold mb-6">{t('dashboard.title')}</h1>
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
+        {!isEmployee && <StatCard title={t('dashboard.total_employees')} value={totalEmployees} />}
+        <StatCard title={t('dashboard.pending_leaves')} value={pendingLeaves} />
+        <StatCard title={t('dashboard.present_today')} value={presentToday} />
+        {!isEmployee && <StatCard title={t('dashboard.monthly_payroll')} value={`$${totalPayroll.toLocaleString()}`} />}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle>Recent Leaves</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('dashboard.recent_leaves')}</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
               {leaves?.data?.slice(0, 5).map((leave: any) => (
@@ -55,23 +57,23 @@ export default function DashboardPage() {
                   <StatusBadge status={leave.status} />
                 </div>
               ))}
-              {(!leaves?.data || leaves.data.length === 0) && <p className="text-sm text-muted-foreground">No leaves found</p>}
+              {(!leaves?.data || leaves.data.length === 0) && <p className="text-sm text-muted-foreground">{t('dashboard.no_leaves')}</p>}
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Quick Stats</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('dashboard.quick_stats')}</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
               {isEmployee ? (
                 <>
-                  <p className="text-sm">My Leaves: <strong>{pendingLeaves} pending</strong></p>
-                  <p className="text-sm">My Attendance: <strong>{presentToday} days</strong></p>
+                  <p className="text-sm">{t('dashboard.my_leaves')}: <strong>{pendingLeaves} {t('dashboard.pending')}</strong></p>
+                  <p className="text-sm">{t('dashboard.my_attendance')}: <strong>{presentToday} {t('dashboard.days')}</strong></p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">Employees: <strong>{totalEmployees}</strong></p>
-                  <p className="text-sm">Departments: <strong>{employees?.meta?.total || 0}</strong></p>
+                  <p className="text-sm">{t('dashboard.employees')}: <strong>{totalEmployees}</strong></p>
+                  <p className="text-sm">{t('dashboard.departments')}: <strong>{employees?.meta?.total || 0}</strong></p>
                 </>
               )}
             </div>

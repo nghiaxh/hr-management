@@ -9,10 +9,12 @@ import { Label } from '../../components/ui/label';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { formatCurrency } from '../../lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { useTranslation } from '../../context/language-context';
 import { Play, CheckCircle } from 'lucide-react';
 
 export default function PayrollManagementPage() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -38,11 +40,11 @@ export default function PayrollManagementPage() {
 
   return (
     <div>
-      <PageHeader title="Payroll Management" action={<Button onClick={() => setOpen(true)}><Play className="h-4 w-4 mr-2" />Process Payroll</Button>} />
-      <div className="bg-white rounded-lg border">
+      <PageHeader title={t('payroll.management')} action={<Button onClick={() => setOpen(true)}><Play className="h-4 w-4 mr-2" />{t('payroll.process')}</Button>} />
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Employee</TableHead><TableHead>Period</TableHead><TableHead>Net Pay</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow>
+            <TableRow><TableHead>{t('payroll.employee')}</TableHead><TableHead>{t('payroll.period')}</TableHead><TableHead>{t('payroll.net_pay')}</TableHead><TableHead>{t('payroll.status')}</TableHead><TableHead>{t('payroll.actions')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> :
@@ -53,22 +55,23 @@ export default function PayrollManagementPage() {
                   <TableCell>{formatCurrency(p.netPay)}</TableCell>
                   <TableCell><StatusBadge status={p.status} /></TableCell>
                   <TableCell>
-                    {p.status === 'draft' && <Button variant="ghost" size="sm" onClick={() => payMutation.mutate(p._id)}><CheckCircle className="h-4 w-4 mr-1" />Mark Paid</Button>}
+                    {p.status === 'draft' && <Button variant="ghost" size="sm" onClick={() => payMutation.mutate(p._id)}><CheckCircle className="h-4 w-4 mr-1" />{t('payroll.mark_paid')}</Button>}
                   </TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No payroll records</TableCell></TableRow>}
+            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t('payroll.no_records_mgmt')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Process Payroll</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('payroll.process')}</DialogTitle></DialogHeader>
+          <DialogDescription className="sr-only">Process payroll for selected employees</DialogDescription>
           <form onSubmit={handleProcess} className="space-y-4">
-            <div><Label>Month</Label><Input name="month" type="number" min={1} max={12} required /></div>
-            <div><Label>Year</Label><Input name="year" type="number" min={2020} required /></div>
-            <div><Label>Employees</Label>
+            <div><Label>{t('payroll.month')}</Label><Input name="month" type="number" min={1} max={12} required /></div>
+            <div><Label>{t('payroll.year')}</Label><Input name="year" type="number" min={2020} required /></div>
+            <div><Label>{t('payroll.employees')}</Label>
               <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
                 {employees?.data?.map((emp: any) => (
                   <label key={emp._id} className="flex items-center gap-2 text-sm">
@@ -78,7 +81,7 @@ export default function PayrollManagementPage() {
                 ))}
               </div>
             </div>
-            <Button type="submit" className="w-full">Process</Button>
+            <Button type="submit" className="w-full">{t('payroll.process_btn')}</Button>
           </form>
         </DialogContent>
       </Dialog>

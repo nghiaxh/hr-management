@@ -4,10 +4,12 @@ import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import { StatusBadge } from '../../components/shared/status-badge';
+import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function LeaveApprovalsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['leaves', 'pending'], queryFn: () => leavesApi.getAll({ status: 'pending' }) });
 
@@ -23,11 +25,11 @@ export default function LeaveApprovalsPage() {
 
   return (
     <div>
-      <PageHeader title="Leave Approvals" />
-      <div className="bg-white rounded-lg border">
+      <PageHeader title={t('leaves.approvals')} />
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Employee</TableHead><TableHead>Type</TableHead><TableHead>Start</TableHead><TableHead>End</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow>
+            <TableRow><TableHead>{t('leaves.employee')}</TableHead><TableHead>{t('leaves.type')}</TableHead><TableHead>{t('leaves.start')}</TableHead><TableHead>{t('leaves.end')}</TableHead><TableHead>{t('leaves.status')}</TableHead><TableHead>{t('leaves.actions')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={6} className="text-center">Loading...</TableCell></TableRow> :
@@ -46,7 +48,7 @@ export default function LeaveApprovalsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No pending leaves</TableCell></TableRow>}
+            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{t('leaves.no_pending')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

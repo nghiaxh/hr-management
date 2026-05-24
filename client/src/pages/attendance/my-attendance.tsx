@@ -4,10 +4,12 @@ import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import { StatusBadge } from '../../components/shared/status-badge';
+import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { LogIn, LogOut } from 'lucide-react';
 
 export default function MyAttendancePage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
@@ -26,26 +28,26 @@ export default function MyAttendancePage() {
 
   return (
     <div>
-      <PageHeader title="My Attendance" action={
+      <PageHeader title={t('attendance.title')} action={
         !todayRecord?.checkIn ? (
-          <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />Check In</Button>
+          <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
         ) : !todayRecord.checkOut ? (
-          <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />Check Out</Button>
+          <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
         ) : null
       } />
 
       {todayRecord && (
-        <div className="bg-white rounded-lg border p-4 mb-4 flex gap-6 text-sm">
-          <div>Check In: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString() : '-'}</strong></div>
-          <div>Check Out: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString() : '-'}</strong></div>
-          <div>Status: <StatusBadge status={todayRecord.status} /></div>
+        <div className="bg-card rounded-lg border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <div>{t('attendance.check_in')}: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString() : '-'}</strong></div>
+          <div>{t('attendance.check_out')}: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString() : '-'}</strong></div>
+          <div>{t('attendance.status')}: <StatusBadge status={todayRecord.status} /></div>
         </div>
       )}
 
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Date</TableHead><TableHead>Check In</TableHead><TableHead>Check Out</TableHead><TableHead>Status</TableHead></TableRow>
+            <TableRow><TableHead>{t('attendance.date')}</TableHead><TableHead>{t('attendance.check_in')}</TableHead><TableHead>{t('attendance.check_out')}</TableHead><TableHead>{t('attendance.status')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> :
@@ -57,7 +59,7 @@ export default function MyAttendancePage() {
                   <TableCell><StatusBadge status={a.status} /></TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No records</TableCell></TableRow>}
+            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
