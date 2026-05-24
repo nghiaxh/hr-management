@@ -16,6 +16,9 @@ export class User {
   @Prop({ required: true, enum: ['admin', 'manager', 'employee'] })
   role: string;
 
+  @Prop()
+  name: string;
+
   @Prop({ default: true })
   isActive: boolean;
 }

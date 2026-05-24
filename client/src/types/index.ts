@@ -1,7 +1,9 @@
 export interface User {
   id: string;
+  _id?: string;
   email: string;
   role: 'admin' | 'manager' | 'employee';
+  name?: string;
 }
 
 export interface AuthResponse {

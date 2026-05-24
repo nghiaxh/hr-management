@@ -34,11 +34,18 @@ export class AuthService {
     return this.userModel.findById(userId).select('-passwordHash');
   }
 
+  async updateProfile(userId: string, dto: { name?: string; email?: string }) {
+    const update: any = {};
+    if (dto.name !== undefined) update.name = dto.name;
+    if (dto.email !== undefined) update.email = dto.email;
+    return this.userModel.findByIdAndUpdate(userId, update, { new: true }).select('-passwordHash');
+  }
+
   private generateToken(user: UserDocument) {
     const payload = { sub: user._id, email: user.email, role: user.role };
     return {
       token: this.jwtService.sign(payload),
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { id: user._id, email: user.email, role: user.role, name: user.name },
     };
   }
 }
