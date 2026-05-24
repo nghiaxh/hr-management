@@ -67,39 +67,39 @@ hr-management/
 
 ## Tính năng chi tiết
 
-### 🔐 Xác thực & Phân quyền (JWT + RBAC)
+### Xác thực & Phân quyền (JWT + RBAC)
 - Đăng nhập bằng JWT token
 - 3 vai trò: **admin**, **manager**, **employee**
 - Guard kiểm tra quyền trên từng API
 - Route bảo vệ phía client
 
-### 📊 Dashboard
+### Dashboard
 - **Admin**: tổng nhân viên, phòng ban, đơn nghỉ chờ duyệt, chấm công hôm nay, tổng lương tháng, thống kê theo phòng ban
 - **Manager**: số nhân viên trong phòng, đơn chờ duyệt, tổng lương phòng
 - **Employee**: đơn nghỉ của tôi, chấm công, lương gần nhất
 
-### 👥 Nhân viên (Employees)
+### Nhân viên (Employees)
 - CRUD đầy đủ (Admin)
 - Tìm kiếm theo tên, vị trí
 - Lọc theo phòng ban
 - **Scope**: Admin xem tất cả, Manager chỉ xem nhân viên trong phòng, Employee chỉ xem hồ sơ của mình
 
-### 🏢 Phòng ban (Departments)
+### Phòng ban (Departments)
 - CRUD đầy đủ (Admin)
 - Gán Manager cho phòng ban
 - Manager chỉ xem được phòng ban của mình
 
-### 📋 Nghỉ phép (Leaves)
+### Nghỉ phép (Leaves)
 - Employee tạo đơn (sick/annual/personal)
 - Admin/Manager duyệt hoặc từ chối
 - **Ràng buộc**: endDate >= startDate, tối đa 30 ngày, không trùng lịch approved
 
-### ⏰ Chấm công (Attendance)
+### Chấm công (Attendance)
 - Employee check-in/check-out hàng ngày
 - **Tự động**: check-in sau 9h → late, làm dưới 4h → half-day
 - Manager xem báo cáo chấm công
 
-### 💰 Bảng lương (Payroll)
+### Bảng lương (Payroll)
 - Admin process hàng loạt theo tháng
 - Tính netPay = basicSalary + bonus - deductions
 - Admin đánh dấu đã trả lương
