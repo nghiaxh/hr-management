@@ -7,6 +7,9 @@ import { LeavesModule } from './leaves/leaves.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { EmployeeHistoryModule } from './employee-history/employee-history.module';
+import { LeaveBalanceModule } from './leave-balance/leave-balance.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { StartupSeedService } from './startup-seed.service';
 
 @Module({
@@ -19,6 +22,9 @@ import { StartupSeedService } from './startup-seed.service';
     AttendanceModule,
     PayrollModule,
     DashboardModule,
+    EmployeeHistoryModule,
+    LeaveBalanceModule,
+    NotificationsModule,
   ],
   providers: [StartupSeedService],
 })
