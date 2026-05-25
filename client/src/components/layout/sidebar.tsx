@@ -10,10 +10,12 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from '../../hooks/use-toast';
 import { authApi } from '../../api/auth';
+import { notificationsApi } from '../../api/notifications';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, Building2, CalendarCheck, ClipboardCheck,
   Clock, BarChart3, Wallet, DollarSign, LogOut, Sun, Moon, Languages,
-  Menu, User, Settings, X, ChevronRight,
+  Menu, User, Settings, X, ChevronRight, GitBranch, Bell,
 } from 'lucide-react';
 
 const menuItems = [
@@ -21,6 +23,7 @@ const menuItems = [
   { path: '/profile', label: 'user.profile', icon: User, roles: ['admin', 'manager', 'employee'] },
   { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
   { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
+  { path: '/org-chart', label: 'nav.org_chart', icon: GitBranch, roles: ['admin', 'manager'] },
   { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['employee'] },
   { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
   { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['employee'] },
@@ -38,6 +41,19 @@ export function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+
+  const queryClient = useQueryClient();
+
+  const { data: unreadCount } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationsApi.getUnreadCount(),
+    refetchInterval: 30000,
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationsApi.markAllRead(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +97,17 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t pt-3 mt-2 space-y-1">
+        <NavLink to="/notifications" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent w-full text-left rounded-lg transition-colors">
+          <div className="relative">
+            <Bell className="h-4 w-4" />
+            {(typeof unreadCount === 'number' && unreadCount > 0) && (
+              <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-[14px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
+          Notifications
+        </NavLink>
         <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent w-full text-left rounded-lg transition-colors">
           <Settings className="h-4 w-4" />
           {t('settings')}
