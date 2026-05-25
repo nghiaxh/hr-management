@@ -8,7 +8,7 @@ Two independent packages: `server/` (NestJS + MongoDB) and `client/` (React + Vi
 # Server (port 3001)
 cd server
 npm install
-npm run seed    # 4 demo accounts, 2 departments, 4 employees
+npm run seed    # 4 demo accounts, 2 departments, 4 employees, leave balances, history entries
 npm run dev     # ts-node, not NestJS CLI (no nest-cli.json)
 
 # Client (port 5173)
@@ -31,6 +31,9 @@ All modules follow the NestJS convention: `module` → `controller` → `service
 | Attendance   | `server/src/attendance/`    | Auto late/half-day logic           |
 | Payroll      | `server/src/payroll/`       | Monthly batch processing           |
 | Dashboard    | `server/src/dashboard/`     | Stats vary by user role            |
+| EmployeeHistory | `server/src/employee-history/` | Raise/promotion/transfer timeline |
+| LeaveBalance | `server/src/leave-balance/` | Auto-deduct on leave approval      |
+| Notifications | `server/src/notifications/` | In-app notifications + mark-read   |
 
 ## Architecture
 
@@ -38,8 +41,8 @@ All modules follow the NestJS convention: `module` → `controller` → `service
 - **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `http://localhost:3001/api`, JWT from localStorage. Path alias `@/` → `./src/*`.
 - **Auth**: JWT (passport-jwt), `@Roles()` decorator + `RolesGuard`. Tokens expire in 7d by default.
 - **RBAC roles**: `admin` (full access), `manager` (department-scoped), `employee` (self only).
-- **Data model**: `User` (auth credentials + role) and `Employee` (HR profile + salary + department) are separate schemas linked by `userId`.
-- **Client routes** (App.tsx): `/login`, `/dashboard`, `/employees`, `/employees/:id`, `/departments`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`.
+- **Data model**: `User` (auth credentials + role) and `Employee` (HR profile + salary + department + contractType + documents) are separate schemas linked by `userId`. Additional models: `EmployeeHistory`, `LeaveBalance`, `Notification`.
+- **Client routes** (App.tsx): `/login`, `/dashboard`, `/employees`, `/employees/:id`, `/departments`, `/org-chart`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/profile`.
 
 ## Key facts
 
