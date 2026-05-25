@@ -81,6 +81,15 @@ export default function EmployeesListPage() {
             </div>
             <div><Label>{t('employees.hire_date')}</Label><Input name="hireDate" type="date" required /></div>
             <div><Label>{t('employees.phone')}</Label><Input name="phone" /></div>
+            <div><Label>Contract Type</Label>
+              <select name="contractType" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">None</option>
+                <option value="permanent">Permanent</option>
+                <option value="contract">Contract</option>
+                <option value="intern">Intern</option>
+              </select>
+            </div>
+            <div><Label>Contract Expiry</Label><Input name="contractExpiry" type="date" /></div>
             <div><Label>{t('employees.user_id')}</Label><Input name="userId" required placeholder={t('employees.user_id_placeholder')} /></div>
             <Button type="submit" className="w-full">{t('employees.create')}</Button>
           </form>
