@@ -5,12 +5,16 @@ import { Leave, LeaveDocument } from './schemas/leave.schema';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
 import { EmployeesService } from '../employees/employees.service';
+import { LeaveBalanceService } from '../leave-balance/leave-balance.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LeavesService {
   constructor(
     @InjectModel(Leave.name) private leaveModel: Model<LeaveDocument>,
     private employeesService: EmployeesService,
+    private leaveBalanceService: LeaveBalanceService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAll(query: { status?: string; employeeId?: string; type?: string; page?: number; limit?: number }, user: any) {
@@ -78,6 +82,40 @@ export class LeavesService {
     leave.status = dto.status;
     leave.approvedBy = userId as any;
     if (dto.rejectionReason) leave.rejectionReason = dto.rejectionReason;
-    return leave.save();
+    await leave.save();
+
+    const emp = await this.employeesService.findOne(leave.employeeId.toString());
+
+    if (dto.status === 'approved') {
+      const days = Math.ceil((leave.endDate.getTime() - leave.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      try {
+        await this.leaveBalanceService.deduct(leave.employeeId.toString(), leave.type, days);
+      } catch (e) {
+        // Balance insufficient - revert status
+        leave.status = 'pending';
+        await leave.save();
+        throw new BadRequestException(`Insufficient leave balance: ${(e as Error).message}`);
+      }
+
+      await this.notificationsService.create({
+        userId: emp.userId._id.toString(),
+        title: 'Leave Approved',
+        message: `Your ${leave.type} leave (${leave.startDate.toISOString().split('T')[0]} - ${leave.endDate.toISOString().split('T')[0]}) has been approved.`,
+        type: 'leave_approved',
+        relatedId: leave._id.toString(),
+        relatedModel: 'Leave',
+      });
+    } else if (dto.status === 'rejected') {
+      await this.notificationsService.create({
+        userId: emp.userId._id.toString(),
+        title: 'Leave Rejected',
+        message: `Your ${leave.type} leave request has been rejected.${dto.rejectionReason ? ' Reason: ' + dto.rejectionReason : ''}`,
+        type: 'leave_rejected',
+        relatedId: leave._id.toString(),
+        relatedModel: 'Leave',
+      });
+    }
+
+    return leave;
   }
 }
