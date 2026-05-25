@@ -6,6 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
+import { toast } from '../../hooks/use-toast';
 import { LogIn, LogOut } from 'lucide-react';
 
 export default function MyAttendancePage() {
@@ -13,18 +14,29 @@ export default function MyAttendancePage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['attendance'] });
+
   const checkInMutation = useMutation({
     mutationFn: () => attendanceApi.checkIn(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance'] }),
+    onSuccess: () => refresh(),
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.message || 'Already checked in today', variant: 'destructive' });
+      refresh();
+    },
   });
 
   const checkOutMutation = useMutation({
     mutationFn: (id: string) => attendanceApi.checkOut(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance'] }),
+    onSuccess: () => refresh(),
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.message || 'Check out failed', variant: 'destructive' });
+      refresh();
+    },
   });
 
+  const records = Array.isArray(data) ? data : data?.data || [];
   const today = new Date().toDateString();
-  const todayRecord = data?.data?.find((a: any) => new Date(a.date).toDateString() === today);
+  const todayRecord = records.find((a: any) => new Date(a.date).toDateString() === today);
 
   return (
     <div>
@@ -51,7 +63,7 @@ export default function MyAttendancePage() {
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> :
-              data?.data?.map((a: any) => (
+              records.map((a: any) => (
                 <TableRow key={a._id}>
                   <TableCell>{formatDate(a.date)}</TableCell>
                   <TableCell>{a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</TableCell>
@@ -59,7 +71,7 @@ export default function MyAttendancePage() {
                   <TableCell><StatusBadge status={a.status} /></TableCell>
                 </TableRow>
               ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
+            {records.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

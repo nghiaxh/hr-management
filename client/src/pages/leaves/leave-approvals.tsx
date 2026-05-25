@@ -6,6 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
+import { toast } from '../../hooks/use-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function LeaveApprovalsPage() {
@@ -16,11 +17,13 @@ export default function LeaveApprovalsPage() {
   const approveMutation = useMutation({
     mutationFn: (id: string) => leavesApi.updateStatus(id, { status: 'approved' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leaves'] }),
+    onError: (err: any) => toast({ title: err?.response?.data?.message || 'Approval failed', variant: 'destructive' }),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => leavesApi.updateStatus(id, { status: 'rejected', rejectionReason: 'Declined' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leaves'] }),
+    onError: (err: any) => toast({ title: err?.response?.data?.message || 'Rejection failed', variant: 'destructive' }),
   });
 
   return (

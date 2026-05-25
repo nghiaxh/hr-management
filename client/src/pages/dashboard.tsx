@@ -28,9 +28,10 @@ export default function DashboardPage() {
   const { data: attendance } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll(), enabled: !!user });
   const { data: payroll } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll(), enabled: !!user });
 
+  const attRecords = Array.isArray(attendance) ? attendance : attendance?.data || [];
   const totalEmployees = employees?.data?.length || 0;
   const pendingLeaves = leaves?.data?.filter((l: any) => l.status === 'pending')?.length || 0;
-  const presentToday = attendance?.data?.filter((a: any) => a.status === 'present' || a.status === 'late')?.length || 0;
+  const presentToday = attRecords.filter((a: any) => a.status === 'present' || a.status === 'late')?.length || 0;
   const totalPayroll = payroll?.data?.reduce((s: number, p: any) => s + p.netPay, 0) || 0;
 
   return (
@@ -62,21 +63,27 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>{t('dashboard.quick_stats')}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{isEmployee ? t('dashboard.my_attendance') : t('dashboard.quick_stats')}</CardTitle></CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {isEmployee ? (
-                <>
-                  <p className="text-sm">{t('dashboard.my_leaves')}: <strong>{pendingLeaves} {t('dashboard.pending')}</strong></p>
-                  <p className="text-sm">{t('dashboard.my_attendance')}: <strong>{presentToday} {t('dashboard.days')}</strong></p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm">{t('dashboard.employees')}: <strong>{totalEmployees}</strong></p>
-                  <p className="text-sm">{t('dashboard.departments')}: <strong>{employees?.meta?.total || 0}</strong></p>
-                </>
-              )}
-            </div>
+            {isEmployee ? (
+              <div className="space-y-2">
+                {attRecords.slice(0, 5).map((a: any) => (
+                  <div key={a._id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div>
+                      <p className="text-sm">{new Date(a.date).toLocaleDateString()}</p>
+                      {a.checkIn && <p className="text-xs text-muted-foreground">{new Date(a.checkIn).toLocaleTimeString()} {a.checkOut ? `- ${new Date(a.checkOut).toLocaleTimeString()}` : ''}</p>}
+                    </div>
+                    <StatusBadge status={a.status} />
+                  </div>
+                ))}
+                {attRecords.length === 0 && <p className="text-sm text-muted-foreground">{t('attendance.no_records')}</p>}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm">{t('dashboard.employees')}: <strong>{totalEmployees}</strong></p>
+                <p className="text-sm">{t('dashboard.departments')}: <strong>{employees?.meta?.total || 0}</strong></p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

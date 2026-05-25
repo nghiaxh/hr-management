@@ -10,7 +10,9 @@ export default function AttendanceReportPage() {
   const { t } = useTranslation();
   const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
-  const stats = data?.data?.reduce((acc: any, a: any) => {
+  const records = Array.isArray(data) ? data : data?.data || [];
+
+  const stats = records.reduce((acc: any, a: any) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
   }, {});
@@ -35,7 +37,7 @@ export default function AttendanceReportPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> :
-              data?.data?.map((a: any) => (
+              records.map((a: any) => (
                 <TableRow key={a._id}>
                   <TableCell>{a.employeeId?.firstName} {a.employeeId?.lastName}</TableCell>
                   <TableCell>{formatDate(a.date)}</TableCell>
@@ -44,6 +46,7 @@ export default function AttendanceReportPage() {
                   <TableCell><StatusBadge status={a.status} /></TableCell>
                 </TableRow>
               ))}
+            {records.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
