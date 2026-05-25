@@ -18,6 +18,12 @@ export class DepartmentsController {
     return this.departmentsService.findAll(query, user);
   }
 
+  @Get('org-chart')
+  @Roles('admin', 'manager')
+  getOrgChart() {
+    return this.departmentsService.getOrgChart();
+  }
+
   @Get(':id')
   @Roles('admin', 'manager')
   findOne(@Param('id') id: string) {

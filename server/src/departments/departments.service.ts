@@ -4,11 +4,13 @@ import { Model } from 'mongoose';
 import { Department, DepartmentDocument } from './schemas/department.schema';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { Employee, EmployeeDocument } from '../employees/schemas/employee.schema';
 
 @Injectable()
 export class DepartmentsService {
   constructor(
     @InjectModel(Department.name) private departmentModel: Model<DepartmentDocument>,
+    @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
   ) {}
 
   async findAll(query: { search?: string; page?: number; limit?: number }, user?: any) {
@@ -52,5 +54,31 @@ export class DepartmentsService {
   async remove(id: string) {
     const dept = await this.departmentModel.findByIdAndDelete(id);
     if (!dept) throw new NotFoundException('Department not found');
+  }
+
+  async getOrgChart() {
+    const departments = await this.departmentModel.find().populate('managerId', '-passwordHash').lean();
+    const result: any[] = [];
+    for (const dept of departments) {
+      const employees = await this.employeeModel
+        .find({ departmentId: dept._id })
+        .populate('userId', '-passwordHash')
+        .lean();
+      result.push({
+        _id: dept._id,
+        name: dept.name,
+        description: dept.description,
+        manager: dept.managerId,
+        employeeCount: employees.length,
+        employees: employees.map(e => ({
+          _id: e._id,
+          firstName: e.firstName,
+          lastName: e.lastName,
+          position: e.position,
+          user: e.userId,
+        })),
+      });
+    }
+    return result;
   }
 }
