@@ -30,6 +30,15 @@ export class Employee {
 
   @Prop()
   phone: string;
+
+  @Prop({ enum: ['permanent', 'contract', 'intern'] })
+  contractType: string;
+
+  @Prop()
+  contractExpiry: Date;
+
+  @Prop({ type: [{ name: String, url: String, type: String, uploadedAt: { type: Date, default: Date.now } }] })
+  documents: { name: string; url: string; type: string; uploadedAt: Date }[];
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);

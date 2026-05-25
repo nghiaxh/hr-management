@@ -28,4 +28,13 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  contractType?: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  contractExpiry?: Date;
 }
