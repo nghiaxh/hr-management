@@ -21,6 +21,9 @@ export interface Employee {
   salary: number;
   hireDate: string;
   phone?: string;
+  contractType?: string;
+  contractExpiry?: string;
+  documents?: { name: string; url: string; type: string; uploadedAt: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +71,48 @@ export interface Payroll {
   netPay: number;
   status: 'draft' | 'paid';
   paidAt?: string;
+}
+
+export interface EmployeeHistory {
+  _id: string;
+  employeeId: string;
+  type: 'raise' | 'promotion' | 'transfer' | 'other';
+  previousValue?: string;
+  newValue: string;
+  effectiveDate: string;
+  note?: string;
+}
+
+export interface LeaveBalance {
+  _id: string;
+  employeeId: string;
+  annualTotal: number;
+  annualUsed: number;
+  sickTotal: number;
+  sickUsed: number;
+  personalTotal: number;
+  personalUsed: number;
+}
+
+export interface Notification {
+  _id: string;
+  userId: string;
+  title: string;
+  message?: string;
+  type: 'leave_request' | 'leave_approved' | 'leave_rejected' | 'payroll_ready' | 'system';
+  relatedId?: string;
+  relatedModel?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface OrgChartNode {
+  _id: string;
+  name: string;
+  description?: string;
+  manager?: User | null;
+  employeeCount: number;
+  employees: { _id: string; firstName: string; lastName: string; position: string; user: User | string }[];
 }
 
 export interface PaginatedResponse<T> {
