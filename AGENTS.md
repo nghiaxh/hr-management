@@ -51,3 +51,26 @@ All modules follow the NestJS convention: `module` → `controller` → `service
 - Client uses `"type": "module"`; server uses CommonJS.
 - All API routes are protected by `JwtAuthGuard` + `RolesGuard` (except `/api/auth/login` and `/api/auth/register`).
 - `server/.env` is NOT tracked in git — if missing, copy defaults from `server/src/main.ts` and `server/src/auth/auth.module.ts`.
+
+## Git commit convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `chore`, `style`, `perf`, `test`, `ci`, `build`.
+
+- `feat` — new feature
+- `fix` — bug fix
+- `docs` — documentation changes
+- `refactor` — code refactoring (no behavior change)
+- `chore` — maintenance, dependencies, config
+- `style` — code formatting, CSS
+- `ci` — CI/CD
+- `build` — build system
+
+Scope (optional) is the affected module/directory. E.g. `feat(auth):`, `fix(leaves):`, `chore(deps):`.
+
+Write descriptions in English, present tense, lowercase, no trailing period.
