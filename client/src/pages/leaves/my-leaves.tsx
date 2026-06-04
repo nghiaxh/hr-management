@@ -51,9 +51,9 @@ export default function MyLeavesPage() {
   };
 
   const balanceItems = balance ? [
-    { label: 'Annual Leave', used: balance.annualUsed, total: balance.annualTotal, color: 'bg-blue-500' },
-    { label: 'Sick Leave', used: balance.sickUsed, total: balance.sickTotal, color: 'bg-green-500' },
-    { label: 'Personal Leave', used: balance.personalUsed, total: balance.personalTotal, color: 'bg-purple-500' },
+    { label: 'Annual Leave', used: balance.annualUsed, total: balance.annualTotal },
+    { label: 'Sick Leave', used: balance.sickUsed, total: balance.sickTotal },
+    { label: 'Personal Leave', used: balance.personalUsed, total: balance.personalTotal },
   ] : [];
 
   return (
@@ -71,7 +71,7 @@ export default function MyLeavesPage() {
                   <p className="text-sm text-muted-foreground">{item.label}</p>
                   <p className="text-2xl font-bold mt-1">{remaining} <span className="text-sm font-normal text-muted-foreground">/ {item.total} days</span></p>
                   <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                    <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                    <div className="h-full bg-muted-foreground/30 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
                 </CardContent>
               </Card>

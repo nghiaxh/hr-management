@@ -45,8 +45,8 @@ export default function LeaveApprovalsPage() {
                   <TableCell><StatusBadge status={leave.status} /></TableCell>
                   <TableCell className="flex gap-1">
                     {leave.status === 'pending' && <>
-                      <Button variant="ghost" size="icon" className="text-green-600" onClick={() => approveMutation.mutate(leave._id)}><CheckCircle className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="text-red-600" onClick={() => rejectMutation.mutate(leave._id)}><XCircle className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={() => approveMutation.mutate(leave._id)}><CheckCircle className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => rejectMutation.mutate(leave._id)}><XCircle className="h-4 w-4" /></Button>
                     </>}
                   </TableCell>
                 </TableRow>

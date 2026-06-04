@@ -24,7 +24,7 @@ export default function OrgChartPage() {
           <Card key={dept._id}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
+                <Building2 className="h-5 w-5 text-muted-foreground" />
                 {dept.name}
               </CardTitle>
             </CardHeader>
@@ -34,7 +34,7 @@ export default function OrgChartPage() {
               )}
               {dept.manager && (
                 <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg">
-                  <User className="h-4 w-4 text-primary" />
+                  <User className="h-4 w-4 text-muted-foreground" />
                   <div className="text-sm">
                     <span className="font-medium">{dept.manager.name || dept.manager.email}</span>
                     <span className="text-muted-foreground ml-2">({t('departments.manager')})</span>
@@ -46,10 +46,10 @@ export default function OrgChartPage() {
                 <span>{dept.employeeCount} employees</span>
               </div>
               {dept.employees?.length > 0 && (
-                <div className="space-y-1 ml-6 border-l-2 border-primary/20 pl-4">
+                <div className="space-y-1 ml-6 border-l-2 border-border pl-4">
                   {dept.employees.map((emp: any) => (
                     <div key={emp._id} className="flex items-center gap-2 py-1 text-sm">
-                      <div className="h-2 w-2 rounded-full bg-primary/40 shrink-0" />
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground/30 shrink-0" />
                       <span className="font-medium">{emp.firstName} {emp.lastName}</span>
                       <span className="text-muted-foreground">- {emp.position}</span>
                     </div>
