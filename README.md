@@ -1,21 +1,21 @@
 # HR Management System
 
-Hệ thống quản lý nhân sự phân quyền (RBAC) xây dựng với NestJS, MongoDB, React, shadcn/ui.
+A role-based (RBAC) HR management system built with NestJS, MongoDB, React, and shadcn/ui.
 
-## Yêu cầu
+## Requirements
 
 - Node.js 18+
-- MongoDB 7+ đang chạy (mặc định `localhost:27017`)
+- MongoDB 7+ running (default `localhost:27017`)
 
-## Cài đặt & Chạy
+## Installation & Running
 
 ### 1. Server (Backend)
 
 ```bash
 cd server
 npm install
-npm run seed    # Tạo dữ liệu mẫu (4 tài khoản demo)
-npm run dev     # API tại http://localhost:3001
+npm run seed    # Create demo data (4 demo accounts)
+npm run dev     # API at http://localhost:3001
 ```
 
 ### 2. Client (Frontend)
@@ -23,36 +23,36 @@ npm run dev     # API tại http://localhost:3001
 ```bash
 cd client
 npm install
-npm run dev     # UI tại http://localhost:5173
+npm run dev     # UI at http://localhost:5173
 ```
 
-## Tài khoản Demo
+## Demo Accounts
 
-| Vai trò  | Email              | Mật khẩu      |
-|----------|-------------------|---------------|
-| Admin    | admin@hr.com      | admin123      |
-| Manager  | manager@hr.com    | manager123    |
-| Employee | employee@hr.com   | employee123   |
-| Employee | employee2@hr.com  | employee123   |
+| Role     | Email              | Password      |
+|----------|--------------------|---------------|
+| Admin    | admin@hr.com       | admin123      |
+| Manager  | manager@hr.com     | manager123    |
+| Employee | employee@hr.com    | employee123   |
+| Employee | employee2@hr.com   | employee123   |
 
-## Kiến trúc
+## Architecture
 
 ```
 hr-management/
 ├── server/                    # NestJS API
 │   ├── src/
-│   │   ├── auth/              # Xác thực JWT + phân quyền
-│   │   ├── employees/         # Quản lý nhân viên
-│   │   ├── departments/       # Quản lý phòng ban
-│   │   ├── leaves/            # Quản lý nghỉ phép
-│   │   ├── attendance/        # Chấm công
-│   │   ├── payroll/           # Bảng lương
-│   │   ├── dashboard/         # Thống kê
-│   │   ├── employee-history/  # Lịch sử nhân viên
-│   │   ├── leave-balance/     # Số dư ngày nghỉ
-│   │   ├── notifications/     # Thông báo
-│   │   └── seed.ts            # Script tạo dữ liệu mẫu
-│   ├── .env                   # Cấu hình (MongoDB URI, JWT Secret)
+│   │   ├── auth/              # JWT auth + authorization
+│   │   ├── employees/         # Employee management
+│   │   ├── departments/       # Department management
+│   │   ├── leaves/            # Leave management
+│   │   ├── attendance/        # Attendance tracking
+│   │   ├── payroll/           # Payroll processing
+│   │   ├── dashboard/         # Statistics & reports
+│   │   ├── employee-history/  # Employee history timeline
+│   │   ├── leave-balance/     # Leave balance tracking
+│   │   ├── notifications/     # In-app notifications
+│   │   └── seed.ts            # Demo data seeder
+│   ├── .env                   # Config (MongoDB URI, JWT Secret)
 │   └── package.json
 │
 └── client/                    # React SPA
@@ -63,163 +63,163 @@ hr-management/
     │   │   ├── layout/        # Sidebar, AppLayout
     │   │   └── shared/        # StatusBadge, PageHeader
     │   ├── context/           # AuthContext
-    │   ├── pages/             # Trang theo route
+    │   ├── pages/             # Route pages
     │   └── types/             # TypeScript interfaces
     └── package.json
 ```
 
-## Tính năng chi tiết
+## Features
 
-### Xác thực & Phân quyền (JWT + RBAC)
-- Đăng nhập bằng JWT token
-- 3 vai trò: **admin**, **manager**, **employee**
-- Guard kiểm tra quyền trên từng API
-- Route bảo vệ phía client
+### Authentication & Authorization (JWT + RBAC)
+- JWT token-based login
+- 3 roles: **admin**, **manager**, **employee**
+- Role guard on every API endpoint
+- Protected client-side routes
 
-### Sơ đồ tổ chức (Org Chart)
-- Hiển thị cây phòng ban với danh sách nhân viên theo từng phòng
-- Xem quản lý phòng ban và số lượng nhân viên
+### Org Chart
+- Tree view of departments with employee lists
+- View department managers and employee counts
 
 ### Dashboard
-- **Admin**: tổng nhân viên, phòng ban, đơn nghỉ chờ duyệt, chấm công hôm nay, tổng lương tháng, thống kê theo phòng ban
-- **Manager**: số nhân viên trong phòng, đơn chờ duyệt, tổng lương phòng
-- **Employee**: đơn nghỉ của tôi, chấm công gần đây, lương gần nhất
+- **Admin**: total employees, departments, pending leaves, today's attendance, monthly payroll, department statistics
+- **Manager**: department employee count, pending approvals, department payroll
+- **Employee**: my leave requests, recent attendance, latest payslip
 
-### Nhân viên (Employees)
-- CRUD đầy đủ (Admin)
-- Tìm kiếm theo tên, vị trí
-- Lọc theo phòng ban
-- Thông tin hợp đồng (loại hợp đồng, ngày hết hạn, tài liệu)
-- Lịch sử nhân viên (tăng lương, thăng chức, chuyển phòng)
-- **Scope**: Admin xem tất cả, Manager chỉ xem nhân viên trong phòng, Employee chỉ xem hồ sơ của mình
+### Employees
+- Full CRUD (Admin)
+- Search by name, position
+- Filter by department
+- Contract info (contract type, expiry date, documents)
+- Employee history (salary changes, promotions, transfers)
+- **Scope**: Admin sees all, Manager sees department only, Employee sees self only
 
-### Phòng ban (Departments)
-- CRUD đầy đủ (Admin)
-- Gán Manager cho phòng ban
-- Manager chỉ xem được phòng ban của mình
+### Departments
+- Full CRUD (Admin)
+- Assign Manager to department
+- Manager can only view their own department
 
-### Nghỉ phép (Leaves)
-- Employee tạo đơn (sick/annual/personal)
-- Admin/Manager duyệt hoặc từ chối
-- **Ràng buộc**: endDate >= startDate, tối đa 30 ngày, không trùng lịch approved
-- **Theo dõi số dư**: tự động trừ ngày phép khi duyệt, hiển thị ngày còn lại
+### Leaves
+- Employee creates requests (sick/annual/personal)
+- Admin/Manager approve or reject
+- **Validation**: endDate >= startDate, max 30 days, no overlapping approved leaves
+- **Balance tracking**: auto-deduct on approval, display remaining days
 
-### Chấm công (Attendance)
-- Employee check-in/check-out hàng ngày
-- **Tự động**: check-in sau 9h → late, làm dưới 4h → half-day
-- Manager xem báo cáo chấm công
+### Attendance
+- Employee check-in/check-out daily
+- **Auto rules**: check-in after 9 AM → late, working < 4h → half-day
+- Manager views attendance reports
 
-### Bảng lương (Payroll)
-- Admin process hàng loạt theo tháng
-- Tính netPay = basicSalary + bonus - deductions
-- Admin đánh dấu đã trả lương
-- Employee xem lịch sử lương
+### Payroll
+- Admin batch processing by month
+- Calculates netPay = basicSalary + bonus - deductions
+- Admin marks as paid
+- Employee views salary history
 
-### Thông báo (Notifications)
-- Thông báo trong ứng dụng khi đơn nghỉ được duyệt/từ chối
-- Bell icon hiển thị số thông báo chưa đọc
-- Trang thông báo riêng với danh sách đầy đủ
+### Notifications
+- In-app notifications when leave is approved/rejected
+- Bell icon with unread count
+- Dedicated notifications page with full list
 
 ## API Endpoints
 
 ### Auth
-| Method | Path              | Auth | Mô tả              |
-|--------|-------------------|------|--------------------|
-| POST   | /api/auth/register| No   | Đăng ký            |
-| POST   | /api/auth/login   | No   | Đăng nhập          |
-| GET    | /api/auth/me      | Yes  | Thông tin user     |
+| Method | Path              | Auth | Description          |
+|--------|-------------------|------|----------------------|
+| POST   | /api/auth/register| No   | Register             |
+| POST   | /api/auth/login   | No   | Login                |
+| GET    | /api/auth/me      | Yes  | Current user info    |
 
 ### Employees
-| Method | Path              | Roles         | Mô tả              |
-|--------|-------------------|---------------|--------------------|
-| GET    | /api/employees    | admin, manager| Danh sách          |
-| GET    | /api/employees/:id| all           | Chi tiết           |
-| POST   | /api/employees    | admin         | Tạo mới            |
-| PUT    | /api/employees/:id| admin         | Cập nhật           |
-| DELETE | /api/employees/:id| admin         | Xóa                |
+| Method | Path              | Roles         | Description          |
+|--------|-------------------|---------------|----------------------|
+| GET    | /api/employees    | admin, manager| List                 |
+| GET    | /api/employees/:id| all           | Detail               |
+| POST   | /api/employees    | admin         | Create               |
+| PUT    | /api/employees/:id| admin         | Update               |
+| DELETE | /api/employees/:id| admin         | Delete               |
 
 ### Departments
-| Method | Path                     | Roles         | Mô tả              |
-|--------|--------------------------|---------------|--------------------|
-| GET    | /api/departments         | admin, manager| Danh sách          |
-| GET    | /api/departments/org-chart| admin, manager| Sơ đồ tổ chức     |
-| POST   | /api/departments         | admin         | Tạo mới            |
-| PUT    | /api/departments/:id     | admin         | Cập nhật           |
-| DELETE | /api/departments/:id     | admin         | Xóa                |
+| Method | Path                     | Roles         | Description          |
+|--------|--------------------------|---------------|----------------------|
+| GET    | /api/departments         | admin, manager| List                 |
+| GET    | /api/departments/org-chart| admin, manager| Org chart            |
+| POST   | /api/departments         | admin         | Create               |
+| PUT    | /api/departments/:id     | admin         | Update               |
+| DELETE | /api/departments/:id     | admin         | Delete               |
 
 ### Leaves
-| Method | Path                   | Roles         | Mô tả              |
-|--------|------------------------|---------------|--------------------|
-| GET    | /api/leaves            | all           | Danh sách          |
-| POST   | /api/leaves            | employee      | Tạo đơn            |
-| PATCH  | /api/leaves/:id/status | admin, manager| Duyệt/từ chối      |
+| Method | Path                   | Roles         | Description          |
+|--------|------------------------|---------------|----------------------|
+| GET    | /api/leaves            | all           | List                 |
+| POST   | /api/leaves            | employee      | Create request       |
+| PATCH  | /api/leaves/:id/status | admin, manager| Approve/reject       |
 
 ### Leave Balance
-| Method | Path                         | Roles         | Mô tả              |
-|--------|------------------------------|---------------|--------------------|
-| GET    | /api/leave-balance/:employeeId| all           | Số dư ngày nghỉ   |
+| Method | Path                         | Roles         | Description          |
+|--------|------------------------------|---------------|----------------------|
+| GET    | /api/leave-balance/:employeeId| all           | Leave balance        |
 
 ### Employee History
-| Method | Path                             | Roles         | Mô tả              |
-|--------|----------------------------------|---------------|--------------------|
-| GET    | /api/employees/:id/history       | all           | Lịch sử nhân viên  |
-| POST   | /api/employees/:id/history       | admin, manager| Thêm sự kiện       |
+| Method | Path                             | Roles         | Description          |
+|--------|----------------------------------|---------------|----------------------|
+| GET    | /api/employees/:id/history       | all           | Employee history     |
+| POST   | /api/employees/:id/history       | admin, manager| Add event            |
 
 ### Notifications
-| Method | Path                         | Roles | Mô tả                    |
+| Method | Path                         | Roles | Description              |
 |--------|------------------------------|-------|--------------------------|
-| GET    | /api/notifications           | all   | Danh sách thông báo      |
-| GET    | /api/notifications/unread-count| all | Số thông báo chưa đọc    |
-| PATCH  | /api/notifications/:id/read  | all   | Đánh dấu đã đọc          |
-| PATCH  | /api/notifications/read-all  | all   | Đánh dấu tất cả đã đọc   |
+| GET    | /api/notifications           | all   | Notification list        |
+| GET    | /api/notifications/unread-count| all | Unread count             |
+| PATCH  | /api/notifications/:id/read  | all   | Mark as read             |
+| PATCH  | /api/notifications/read-all  | all   | Mark all as read         |
 
 ### Attendance
-| Method | Path                      | Roles    | Mô tả              |
-|--------|---------------------------|----------|--------------------|
-| GET    | /api/attendance           | all      | Danh sách          |
-| POST   | /api/attendance/check-in  | employee | Check-in           |
-| PATCH  | /api/attendance/:id/check-out | employee | Check-out       |
+| Method | Path                      | Roles    | Description          |
+|--------|---------------------------|----------|----------------------|
+| GET    | /api/attendance           | all      | List                 |
+| POST   | /api/attendance/check-in  | employee | Check-in             |
+| PATCH  | /api/attendance/:id/check-out | employee | Check-out          |
 
 ### Payroll
-| Method | Path                  | Roles | Mô tả              |
-|--------|-----------------------|-------|--------------------|
-| GET    | /api/payroll          | all   | Danh sách          |
-| POST   | /api/payroll/process  | admin | Process hàng loạt  |
-| PATCH  | /api/payroll/:id/pay  | admin | Đánh dấu đã trả    |
+| Method | Path                  | Roles | Description          |
+|--------|-----------------------|-------|----------------------|
+| GET    | /api/payroll          | all   | List                 |
+| POST   | /api/payroll/process  | admin | Batch process        |
+| PATCH  | /api/payroll/:id/pay  | admin | Mark as paid         |
 
 ### Dashboard
-| Method | Path            | Roles | Mô tả              |
-|--------|-----------------|-------|--------------------|
-| GET    | /api/dashboard  | all   | Thống kê theo role |
+| Method | Path            | Roles | Description          |
+|--------|-----------------|-------|----------------------|
+| GET    | /api/dashboard  | all   | Role-based stats     |
 
 ## Client Routes
 
-| Path                 | Roles         | Trang                  |
-|----------------------|---------------|------------------------|
-| /login               | all           | Đăng nhập              |
-| /dashboard           | all           | Tổng quan              |
-| /employees           | admin, manager| Danh sách nhân viên    |
-| /employees/:id       | all           | Chi tiết nhân viên     |
-| /departments         | admin, manager| Phòng ban              |
-| /org-chart           | admin, manager| Sơ đồ tổ chức          |
-| /leaves              | employee      | Đơn nghỉ của tôi       |
-| /leaves/approvals    | admin, manager| Phê duyệt đơn          |
-| /attendance          | employee      | Chấm công              |
-| /attendance/report   | admin, manager| Báo cáo chấm công      |
-| /payroll             | employee      | Lương của tôi          |
-| /payroll/manage      | admin         | Quản lý lương          |
-| /notifications       | all           | Thông báo              |
-| /profile             | all           | Hồ sơ cá nhân          |
+| Path                 | Roles         | Page                    |
+|----------------------|---------------|-------------------------|
+| /login               | all           | Login                   |
+| /dashboard           | all           | Dashboard               |
+| /employees           | admin, manager| Employee list           |
+| /employees/:id       | all           | Employee detail         |
+| /departments         | admin, manager| Departments             |
+| /org-chart           | admin, manager| Organization chart      |
+| /leaves              | employee      | My leaves               |
+| /leaves/approvals    | admin, manager| Leave approvals         |
+| /attendance          | employee      | Attendance              |
+| /attendance/report   | admin, manager| Attendance report       |
+| /payroll             | employee      | My payroll              |
+| /payroll/manage      | admin         | Payroll management      |
+| /notifications       | all           | Notifications           |
+| /profile             | all           | Profile                 |
 
 ## Tech Stack
 
-| Layer      | Công nghệ                                |
-|------------|------------------------------------------|
-| Frontend   | React 18, Vite, TypeScript               |
-| UI         | shadcn/ui, Tailwind CSS, Radix primitives|
-| Backend    | NestJS (Express)                         |
-| Database   | MongoDB 7+, Mongoose ODM                 |
-| Auth       | JWT (passport-jwt), bcrypt               |
-| Client State | TanStack React Query                   |
-| Icons      | lucide-react                             |
-| Dates      | date-fns                                 |
+| Layer         | Technology                               |
+|---------------|------------------------------------------|
+| Frontend      | React 18, Vite, TypeScript               |
+| UI            | shadcn/ui, Tailwind CSS, Radix primitives|
+| Backend       | NestJS (Express)                         |
+| Database      | MongoDB 7+, Mongoose ODM                 |
+| Auth          | JWT (passport-jwt), bcrypt               |
+| Client State  | TanStack React Query                     |
+| Icons         | lucide-react                             |
+| Dates         | date-fns                                 |
