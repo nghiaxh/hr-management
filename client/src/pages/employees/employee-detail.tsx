@@ -9,9 +9,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { useTranslation } from '../../context/language-context';
-import { formatDate, formatCurrency } from '../../lib/utils';
+import { cn, formatDate, formatCurrency } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
-import { ArrowLeft, Briefcase, FileText, History, Plus } from 'lucide-react';
+import {
+  ArrowLeft, Briefcase, FileText, History, Plus, Mail, Phone,
+  CalendarDays, BadgeDollarSign, Building2, TrendingUp, ArrowRight,
+  UserRound, ChevronRight
+} from 'lucide-react';
+
+const typeConfig: Record<string, { icon: any }> = {
+  raise: { icon: TrendingUp },
+  promotion: { icon: ArrowRight },
+  transfer: { icon: Building2 },
+  other: { icon: ChevronRight },
+};
 
 export default function EmployeeDetailPage() {
   const { t } = useTranslation();
@@ -28,12 +39,12 @@ export default function EmployeeDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-history', id] });
       setHistoryOpen(false);
-      toast({ title: 'History entry added' });
+      toast({ title: t('employees.history_added') });
     },
   });
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
-  if (!emp) return <div className="text-center py-8">Employee not found</div>;
+  if (!emp) return <div className="text-center py-8">{t('employees.not_found')}</div>;
 
   const handleHistorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,77 +58,127 @@ export default function EmployeeDetailPage() {
     });
   };
 
-  return (
-    <div className="max-w-3xl">
-      <Button variant="ghost" onClick={() => navigate('/employees')} className="mb-4"><ArrowLeft className="h-4 w-4 mr-2" />{t('employees.title')}</Button>
+  const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
+    <div className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
+      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium truncate">{value}</p>
+      </div>
+    </div>
+  );
 
-      <div className="grid gap-6 md:grid-cols-2">
+  return (
+    <div className="max-w-4xl mx-auto">
+      <button onClick={() => navigate('/employees')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <ArrowLeft className="h-4 w-4" />
+        {t('employees.title')}
+      </button>
+
+      <div className="flex items-center gap-4 mb-6">
+        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xl font-bold shrink-0 shadow-md">
+          {emp.firstName?.[0]}{emp.lastName?.[0]}
+        </div>
+        <div>
+          <h1 className="text-xl font-bold">{emp.firstName} {emp.lastName}</h1>
+          <p className="text-sm text-muted-foreground">{emp.position}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>{emp.firstName} {emp.lastName}</CardTitle></CardHeader>
-          <CardContent>
-            <dl className="space-y-3">
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('employees.position')}</dt><dd>{emp.position}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('employees.department')}</dt><dd>{emp.departmentId?.name || 'N/A'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('employees.salary')}</dt><dd>{formatCurrency(emp.salary)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('employees.hire_date')}</dt><dd>{formatDate(emp.hireDate)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('employees.phone')}</dt><dd>{emp.phone || 'N/A'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{t('user.email')}</dt><dd>{emp.userId?.email || 'N/A'}</dd></div>
-            </dl>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <UserRound className="h-4 w-4 text-muted-foreground" />
+              {t('employees.name')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <InfoRow icon={Building2} label={t('employees.department')} value={emp.departmentId?.name || 'N/A'} />
+            <InfoRow icon={BadgeDollarSign} label={t('employees.salary')} value={formatCurrency(emp.salary)} />
+            <InfoRow icon={CalendarDays} label={t('employees.hire_date')} value={formatDate(emp.hireDate)} />
+            <InfoRow icon={Phone} label={t('employees.phone')} value={emp.phone || 'N/A'} />
+            <InfoRow icon={Mail} label={t('user.email')} value={emp.userId?.email || 'N/A'} />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Briefcase className="h-4 w-4" />Contract</CardTitle></CardHeader>
-          <CardContent>
-            <dl className="space-y-3">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Contract Type</dt><dd className="capitalize">{emp.contractType || 'N/A'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Contract Expiry</dt><dd>{emp.contractExpiry ? formatDate(emp.contractExpiry) : 'N/A'}</dd></div>
-            </dl>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              {t('employees.contract')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <InfoRow icon={FileText} label={t('employees.contract_type')} value={t(`employees.contract_${emp.contractType}`) || emp.contractType || 'N/A'} />
+            <InfoRow icon={CalendarDays} label={t('employees.contract_expiry')} value={emp.contractExpiry ? formatDate(emp.contractExpiry) : 'N/A'} />
             {emp.documents && emp.documents.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm font-medium mb-2 flex items-center gap-1"><FileText className="h-3 w-3" />Documents</p>
-                <ul className="space-y-1">
+              <div className="pt-3 mt-1 border-t border-border/40">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <FileText className="h-3 w-3" />
+                  {t('employees.documents')}
+                </p>
+                <div className="space-y-1">
                   {emp.documents.map((doc: any, i: number) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground py-1 px-2 rounded-md bg-muted/50">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0" />
                       {doc.name}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
+      <Card className="mt-5">
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><History className="h-4 w-4" />Employee History</CardTitle>
-            <Button size="sm" onClick={() => setHistoryOpen(true)}><Plus className="h-3 w-3 mr-1" />Add Entry</Button>
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="h-4 w-4 text-muted-foreground" />
+              {t('employees.history')}
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {t('employees.history_add')}
+            </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {history.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No history entries</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('employees.no_history')}</p>
           ) : (
             <div className="space-y-0">
-              {history.map((entry: any) => (
-                <div key={entry._id} className="flex gap-3 pb-4 border-l-2 border-primary/20 pl-4 ml-2 last:pb-0">
-                  <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5 -ml-5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium uppercase text-muted-foreground">{entry.type}</span>
-                      <span className="text-xs text-muted-foreground">{formatDate(entry.effectiveDate)}</span>
+              {history.map((entry: any, idx: number) => {
+                const config = typeConfig[entry.type] || typeConfig.other;
+                const Icon = config.icon;
+                return (
+                  <div key={entry._id} className="flex gap-4 pb-5 border-l-2 border-border ml-3 pl-5 last:pb-0 relative">
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 -ml-[22px] mt-0.5 ring-2 ring-background bg-muted">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                    <p className="text-sm mt-1">
-                      {entry.previousValue && <span className="text-muted-foreground line-through mr-1">{entry.previousValue}</span>}
-                      <span className="font-medium">{entry.newValue}</span>
-                    </p>
-                    {entry.note && <p className="text-xs text-muted-foreground mt-0.5">{entry.note}</p>}
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t(`history.${entry.type}`)}</span>
+                        <span className="text-[11px] text-muted-foreground/60">{formatDate(entry.effectiveDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-sm">
+                        {entry.previousValue && (
+                          <>
+                            <span className="text-muted-foreground line-through">{entry.previousValue}</span>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                          </>
+                        )}
+                        <span className="font-medium">{entry.newValue}</span>
+                      </div>
+                      {entry.note && <p className="text-xs text-muted-foreground/60 mt-0.5">{entry.note}</p>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -125,22 +186,37 @@ export default function EmployeeDetailPage() {
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add History Entry</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">Add a history entry for this employee</DialogDescription>
+          <DialogHeader><DialogTitle>{t('employees.history_title')}</DialogTitle></DialogHeader>
+          <DialogDescription className="sr-only">{t('employees.history_add')}</DialogDescription>
           <form onSubmit={handleHistorySubmit} className="space-y-4">
-            <div><Label>Type</Label>
-              <select name="type" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="raise">Raise</option>
-                <option value="promotion">Promotion</option>
-                <option value="transfer">Transfer</option>
-                <option value="other">Other</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>{t('employees.history_type')}</Label>
+                <select name="type" required className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                  <option value="raise">{t('history.raise')}</option>
+                  <option value="promotion">{t('history.promotion')}</option>
+                  <option value="transfer">{t('history.transfer')}</option>
+                  <option value="other">{t('history.other')}</option>
+                </select>
+              </div>
+              <div>
+                <Label>{t('employees.history_date')}</Label>
+                <Input name="effectiveDate" type="date" required />
+              </div>
+              <div>
+                <Label>{t('employees.history_previous')}</Label>
+                <Input name="previousValue" placeholder={t('employees.history_previous_placeholder')} />
+              </div>
+              <div>
+                <Label>{t('employees.history_new')}</Label>
+                <Input name="newValue" required placeholder={t('employees.history_new_placeholder')} />
+              </div>
             </div>
-            <div><Label>Previous Value</Label><Input name="previousValue" placeholder="e.g. $3,000 / Junior" /></div>
-            <div><Label>New Value</Label><Input name="newValue" required placeholder="e.g. $4,000 / Senior" /></div>
-            <div><Label>Effective Date</Label><Input name="effectiveDate" type="date" required /></div>
-            <div><Label>Note</Label><Input name="note" placeholder="Optional note" /></div>
-            <Button type="submit" className="w-full">Save</Button>
+            <div>
+              <Label>{t('employees.history_note')}</Label>
+              <Input name="note" placeholder={t('employees.history_note_placeholder')} />
+            </div>
+            <Button type="submit" className="w-full">{t('employees.history_save')}</Button>
           </form>
         </DialogContent>
       </Dialog>
