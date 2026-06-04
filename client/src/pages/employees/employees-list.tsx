@@ -69,29 +69,31 @@ export default function EmployeesListPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t('employees.add')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">Create a new employee record</DialogDescription>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>{t('employees.first_name')}</Label><Input name="firstName" required /></div>
-            <div><Label>{t('employees.last_name')}</Label><Input name="lastName" required /></div>
-            <div><Label>{t('employees.position')}</Label><Input name="position" required /></div>
-            <div><Label>{t('employees.salary')}</Label><Input name="salary" type="number" required /></div>
-            <div><Label>{t('employees.department')}</Label>
-              <select name="departmentId" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                {departments?.data?.map((d: any) => <option key={d._id} value={d._id}>{d.name}</option>)}
-              </select>
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label>{t('employees.first_name')}</Label><Input name="firstName" required /></div>
+              <div><Label>{t('employees.last_name')}</Label><Input name="lastName" required /></div>
+              <div><Label>{t('employees.position')}</Label><Input name="position" required /></div>
+              <div><Label>{t('employees.salary')}</Label><Input name="salary" type="number" required /></div>
+              <div><Label>{t('employees.department')}</Label>
+                <select name="departmentId" required className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                  {departments?.data?.map((d: any) => <option key={d._id} value={d._id}>{d.name}</option>)}
+                </select>
+              </div>
+              <div><Label>{t('employees.hire_date')}</Label><Input name="hireDate" type="date" required /></div>
+              <div><Label>{t('employees.phone')}</Label><Input name="phone" /></div>
+              <div><Label>Contract Type</Label>
+                <select name="contractType" className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                  <option value="">None</option>
+                  <option value="permanent">Permanent</option>
+                  <option value="contract">Contract</option>
+                  <option value="intern">Intern</option>
+                </select>
+              </div>
+              <div><Label>Contract Expiry</Label><Input name="contractExpiry" type="date" /></div>
+              <div><Label>{t('employees.user_id')}</Label><Input name="userId" required placeholder={t('employees.user_id_placeholder')} /></div>
             </div>
-            <div><Label>{t('employees.hire_date')}</Label><Input name="hireDate" type="date" required /></div>
-            <div><Label>{t('employees.phone')}</Label><Input name="phone" /></div>
-            <div><Label>Contract Type</Label>
-              <select name="contractType" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">None</option>
-                <option value="permanent">Permanent</option>
-                <option value="contract">Contract</option>
-                <option value="intern">Intern</option>
-              </select>
-            </div>
-            <div><Label>Contract Expiry</Label><Input name="contractExpiry" type="date" /></div>
-            <div><Label>{t('employees.user_id')}</Label><Input name="userId" required placeholder={t('employees.user_id_placeholder')} /></div>
-            <Button type="submit" className="w-full">{t('employees.create')}</Button>
+            <Button type="submit" className="w-full mt-4">{t('employees.create')}</Button>
           </form>
         </DialogContent>
       </Dialog>
