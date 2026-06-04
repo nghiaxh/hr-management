@@ -6,12 +6,12 @@ import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { Card, CardContent } from '../../components/ui/card';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { formatCurrency } from '../../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { useTranslation } from '../../context/language-context';
-import { Play, CheckCircle } from 'lucide-react';
+import { Play, CheckCircle, Wallet, TrendingUp, MinusCircle, BadgeDollarSign } from 'lucide-react';
 
 export default function PayrollManagementPage() {
   const { t } = useTranslation();
@@ -38,47 +38,149 @@ export default function PayrollManagementPage() {
     processMutation.mutate({ employeeIds, month: Number(form.get('month')), year: Number(form.get('year')) });
   };
 
+  const records = data?.data || [];
+  const totalNet = records.filter((r: any) => r.status === 'paid').reduce((s: number, r: any) => s + r.netPay, 0);
+  const totalDraft = records.filter((r: any) => r.status === 'draft').reduce((s: number, r: any) => s + r.netPay, 0);
+
+  if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
+
   return (
-    <div>
-      <PageHeader title={t('payroll.management')} action={<Button onClick={() => setOpen(true)}><Play className="h-4 w-4 mr-2" />{t('payroll.process')}</Button>} />
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>{t('payroll.employee')}</TableHead><TableHead>{t('payroll.period')}</TableHead><TableHead>{t('payroll.net_pay')}</TableHead><TableHead>{t('payroll.status')}</TableHead><TableHead>{t('payroll.actions')}</TableHead></TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> :
-              data?.data?.map((p: any) => (
-                <TableRow key={p._id}>
-                  <TableCell>{p.employeeId?.firstName} {p.employeeId?.lastName}</TableCell>
-                  <TableCell>{p.month}/{p.year}</TableCell>
-                  <TableCell>{formatCurrency(p.netPay)}</TableCell>
-                  <TableCell><StatusBadge status={p.status} /></TableCell>
-                  <TableCell>
-                    {p.status === 'draft' && <Button variant="ghost" size="sm" onClick={() => payMutation.mutate(p._id)}><CheckCircle className="h-4 w-4 mr-1" />{t('payroll.mark_paid')}</Button>}
-                  </TableCell>
-                </TableRow>
-              ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t('payroll.no_records_mgmt')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+    <div className="space-y-6">
+      <PageHeader
+        title={t('payroll.management')}
+        action={
+          <Button onClick={() => setOpen(true)}>
+            <Play className="h-4 w-4 mr-1.5" />{t('payroll.process')}
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <Card>
+          <CardContent className="p-4 md:p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">{t('payroll.total_paid')}</p>
+                <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalNet)}</p>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center">
+                <BadgeDollarSign className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 md:p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">{t('payroll.status')}</p>
+                <p className="text-xl md:text-2xl font-bold">{records.length}</p>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 md:p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">{t('payroll.waiting')}</p>
+                <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalDraft)}</p>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center">
+                <MinusCircle className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">{records.filter((r: any) => r.status === 'draft').length} {t('payroll.employees')?.toLowerCase()}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 md:p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">{t('payroll.paid')}</p>
+                <p className="text-xl md:text-2xl font-bold">{records.filter((r: any) => r.status === 'paid').length}</p>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-card rounded-xl border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('payroll.employee')}</th>
+                <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('payroll.period')}</th>
+                <th className="text-right font-medium text-muted-foreground px-4 py-3">{t('payroll.gross')}</th>
+                <th className="text-right font-medium text-muted-foreground px-4 py-3">{t('payroll.bonus')}</th>
+                <th className="text-right font-medium text-muted-foreground px-4 py-3">{t('payroll.deductions')}</th>
+                <th className="text-right font-medium text-muted-foreground px-4 py-3">{t('payroll.net_pay')}</th>
+                <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('payroll.status')}</th>
+                <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('payroll.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.length === 0 ? (
+                <tr><td colSpan={8} className="text-center text-muted-foreground py-8">{t('payroll.no_records_mgmt')}</td></tr>
+              ) : (
+                records.map((p: any) => (
+                  <tr key={p._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-medium">{p.employeeId?.firstName} {p.employeeId?.lastName}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.month}/{p.year}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">{formatCurrency(p.basicSalary)}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">+{formatCurrency(p.bonus)}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">-{formatCurrency(p.deductions)}</td>
+                    <td className="px-4 py-3 text-right font-bold">{formatCurrency(p.netPay)}</td>
+                    <td className="px-4 py-3 text-center"><StatusBadge status={p.status} /></td>
+                    <td className="px-4 py-3 text-center">
+                      {p.status === 'draft' && (
+                        <Button variant="ghost" size="sm" onClick={() => payMutation.mutate(p._id)} className="text-xs">
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />{t('payroll.mark_paid')}
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('payroll.process')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">Process payroll for selected employees</DialogDescription>
+          <DialogDescription className="sr-only">{t('payroll.process_description')}</DialogDescription>
           <form onSubmit={handleProcess} className="space-y-4">
-            <div><Label>{t('payroll.month')}</Label><Input name="month" type="number" min={1} max={12} required /></div>
-            <div><Label>{t('payroll.year')}</Label><Input name="year" type="number" min={2020} required /></div>
-            <div><Label>{t('payroll.employees')}</Label>
-              <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{t('payroll.month')}</Label>
+                <Input name="month" type="number" min={1} max={12} required />
+              </div>
+              <div>
+                <Label>{t('payroll.year')}</Label>
+                <Input name="year" type="number" min={2020} required />
+              </div>
+            </div>
+            <div>
+              <Label>{t('payroll.employees')}</Label>
+              <div className="max-h-44 overflow-y-auto rounded-lg border p-2 space-y-1 bg-background/50">
                 {employees?.data?.map((emp: any) => (
-                  <label key={emp._id} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="employeeIds" value={emp._id} />
-                    {emp.firstName} {emp.lastName}
+                  <label key={emp._id} className="flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer">
+                    <input type="checkbox" name="employeeIds" value={emp._id} className="rounded" />
+                    <span>{emp.firstName} {emp.lastName}</span>
                   </label>
                 ))}
+                {(!employees?.data || employees.data.length === 0) && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No employees available</p>
+                )}
               </div>
             </div>
             <Button type="submit" className="w-full">{t('payroll.process_btn')}</Button>
