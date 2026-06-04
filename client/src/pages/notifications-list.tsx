@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '../api/notifications';
 import { PageHeader } from '../components/shared/page-header';
 import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
 import { useTranslation } from '../context/language-context';
 import { formatDate } from '../lib/utils';
 import { toast } from '../hooks/use-toast';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Mail, MailOpen } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export default function NotificationsListPage() {
   const { t } = useTranslation();
@@ -31,44 +31,69 @@ export default function NotificationsListPage() {
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
 
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageHeader
         title="Notifications"
+        description={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
         action={
-          notifications.some((n: any) => !n.isRead) ? (
+          unreadCount > 0 ? (
             <Button variant="outline" size="sm" onClick={() => markAllReadMutation.mutate()}>
-              <CheckCheck className="h-4 w-4 mr-1" />Mark all read
+              <CheckCheck className="h-4 w-4 mr-1.5" />Mark all read
             </Button>
           ) : undefined
         }
       />
-      <div className="space-y-2">
-        {notifications.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center py-12 text-muted-foreground">
-              <Bell className="h-8 w-8 mb-2" />
-              <p className="text-sm">No notifications</p>
-            </CardContent>
-          </Card>
-        ) : (
-          notifications.map((n: any) => (
-            <Card key={n._id} className={`cursor-pointer transition-colors ${!n.isRead ? 'border-primary/30 bg-primary/5' : ''}`} onClick={() => !n.isRead && markReadMutation.mutate(n._id)}>
-              <CardContent className="flex items-start gap-3 py-3">
-                <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${n.isRead ? 'bg-transparent' : 'bg-primary'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{n.title}</p>
-                    {!n.isRead && <span className="text-[10px] text-primary font-medium">New</span>}
+
+      {notifications.length === 0 ? (
+        <div className="flex flex-col items-center py-16 text-muted-foreground">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <Bell className="h-6 w-6" />
+          </div>
+          <p className="text-sm font-medium">No notifications</p>
+          <p className="text-xs text-muted-foreground mt-1">You're all up to date</p>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {notifications.map((n: any) => (
+            <div
+              key={n._id}
+              onClick={() => !n.isRead && markReadMutation.mutate(n._id)}
+              className={cn(
+                'group flex items-start gap-3 p-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                n.isRead
+                  ? 'bg-card/50 border-transparent hover:bg-accent/30'
+                  : 'bg-accent/50 border-border/80 hover:bg-accent'
+              )}
+            >
+              <div className={cn(
+                'mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-colors',
+                n.isRead ? 'bg-muted text-muted-foreground' : 'bg-muted-foreground/15 text-foreground'
+              )}>
+                {n.isRead ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className={cn('text-sm', n.isRead ? 'text-foreground/70' : 'text-foreground font-medium')}>
+                    {n.title}
+                  </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!n.isRead && <span className="h-2 w-2 rounded-full bg-muted-foreground/50" />}
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatDate(n.createdAt)}</span>
                   </div>
-                  {n.message && <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>}
-                  <p className="text-[10px] text-muted-foreground mt-1">{formatDate(n.createdAt)}</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                {n.message && (
+                  <p className={cn('text-xs mt-0.5', n.isRead ? 'text-muted-foreground/60' : 'text-muted-foreground')}>
+                    {n.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
