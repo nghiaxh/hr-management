@@ -63,6 +63,56 @@ export class EmployeesService {
     if (!emp) throw new NotFoundException('Employee not found');
   }
 
+  async bulkDelete(ids: string[]) {
+    await this.employeeModel.deleteMany({ _id: { $in: ids } });
+    return { deleted: ids.length };
+  }
+
+  async exportCsv() {
+    const employees = await this.employeeModel.find()
+      .populate('userId', '-passwordHash')
+      .populate('departmentId');
+
+    const header = 'firstName,lastName,position,department,salary,email,phone,contractType,hireDate';
+    const rows = employees.map(e => {
+      const row = [
+        `"${e.firstName}"`,
+        `"${e.lastName}"`,
+        `"${e.position}"`,
+        `"${(e as any).departmentId?.name || ''}"`,
+        e.salary,
+        `"${(e as any).userId?.email || ''}"`,
+        `"${e.phone || ''}"`,
+        e.contractType || '',
+        e.hireDate ? new Date(e.hireDate).toISOString().split('T')[0] : '',
+      ];
+      return row.join(',');
+    });
+
+    return [header, ...rows].join('\n');
+  }
+
+  async addDocument(id: string, file: Express.Multer.File) {
+    const emp = await this.employeeModel.findById(id);
+    if (!emp) throw new NotFoundException('Employee not found');
+    emp.documents.push({
+      name: file.originalname,
+      url: `/uploads/${file.filename}`,
+      type: file.mimetype,
+      uploadedAt: new Date(),
+    });
+    await emp.save();
+    return emp;
+  }
+
+  async removeDocument(id: string, docId: string) {
+    const emp = await this.employeeModel.findById(id);
+    if (!emp) throw new NotFoundException('Employee not found');
+    emp.documents = emp.documents.filter((d: any) => d._id.toString() !== docId);
+    await emp.save();
+    return emp;
+  }
+
   async findByUserId(userId: string) {
     return this.employeeModel.findOne({ userId }).populate('departmentId');
   }
