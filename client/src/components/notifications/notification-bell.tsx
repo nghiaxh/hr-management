@@ -4,8 +4,10 @@ import { notificationsApi } from '../../api/notifications';
 import { Button } from '../ui/button';
 import { Bell } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
+import { useTranslation } from '../../context/language-context';
 
 export function NotificationBell() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -43,7 +45,7 @@ export function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-md hover:bg-accent transition-colors">
+      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-md hover:bg-accent transition-colors cursor-pointer">
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
@@ -55,15 +57,15 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-card border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
           <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-card">
-            <span className="text-sm font-semibold">Notifications</span>
+            <span className="text-sm font-semibold">{t('nav.notifications')}</span>
             {unreadCount > 0 && (
-              <button onClick={() => markAllReadMutation.mutate()} className="text-xs text-primary hover:underline">
-                Mark all read
+              <button onClick={() => markAllReadMutation.mutate()} className="text-xs text-primary hover:underline cursor-pointer">
+                {t('notifications.mark_all_read')}
               </button>
             )}
           </div>
           {notifications.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">No notifications</div>
+            <div className="p-6 text-center text-sm text-muted-foreground">{t('notifications.no_notifications')}</div>
           ) : (
             notifications.slice(0, 20).map((n: any) => (
               <div key={n._id} className={`p-3 border-b last:border-0 hover:bg-accent/50 transition-colors ${!n.isRead ? 'bg-primary/5' : ''}`}>

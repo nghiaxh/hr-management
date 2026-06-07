@@ -18,7 +18,7 @@ export default function OrgChartPage() {
 
   return (
     <div>
-      <PageHeader title="Organization Chart" />
+      <PageHeader title={t('org_chart.title')} />
       <div className="grid gap-6 md:grid-cols-2">
         {departments.map((dept: any) => (
           <Card key={dept._id}>
@@ -43,7 +43,7 @@ export default function OrgChartPage() {
               )}
               <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>{dept.employeeCount} employees</span>
+                <span>{dept.employeeCount} {t('org_chart.employees')}</span>
               </div>
               {dept.employees?.length > 0 && (
                 <div className="space-y-1 ml-6 border-l-2 border-border pl-4">
@@ -57,14 +57,14 @@ export default function OrgChartPage() {
                 </div>
               )}
               {(!dept.employees || dept.employees.length === 0) && (
-                <p className="text-sm text-muted-foreground italic">No employees</p>
+                <p className="text-sm text-muted-foreground italic">{t('org_chart.no_employees')}</p>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
       {departments.length === 0 && (
-        <p className="text-center text-muted-foreground py-8">No departments found</p>
+        <p className="text-center text-muted-foreground py-8">{t('org_chart.no_departments')}</p>
       )}
     </div>
   );

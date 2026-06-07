@@ -20,7 +20,7 @@ export default function MyAttendancePage() {
     mutationFn: () => attendanceApi.checkIn(),
     onSuccess: () => refresh(),
     onError: (err: any) => {
-      toast({ title: err?.response?.data?.message || 'Already checked in today', variant: 'destructive' });
+      toast({ title: err?.response?.data?.message || t('attendance.already_checked_in'), variant: 'destructive' });
       refresh();
     },
   });
@@ -29,7 +29,7 @@ export default function MyAttendancePage() {
     mutationFn: (id: string) => attendanceApi.checkOut(id),
     onSuccess: () => refresh(),
     onError: (err: any) => {
-      toast({ title: err?.response?.data?.message || 'Check out failed', variant: 'destructive' });
+      toast({ title: err?.response?.data?.message || t('attendance.check_out_failed'), variant: 'destructive' });
       refresh();
     },
   });
@@ -62,7 +62,7 @@ export default function MyAttendancePage() {
             <TableRow><TableHead>{t('attendance.date')}</TableHead><TableHead>{t('attendance.check_in')}</TableHead><TableHead>{t('attendance.check_out')}</TableHead><TableHead>{t('attendance.status')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> :
+            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">{t('common.loading')}</TableCell></TableRow> :
               records.map((a: any) => (
                 <TableRow key={a._id}>
                   <TableCell>{formatDate(a.date)}</TableCell>

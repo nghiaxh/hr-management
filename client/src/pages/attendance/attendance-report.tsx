@@ -36,7 +36,7 @@ export default function AttendanceReportPage() {
             <TableRow><TableHead>{t('attendance.employee')}</TableHead><TableHead>{t('attendance.date')}</TableHead><TableHead>{t('attendance.check_in')}</TableHead><TableHead>{t('attendance.check_out')}</TableHead><TableHead>{t('attendance.status')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> :
+            {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">{t('common.loading')}</TableCell></TableRow> :
               records.map((a: any) => (
                 <TableRow key={a._id}>
                   <TableCell>{a.employeeId?.firstName} {a.employeeId?.lastName}</TableCell>

@@ -22,7 +22,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Invalid credentials';
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('login.invalid_credentials');
       setError(message);
     }
   };
@@ -35,7 +35,7 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md mx-4 relative animate-fade-in-up glass-card">
         <CardHeader className="text-center pb-4">
-          <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('login.sign_in_to_account')}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -45,19 +45,19 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('login.email')}</Label>
               <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="bg-background/50" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('login.password')}</Label>
               <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-background/50" />
             </div>
             <Button type="submit" className="w-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
-              Sign In
+              {t('login.sign_in')}
             </Button>
           </form>
           <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border/50">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Demo Accounts</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">{t('login.demo_accounts')}</p>
             <div className="text-xs text-muted-foreground space-y-1">
               <p>admin@hr.com / admin123</p>
               <p>manager@hr.com / manager123</p>

@@ -21,7 +21,7 @@ export default function NotificationsListPage() {
   const markReadMutation = useMutation({
     mutationFn: (id: string) => notificationsApi.markRead(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
-    onError: () => toast({ title: 'Failed to mark as read', variant: 'destructive' }),
+    onError: () => toast({ title: t('notifications.failed_mark_read'), variant: 'destructive' }),
   });
 
   const markAllReadMutation = useMutation({
@@ -36,12 +36,12 @@ export default function NotificationsListPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title="Notifications"
-        description={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+        title={t('nav.notifications')}
+        description={unreadCount > 0 ? `${unreadCount} ${t('notifications.unread')}` : t('notifications.all_caught_up')}
         action={
           unreadCount > 0 ? (
             <Button variant="outline" size="sm" onClick={() => markAllReadMutation.mutate()}>
-              <CheckCheck className="h-4 w-4 mr-1.5" />Mark all read
+              <CheckCheck className="h-4 w-4 mr-1.5" />{t('notifications.mark_all_read')}
             </Button>
           ) : undefined
         }
@@ -52,8 +52,8 @@ export default function NotificationsListPage() {
           <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
             <Bell className="h-6 w-6" />
           </div>
-          <p className="text-sm font-medium">No notifications</p>
-          <p className="text-xs text-muted-foreground mt-1">You're all up to date</p>
+          <p className="text-sm font-medium">{t('notifications.no_notifications')}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('notifications.up_to_date')}</p>
         </div>
       ) : (
         <div className="space-y-1">

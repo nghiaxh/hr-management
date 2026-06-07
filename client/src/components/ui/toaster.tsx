@@ -20,7 +20,7 @@ export function Toaster() {
             <p className="font-semibold">{t.title}</p>
             {t.description && <p className="text-xs opacity-80 mt-0.5">{t.description}</p>}
           </div>
-          <button onClick={() => dismiss(t.id)} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+          <button onClick={() => dismiss(t.id)} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
             <X className="h-4 w-4" />
           </button>
         </div>
