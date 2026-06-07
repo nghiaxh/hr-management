@@ -5,4 +5,5 @@ export const authApi = {
   register: (email: string, password: string, role: string) => api.post('/auth/register', { email, password, role }).then(r => r.data),
   getMe: () => api.get('/auth/me').then(r => r.data),
   updateProfile: (data: { name?: string; email?: string }) => api.put('/auth/profile', data).then(r => r.data),
+  changePassword: (currentPassword: string, newPassword: string) => api.post('/auth/change-password', { currentPassword, newPassword }).then(r => r.data),
 };

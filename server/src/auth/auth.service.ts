@@ -41,6 +41,16 @@ export class AuthService {
     return this.userModel.findByIdAndUpdate(userId, update, { new: true }).select('-passwordHash');
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return { message: 'Password changed successfully' };
+  }
+
   private generateToken(user: UserDocument) {
     const payload = { sub: user._id, email: user.email, role: user.role };
     return {

@@ -8,14 +8,18 @@ import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../hooks/use-toast';
 import { authApi } from '../api/auth';
-import { Pencil } from 'lucide-react';
+import { Pencil, Lock } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +29,25 @@ export default function ProfilePage() {
       toast({ title: t('profile.updated') });
       setProfileOpen(false);
     } catch {
-      toast({ title: 'Failed to update profile', variant: 'destructive' });
+      toast({ title: t('profile.failed_update'), variant: 'destructive' });
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: t('profile.passwords_mismatch'), variant: 'destructive' });
+      return;
+    }
+    try {
+      await authApi.changePassword(currentPassword, newPassword);
+      toast({ title: t('profile.password_changed') });
+      setPasswordOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch {
+      toast({ title: t('profile.password_failed'), variant: 'destructive' });
     }
   };
 
@@ -64,15 +86,39 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      <Card className="mt-4">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{t('profile.security')}</h2>
+            <Button variant="outline" size="sm" onClick={() => setPasswordOpen(true)}>
+              <Lock className="h-4 w-4 mr-2" />{t('profile.change_password')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('user.edit_profile')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">Edit user profile</DialogDescription>
+          <DialogDescription className="sr-only">{t('profile.edit_sr')}</DialogDescription>
           <form onSubmit={handleSave} className="space-y-4">
             <div><Label>{t('user.name')}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
             <div><Label>{t('user.email')}</Label><Input value={email} onChange={e => setEmail(e.target.value)} required /></div>
             <div><Label>{t('user.role')}</Label><Input value={user?.role || ''} disabled /></div>
             <Button type="submit" className="w-full">{t('user.save')}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t('profile.change_password')}</DialogTitle></DialogHeader>
+          <DialogDescription className="sr-only">{t('profile.password_sr')}</DialogDescription>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div><Label>{t('profile.current_password')}</Label><Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required /></div>
+            <div><Label>{t('profile.new_password')}</Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} /></div>
+            <div><Label>{t('profile.confirm_password')}</Label><Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} /></div>
+            <Button type="submit" className="w-full">{t('profile.change_password')}</Button>
           </form>
         </DialogContent>
       </Dialog>
