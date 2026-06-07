@@ -23,12 +23,14 @@ import CandidatesPage from './pages/recruitment/candidates';
 import MyReviewsPage from './pages/performance-reviews/my-reviews';
 import ReviewManagementPage from './pages/performance-reviews/review-management';
 import { Toaster } from './components/ui/toaster';
+import { SocketInit } from './hooks/use-socket';
 
 const queryClient = new QueryClient();
 
 function AppContent() {
   return (
     <>
+      <SocketInit />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AppLayout />}>
