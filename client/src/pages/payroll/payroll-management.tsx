@@ -10,12 +10,14 @@ import { Card, CardContent } from '../../components/ui/card';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { formatCurrency } from '../../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { useTranslation } from '../../context/language-context';
 import { Play, CheckCircle, Wallet, TrendingUp, MinusCircle, BadgeDollarSign } from 'lucide-react';
 
 export default function PayrollManagementPage() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [payTarget, setPayTarget] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
@@ -128,7 +130,7 @@ export default function PayrollManagementPage() {
             </thead>
             <tbody>
               {records.length === 0 ? (
-                <tr><td colSpan={8} className="text-center text-muted-foreground py-8">{t('payroll.no_records_mgmt')}</td></tr>
+                <tr><td colSpan={8} className="text-center text-muted-foreground py-8">{t('payroll.no_records_management')}</td></tr>
               ) : (
                 records.map((p: any) => (
                   <tr key={p._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -141,7 +143,7 @@ export default function PayrollManagementPage() {
                     <td className="px-4 py-3 text-center"><StatusBadge status={p.status} /></td>
                     <td className="px-4 py-3 text-center">
                       {p.status === 'draft' && (
-                        <Button variant="ghost" size="sm" onClick={() => payMutation.mutate(p._id)} className="text-xs">
+                        <Button variant="ghost" size="sm" onClick={() => setPayTarget(p._id)} className="text-xs">
                           <CheckCircle className="h-3.5 w-3.5 mr-1" />{t('payroll.mark_paid')}
                         </Button>
                       )}
@@ -179,7 +181,7 @@ export default function PayrollManagementPage() {
                   </label>
                 ))}
                 {(!employees?.data || employees.data.length === 0) && (
-                  <p className="text-xs text-muted-foreground text-center py-4">No employees available</p>
+                  <p className="text-xs text-muted-foreground text-center py-4">{t('payroll.no_employees')}</p>
                 )}
               </div>
             </div>
@@ -187,6 +189,17 @@ export default function PayrollManagementPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!payTarget}
+        onOpenChange={(o) => { if (!o) setPayTarget(null); }}
+        title={t('auth.confirm_pay')}
+        description={t('auth.confirm_pay_desc')}
+        confirmLabel={t('payroll.mark_paid')}
+        cancelLabel={t('dialog.cancel')}
+        variant="default"
+        onConfirm={() => { if (payTarget) payMutation.mutate(payTarget); setPayTarget(null); }}
+      />
     </div>
   );
 }

@@ -26,17 +26,17 @@ export default function DepartmentsListPage() {
   const createMutation = useMutation({
     mutationFn: (d: any) => departmentsApi.create(d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setOpen(false); toast({ title: t('departments.created') }); },
-    onError: () => toast({ title: 'Failed to create department', variant: 'destructive' }),
+    onError: () => toast({ title: t('departments.create_failed'), variant: 'destructive' }),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => departmentsApi.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setEditOpen(false); setEditingDept(null); toast({ title: t('departments.updated') }); },
-    onError: () => toast({ title: 'Failed to update department', variant: 'destructive' }),
+    onError: () => toast({ title: t('departments.update_failed'), variant: 'destructive' }),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => departmentsApi.delete(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setDeleteOpen(false); setDeletingDept(null); toast({ title: t('departments.deleted') }); },
-    onError: () => toast({ title: 'Failed to delete department', variant: 'destructive' }),
+    onError: () => toast({ title: t('departments.delete_failed'), variant: 'destructive' }),
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -64,7 +64,7 @@ export default function DepartmentsListPage() {
             <TableRow><TableHead>{t('departments.name')}</TableHead><TableHead>{t('departments.description')}</TableHead><TableHead>{t('departments.manager')}</TableHead><TableHead>{t('departments.actions')}</TableHead></TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> :
+            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">{t('departments.loading')}</TableCell></TableRow> :
               data?.data?.map((dept: any) => (
                 <TableRow key={dept._id}>
                   <TableCell className="font-medium">{dept.name}</TableCell>
@@ -84,7 +84,7 @@ export default function DepartmentsListPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('departments.add')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">Create a new department</DialogDescription>
+          <DialogDescription className="sr-only">{t('departments.create_sr')}</DialogDescription>
           <form onSubmit={handleCreate} className="space-y-4">
             <div><Label>{t('departments.name')}</Label><Input name="name" required /></div>
             <div><Label>{t('departments.description')}</Label><Input name="description" /></div>
@@ -96,7 +96,7 @@ export default function DepartmentsListPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('departments.edit')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">Edit department details</DialogDescription>
+          <DialogDescription className="sr-only">{t('departments.edit_sr')}</DialogDescription>
           <form onSubmit={handleEdit} className="space-y-4">
             <div><Label>{t('departments.name')}</Label><Input name="name" defaultValue={editingDept?.name} required /></div>
             <div><Label>{t('departments.description')}</Label><Input name="description" defaultValue={editingDept?.description} /></div>
