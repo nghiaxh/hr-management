@@ -115,6 +115,33 @@ export interface OrgChartNode {
   employees: { _id: string; firstName: string; lastName: string; position: string; user: User | string }[];
 }
 
+export interface JobPosting {
+  _id: string;
+  title: string;
+  departmentId: Department | string;
+  description?: string;
+  requirements?: string;
+  status: 'open' | 'closed' | 'draft';
+  openings: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Candidate {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  jobPostingId: JobPosting | string;
+  status: 'applied' | 'screening' | 'interview' | 'offered' | 'hired' | 'rejected';
+  resumeUrl?: string;
+  notes?: string;
+  appliedDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number };

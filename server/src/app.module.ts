@@ -10,6 +10,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { EmployeeHistoryModule } from './employee-history/employee-history.module';
 import { LeaveBalanceModule } from './leave-balance/leave-balance.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
 import { StartupSeedService } from './startup-seed.service';
 
 @Module({
@@ -25,6 +26,7 @@ import { StartupSeedService } from './startup-seed.service';
     EmployeeHistoryModule,
     LeaveBalanceModule,
     NotificationsModule,
+    RecruitmentModule,
   ],
   providers: [StartupSeedService],
 })
