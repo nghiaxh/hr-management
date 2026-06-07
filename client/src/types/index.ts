@@ -142,6 +142,19 @@ export interface Candidate {
   updatedAt: string;
 }
 
+export interface PerformanceReview {
+  _id: string;
+  employeeId: Employee | string;
+  reviewerId: User | string;
+  period: string;
+  rating?: number;
+  comments?: string;
+  goals?: string;
+  status: 'draft' | 'submitted' | 'acknowledged';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number };

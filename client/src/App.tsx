@@ -20,6 +20,8 @@ import NotificationsListPage from './pages/notifications-list';
 import NotFoundPage from './pages/not-found';
 import JobPostingsPage from './pages/recruitment/job-postings';
 import CandidatesPage from './pages/recruitment/candidates';
+import MyReviewsPage from './pages/performance-reviews/my-reviews';
+import ReviewManagementPage from './pages/performance-reviews/review-management';
 import { Toaster } from './components/ui/toaster';
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ function AppContent() {
           <Route path="/notifications" element={<NotificationsListPage />} />
           <Route path="/recruitment/job-postings" element={<JobPostingsPage />} />
           <Route path="/recruitment/candidates" element={<CandidatesPage />} />
+          <Route path="/performance-reviews" element={<MyReviewsPage />} />
+          <Route path="/performance-reviews/manage" element={<ReviewManagementPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

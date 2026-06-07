@@ -11,6 +11,7 @@ import { EmployeeHistoryModule } from './employee-history/employee-history.modul
 import { LeaveBalanceModule } from './leave-balance/leave-balance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
+import { PerformanceReviewModule } from './performance-reviews/performance-review.module';
 import { StartupSeedService } from './startup-seed.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { StartupSeedService } from './startup-seed.service';
     LeaveBalanceModule,
     NotificationsModule,
     RecruitmentModule,
+    PerformanceReviewModule,
   ],
   providers: [StartupSeedService],
 })
