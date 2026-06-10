@@ -78,12 +78,12 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
-            <p className="text-[11px] text-muted-foreground capitalize">{user?.role}</p>
+            <p className="text-[11px] text-muted-foreground">{t('role.' + user?.role)}</p>
           </div>
         )}
       </NavLink>
 
-      <nav className="flex-1 space-y-0.5">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto">
         {menuItems.filter(item => item.roles.includes(user?.role || '')).map((item) => (
           <NavLink key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className={({ isActive }) =>
             cn('flex items-center px-2 py-1.5 rounded-lg text-sm transition-all duration-150 relative',
@@ -158,8 +158,8 @@ export function Sidebar() {
       )}
 
       <aside className={cn(
-        'glass min-h-screen py-4 px-3 flex flex-col transition-all duration-300 ease-in-out',
-        'md:relative md:translate-x-0 fixed z-40 top-0 left-0 border-r',
+        'glass h-screen py-4 px-3 flex flex-col transition-all duration-300 ease-in-out',
+        'md:sticky md:top-0 md:translate-x-0 fixed z-40 top-0 left-0 border-r',
         collapsed ? 'w-16' : 'w-64',
         mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
       )}>

@@ -5,6 +5,9 @@ export type Lang = 'en' | 'vi';
 const translations: Record<Lang, Record<string, string>> = {
   en: {
     'app.name': 'HR Management',
+    'role.admin': 'Admin',
+    'role.manager': 'Manager',
+    'role.employee': 'Employee',
     'nav.dashboard': 'Dashboard',
     'nav.employees': 'Employees',
     'nav.departments': 'Departments',
@@ -416,6 +419,9 @@ const translations: Record<Lang, Record<string, string>> = {
   },
   vi: {
     'app.name': 'Quản lý Nhân sự',
+    'role.admin': 'Quản trị viên',
+    'role.manager': 'Quản lý',
+    'role.employee': 'Nhân viên',
     'nav.dashboard': 'Tổng quan',
     'nav.employees': 'Nhân viên',
     'nav.departments': 'Phòng ban',
