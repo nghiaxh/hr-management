@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { departmentsApi } from '../../api/departments';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Label } from '../../components/ui/label';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
+import { Department } from '../../types';
+
+const columnHelper = createColumnHelper<Department>();
 
 export default function DepartmentsListPage() {
   const { t } = useTranslation();
@@ -51,35 +56,46 @@ export default function DepartmentsListPage() {
     updateMutation.mutate({ id: editingDept._id, data: Object.fromEntries(form) });
   };
 
+  const columns = [
+    columnHelper.accessor('name', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('departments.name')} />,
+    }),
+    columnHelper.accessor('description', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('departments.description')} />,
+      cell: ({ getValue }) => getValue() || '-',
+    }),
+    columnHelper.accessor((row) => (row.managerId as any)?.email || '-', {
+      id: 'manager',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('departments.manager')} />,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: t('departments.actions'),
+      cell: ({ row }) => (
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('departments.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('departments.add')}</Button>} />
-      <div className="flex items-center gap-2 mb-4">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input placeholder={t('departments.search')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
-      </div>
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>{t('departments.name')}</TableHead><TableHead>{t('departments.description')}</TableHead><TableHead>{t('departments.manager')}</TableHead><TableHead>{t('departments.actions')}</TableHead></TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">{t('departments.loading')}</TableCell></TableRow> :
-              data?.data?.map((dept: any) => (
-                <TableRow key={dept._id}>
-                  <TableCell className="font-medium">{dept.name}</TableCell>
-                  <TableCell>{dept.description || '-'}</TableCell>
-                  <TableCell>{dept.managerId?.email || '-'}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingDept(dept); setEditOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setDeletingDept(dept); setDeleteOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('departments.no_results')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.data || []}
+        isLoading={isLoading}
+        emptyMessage={t('departments.no_results')}
+        getRowId={(row) => row._id}
+        toolbar={
+          <>
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input placeholder={t('departments.search')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
+          </>
+        }
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

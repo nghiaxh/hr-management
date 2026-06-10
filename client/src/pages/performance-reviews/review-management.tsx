@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { performanceReviewsApi } from '../../api/performance-reviews';
 import { employeesApi } from '../../api/employees';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Card, CardContent } from '../../components/ui/card';
-import { Plus, Pencil, Star, ClipboardList } from 'lucide-react';
+import { Plus, Pencil } from 'lucide-react';
 import { toast } from '../../hooks/use-toast';
 import { useTranslation } from '../../context/language-context';
+import { PerformanceReview } from '../../types';
+
+const columnHelper = createColumnHelper<PerformanceReview>();
 
 export default function ReviewManagementPage() {
   const { t } = useTranslation();
@@ -52,81 +58,72 @@ export default function ReviewManagementPage() {
 
   const reviews = data?.data || [];
   const avgRating = reviews.filter((r: any) => r.rating).reduce((s: number, r: any) => s + r.rating, 0) / (reviews.filter((r: any) => r.rating).length || 1);
+  const submittedCount = reviews.filter((r: any) => r.status === 'submitted' || r.status === 'acknowledged').length;
+
+  const columns = [
+    columnHelper.accessor((row) => `${(row.employeeId as any)?.firstName || ''} ${(row.employeeId as any)?.lastName || ''}`.trim() || '-', {
+      id: 'employee',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('performance_reviews.employee')} />,
+    }),
+    columnHelper.accessor('period', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('performance_reviews.period')} />,
+    }),
+    columnHelper.accessor('rating', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('performance_reviews.rating')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center">{getValue() ? `${getValue()}/5` : '-'}</div>,
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('performance_reviews.status_heading')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: t('performance_reviews.actions_heading'),
+      cell: ({ row }) => (
+        <div className="text-center">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingReview(row.original); setEditOpen(true); }}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    }),
+  ];
 
   return (
     <div className="space-y-6">
       <PageHeader title={t('performance_reviews.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('performance_reviews.new_review')}</Button>} />
 
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.total_reviews')}</p>
-                <p className="text-2xl font-bold">{reviews.length}</p>
-              </div>
-              <ClipboardList className="h-5 w-5 text-muted-foreground" />
-            </div>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-blue-500" />
+          <CardContent className="p-5 space-y-0.5">
+            <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.total_reviews')}</p>
+            <p className="text-2xl font-bold">{reviews.length}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.avg_rating')}</p>
-                <p className="text-2xl font-bold">{avgRating > 0 ? avgRating.toFixed(1) : t('performance_reviews.na')}</p>
-              </div>
-              <Star className="h-5 w-5 text-yellow-500" />
-            </div>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-amber-500" />
+          <CardContent className="p-5 space-y-0.5">
+            <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.avg_rating')}</p>
+            <p className="text-2xl font-bold">{avgRating > 0 ? avgRating.toFixed(1) : t('performance_reviews.na')}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.submitted')}</p>
-                <p className="text-2xl font-bold">{reviews.filter((r: any) => r.status === 'submitted' || r.status === 'acknowledged').length}</p>
-              </div>
-              <Star className="h-5 w-5 text-muted-foreground" />
-            </div>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-emerald-500" />
+          <CardContent className="p-5 space-y-0.5">
+            <p className="text-xs text-muted-foreground font-medium">{t('performance_reviews.submitted')}</p>
+            <p className="text-2xl font-bold">{submittedCount}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="bg-card rounded-lg border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('performance_reviews.employee')}</th>
-              <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('performance_reviews.period')}</th>
-              <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('performance_reviews.rating')}</th>
-              <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('performance_reviews.status_heading')}</th>
-              <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('performance_reviews.actions_heading')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">{t('performance_reviews.loading')}</td></tr>
-            ) : reviews.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">{t('performance_reviews.no_reviews_found')}</td></tr>
-            ) : (
-              reviews.map((r: any) => (
-                <tr key={r._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{r.employeeId?.firstName} {r.employeeId?.lastName}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.period}</td>
-                  <td className="px-4 py-3 text-center">{r.rating ? `${r.rating}/5` : '-'}</td>
-                  <td className="px-4 py-3 text-center"><StatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3 text-center">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingReview(r); setEditOpen(true); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={reviews}
+        isLoading={isLoading}
+        emptyMessage={t('performance_reviews.no_reviews_found')}
+        getRowId={(row) => row._id}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

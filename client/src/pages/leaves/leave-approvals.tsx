@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { leavesApi } from '../../api/leaves';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { Leave } from '../../types';
+
+const columnHelper = createColumnHelper<Leave>();
 
 export default function LeaveApprovalsPage() {
   const { t } = useTranslation();
@@ -30,35 +35,51 @@ export default function LeaveApprovalsPage() {
     onError: (err: any) => toast({ title: err?.response?.data?.message || t('leaves.rejection_failed'), variant: 'destructive' }),
   });
 
+  const columns = [
+    columnHelper.accessor((row) => `${(row.employeeId as any)?.firstName || ''} ${(row.employeeId as any)?.lastName || ''}`.trim() || '-', {
+      id: 'employee',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.employee')} />,
+    }),
+    columnHelper.accessor('type', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.type')} />,
+      cell: ({ getValue }) => <span className="capitalize">{getValue()}</span>,
+    }),
+    columnHelper.accessor('startDate', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.start')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('endDate', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.end')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.status')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: t('leaves.actions'),
+      cell: ({ row }) => (
+        <div className="flex gap-1">
+          {row.original.status === 'pending' && <>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original._id); }}><CheckCircle className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original._id); }}><XCircle className="h-4 w-4" /></Button>
+          </>}
+        </div>
+      ),
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('leaves.approvals')} />
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>{t('leaves.employee')}</TableHead><TableHead>{t('leaves.type')}</TableHead><TableHead>{t('leaves.start')}</TableHead><TableHead>{t('leaves.end')}</TableHead><TableHead>{t('leaves.status')}</TableHead><TableHead>{t('leaves.actions')}</TableHead></TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={6} className="text-center">{t('leaves.loading')}</TableCell></TableRow> :
-              data?.data?.map((leave: any) => (
-                <TableRow key={leave._id}>
-                  <TableCell>{leave.employeeId?.firstName} {leave.employeeId?.lastName}</TableCell>
-                  <TableCell className="capitalize">{leave.type}</TableCell>
-                  <TableCell>{formatDate(leave.startDate)}</TableCell>
-                  <TableCell>{formatDate(leave.endDate)}</TableCell>
-                  <TableCell><StatusBadge status={leave.status} /></TableCell>
-                  <TableCell className="flex gap-1">
-                    {leave.status === 'pending' && <>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={() => setApproveTarget(leave._id)}><CheckCircle className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => setRejectTarget(leave._id)}><XCircle className="h-4 w-4" /></Button>
-                    </>}
-                  </TableCell>
-                </TableRow>
-              ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{t('leaves.no_pending')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.data || []}
+        isLoading={isLoading}
+        emptyMessage={t('leaves.no_pending')}
+        getRowId={(row) => row._id}
+      />
 
       <ConfirmDialog
         open={!!approveTarget}

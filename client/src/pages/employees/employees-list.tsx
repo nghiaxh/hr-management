@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
+import { createColumnHelper, PaginationState } from '@tanstack/react-table';
 import { employeesApi } from '../../api/employees';
 import { departmentsApi } from '../../api/departments';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Label } from '../../components/ui/label';
@@ -17,7 +19,10 @@ import { StatusBadge } from '../../components/shared/status-badge';
 import { SkeletonList } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useToast } from '../../hooks/use-toast';
-import { Plus, Search, Trash2, Download, CheckSquare, Square, ChevronDown } from 'lucide-react';
+import { Plus, Search, Trash2, Download } from 'lucide-react';
+import { Employee } from '../../types';
+
+const columnHelper = createColumnHelper<Employee>();
 
 export default function EmployeesListPage() {
   const { t } = useTranslation();
@@ -35,17 +40,16 @@ export default function EmployeesListPage() {
     userId: z.string().min(1, t('validation.user_id_required')),
   });
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [open, setOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [rowSelection, setRowSelection] = useState({});
   const queryClient = useQueryClient();
-  const limit = 10;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['employees', search, page],
-    queryFn: () => employeesApi.getAll({ search, page, limit }),
+    queryKey: ['employees', search, pagination.pageIndex + 1],
+    queryFn: () => employeesApi.getAll({ search, page: pagination.pageIndex + 1, limit: pagination.pageSize }),
   });
   const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.getAll() });
 
@@ -74,7 +78,7 @@ export default function EmployeesListPage() {
     mutationFn: (ids: string[]) => employeesApi.bulkDelete(ids),
     onSuccess: (_data, ids) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      setSelected(new Set());
+      setRowSelection({});
       toast({ title: `${ids.length} ${t('employees.bulk_deleted')}` });
     },
   });
@@ -89,112 +93,100 @@ export default function EmployeesListPage() {
   });
 
   const meta = data?.meta;
-  const totalPages = meta ? Math.ceil(meta.total / limit) : 0;
-  const allIds = data?.data?.map((e: any) => e._id) || [];
-  const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+  const totalPages = meta ? Math.ceil(meta.total / pagination.pageSize) : 0;
+  const selectedIds = Object.keys(rowSelection).filter((k) => (rowSelection as any)[k]);
 
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(allIds));
-    }
-  };
-
-  const toggleOne = (id: string) => {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelected(next);
-  };
+  const columns = [
+    columnHelper.display({
+      id: 'select',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={table.getIsAllPageRowsSelected()}
+          ref={(el) => { if (el) el.indeterminate = table.getIsSomePageRowsSelected(); }}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={row.getIsSelected()}
+          disabled={!row.getCanSelect()}
+          onChange={row.getToggleSelectedHandler()}
+        />
+      ),
+    }),
+    columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
+      id: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.name')} />,
+      cell: ({ row, getValue }) => (
+        <Link to={`/employees/${row.original._id}`} className="text-primary hover:underline">
+          {getValue()}
+        </Link>
+      ),
+    }),
+    columnHelper.accessor('position', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.position')} />,
+    }),
+    columnHelper.accessor((row) => (row.departmentId as any)?.name || t('performance_reviews.na'), {
+      id: 'department',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.department')} />,
+    }),
+    columnHelper.accessor('salary', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.salary')} />,
+      cell: ({ getValue }) => `$${(getValue() as number)?.toLocaleString()}`,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: t('departments.actions'),
+      cell: ({ row }) => (
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ),
+    }),
+  ];
 
   if (isLoading) return <SkeletonList />;
 
   return (
     <div>
       <PageHeader title={t('employees.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('employees.add')}</Button>} />
-      <div className="flex items-center gap-2 mb-4">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input placeholder={t('employees.search')} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="w-full md:max-w-sm" />
-        <div className="ml-auto flex items-center gap-2">
-          {selected.size > 0 && (
-            <>
-              <span className="text-sm text-muted-foreground">{selected.size} {t('employees.selected')}</span>
-              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                {t('employees.delete_bulk')}
-              </Button>
-            </>
-          )}
-          <Button variant="outline" size="sm" onClick={() => employeesApi.exportCsv()}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />
-            {t('employees.export_csv')}
-          </Button>
-        </div>
-      </div>
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <button onClick={toggleAll} className="flex items-center cursor-pointer">
-                  {allSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-                </button>
-              </TableHead>
-              <TableHead>{t('employees.name')}</TableHead>
-              <TableHead>{t('employees.position')}</TableHead>
-              <TableHead>{t('employees.department')}</TableHead>
-              <TableHead>{t('employees.salary')}</TableHead>
-              <TableHead className="w-16">{t('departments.actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.data?.map((emp: any) => (
-              <TableRow key={emp._id}>
-                <TableCell>
-                  <button onClick={() => toggleOne(emp._id)} className="flex items-center cursor-pointer">
-                    {selected.has(emp._id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
-                  </button>
-                </TableCell>
-                <TableCell><Link to={`/employees/${emp._id}`} className="text-primary hover:underline">{emp.firstName} {emp.lastName}</Link></TableCell>
-                <TableCell>{emp.position}</TableCell>
-                <TableCell>{emp.departmentId?.name || t('performance_reviews.na')}</TableCell>
-                <TableCell>${emp.salary?.toLocaleString()}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(emp)}>
-                    <Trash2 className="h-4 w-4" />
+      <DataTable
+        columns={columns}
+        data={data?.data || []}
+        emptyMessage={t('employees.no_results')}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        pageCount={totalPages}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        getRowId={(row) => row._id}
+        totalLabel={`${meta?.total ?? 0} ${t('employees.total')}`}
+        toolbar={
+          <>
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input placeholder={t('employees.search')} value={search} onChange={e => { setSearch(e.target.value); setPagination((prev) => ({ ...prev, pageIndex: 0 })); }} className="w-full md:max-w-sm" />
+            <div className="ml-auto flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <>
+                  <span className="text-sm text-muted-foreground">{selectedIds.length} {t('employees.selected')}</span>
+                  <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    {t('employees.delete_bulk')}
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{t('employees.no_results')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-              <p className="text-sm text-muted-foreground">
-                {meta!.total} {t('employees.total')}
-              </p>
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
-                {t('employees.previous')}
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const start = Math.max(1, page - 2);
-                const p = start + i;
-                if (p > totalPages) return null;
-                return (
-                  <Button key={p} variant={p === page ? 'default' : 'outline'} size="sm" className="w-8" onClick={() => setPage(p)}>
-                    {p}
-                  </Button>
-                );
-              })}
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                {t('employees.next')}
+                </>
+              )}
+              <Button variant="outline" size="sm" onClick={() => employeesApi.exportCsv()}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                {t('employees.export_csv')}
               </Button>
             </div>
-          </div>
-        )}
-      </div>
+          </>
+        }
+      />
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) createForm.reset(); }}>
         <DialogContent>
@@ -269,11 +261,11 @@ export default function EmployeesListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={t('auth.confirm_bulk_delete')}
-        description={`${t('auth.confirm_bulk_delete_desc').replace('{count}', String(selected.size))}`}
+        description={`${t('auth.confirm_bulk_delete_desc').replace('{count}', String(selectedIds.length))}`}
         confirmLabel={t('employees.delete_bulk')}
         cancelLabel={t('dialog.cancel')}
         variant="destructive"
-        onConfirm={() => { bulkDeleteMutation.mutate(Array.from(selected)); setBulkDeleteOpen(false); }}
+        onConfirm={() => { bulkDeleteMutation.mutate(selectedIds); setBulkDeleteOpen(false); }}
       />
 
       <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
@@ -286,7 +278,7 @@ export default function EmployeesListPage() {
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('employees.cancel')}</Button>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteTarget._id)} disabled={deleteMutation.isPending}>
+              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteTarget!._id)} disabled={deleteMutation.isPending}>
                 {deleteMutation.isPending ? t('employees.deleting') : t('employees.delete')}
               </Button>
             </div>

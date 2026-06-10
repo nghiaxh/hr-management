@@ -1,10 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { attendanceApi } from '../../api/attendance';
 import { PageHeader } from '../../components/shared/page-header';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { Card, CardContent } from '../../components/ui/card';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
+import { Attendance } from '../../types';
+
+const columnHelper = createColumnHelper<Attendance>();
+
+const STATUS_META: Record<string, { color: string; bar: string }> = {
+  present: { color: 'text-emerald-600', bar: 'bg-emerald-500' },
+  late: { color: 'text-amber-600', bar: 'bg-amber-500' },
+  absent: { color: 'text-red-600', bar: 'bg-red-500' },
+  'half-day': { color: 'text-orange-600', bar: 'bg-orange-500' },
+};
 
 export default function AttendanceReportPage() {
   const { t } = useTranslation();
@@ -12,44 +25,100 @@ export default function AttendanceReportPage() {
 
   const records = Array.isArray(data) ? data : data?.data || [];
 
-  const stats = records.reduce((acc: any, a: any) => {
+  const stats: Record<string, number> = records.reduce((acc: any, a: any) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
   }, {});
 
+  const total = records.length;
+
+  const columns = [
+    columnHelper.accessor((row) => `${(row.employeeId as any)?.firstName || ''} ${(row.employeeId as any)?.lastName || ''}`.trim() || '-', {
+      id: 'employee',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.employee')} />,
+    }),
+    columnHelper.accessor('date', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.date')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('checkIn', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_in')} />,
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+    }),
+    columnHelper.accessor('checkOut', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_out')} />,
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.status')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('attendance.report')} />
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-          {Object.entries(stats).map(([k, v]) => (
-            <div key={k} className="bg-card rounded-lg border p-4 text-center">
-              <p className="text-2xl font-bold capitalize">{v as number}</p>
-              <p className="text-sm text-muted-foreground capitalize">{k}</p>
-            </div>
-          ))}
-        </div>
+
+      {total > 0 && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+            {Object.entries(STATUS_META).map(([key, meta]) => {
+              const count = stats[key] || 0;
+              const pct = total > 0 ? (count / total) * 100 : 0;
+              return (
+                <Card key={key} className="overflow-hidden">
+                  <div className={`h-1 ${meta.bar}`} />
+                  <CardContent className="p-4 md:p-5">
+                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">{key}</p>
+                    <p className="text-xs font-medium mt-1">{pct.toFixed(0)}%</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="overflow-hidden mb-6">
+            <CardContent className="p-5">
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-muted/30">
+                {Object.keys(STATUS_META).map((key) => {
+                  const count = stats[key] || 0;
+                  if (count === 0) return null;
+                  return (
+                    <div
+                      key={key}
+                      className={STATUS_META[key].bar}
+                      style={{ width: `${(count / total) * 100}%` }}
+                      title={`${key}: ${count}`}
+                    />
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-muted-foreground">
+                {Object.keys(STATUS_META).map((key) => {
+                  const count = stats[key] || 0;
+                  if (count === 0) return null;
+                  return (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${STATUS_META[key].bar}`} />
+                      <span className="capitalize">{key}</span>
+                      <span className="font-medium">{((count / total) * 100).toFixed(0)}%</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>{t('attendance.employee')}</TableHead><TableHead>{t('attendance.date')}</TableHead><TableHead>{t('attendance.check_in')}</TableHead><TableHead>{t('attendance.check_out')}</TableHead><TableHead>{t('attendance.status')}</TableHead></TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={5} className="text-center">{t('common.loading')}</TableCell></TableRow> :
-              records.map((a: any) => (
-                <TableRow key={a._id}>
-                  <TableCell>{a.employeeId?.firstName} {a.employeeId?.lastName}</TableCell>
-                  <TableCell>{formatDate(a.date)}</TableCell>
-                  <TableCell>{a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</TableCell>
-                  <TableCell>{a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</TableCell>
-                  <TableCell><StatusBadge status={a.status} /></TableCell>
-                </TableRow>
-              ))}
-            {records.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </div>
+
+      <DataTable
+        columns={columns}
+        data={records}
+        isLoading={isLoading}
+        emptyMessage={t('attendance.no_records')}
+        getRowId={(row) => row._id}
+      />
     </div>
   );
 }

@@ -1,13 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { attendanceApi } from '../../api/attendance';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
 import { LogIn, LogOut } from 'lucide-react';
+import { Attendance } from '../../types';
+
+const columnHelper = createColumnHelper<Attendance>();
 
 export default function MyAttendancePage() {
   const { t } = useTranslation();
@@ -38,6 +43,25 @@ export default function MyAttendancePage() {
   const today = new Date().toDateString();
   const todayRecord = records.find((a: any) => new Date(a.date).toDateString() === today);
 
+  const columns = [
+    columnHelper.accessor('date', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.date')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('checkIn', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_in')} />,
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+    }),
+    columnHelper.accessor('checkOut', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_out')} />,
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.status')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('attendance.title')} action={
@@ -56,25 +80,13 @@ export default function MyAttendancePage() {
         </div>
       )}
 
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>{t('attendance.date')}</TableHead><TableHead>{t('attendance.check_in')}</TableHead><TableHead>{t('attendance.check_out')}</TableHead><TableHead>{t('attendance.status')}</TableHead></TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={4} className="text-center">{t('common.loading')}</TableCell></TableRow> :
-              records.map((a: any) => (
-                <TableRow key={a._id}>
-                  <TableCell>{formatDate(a.date)}</TableCell>
-                  <TableCell>{a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</TableCell>
-                  <TableCell>{a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</TableCell>
-                  <TableCell><StatusBadge status={a.status} /></TableCell>
-                </TableRow>
-              ))}
-            {records.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t('attendance.no_records')}</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={records}
+        isLoading={isLoading}
+        emptyMessage={t('attendance.no_records')}
+        getRowId={(row) => row._id}
+      />
     </div>
   );
 }

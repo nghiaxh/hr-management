@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 import { recruitmentApi } from '../../api/recruitment';
 import { departmentsApi } from '../../api/departments';
 import { PageHeader } from '../../components/shared/page-header';
@@ -7,12 +8,17 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Plus, Pencil, Trash2, Search, Users } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { JobPosting } from '../../types';
+
+const columnHelper = createColumnHelper<JobPosting>();
 
 export default function JobPostingsPage() {
   const { t } = useTranslation();
@@ -60,60 +66,60 @@ export default function JobPostingsPage() {
     updateMutation.mutate({ id: editingJob._id, data: Object.fromEntries(form) });
   };
 
+  const columns = [
+    columnHelper.accessor('title', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('recruitment.title')} />,
+    }),
+    columnHelper.accessor((row) => (row.departmentId as any)?.name || '-', {
+      id: 'department',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('recruitment.department')} />,
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('recruitment.status')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+    columnHelper.accessor('openings', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('recruitment.openings')} className="justify-end" />,
+      cell: ({ getValue }) => <div className="text-right">{getValue()}</div>,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: t('recruitment.actions'),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-1">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`/recruitment/candidates?jobPostingId=${row.original._id}`); }}><Users className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingJob(row.original); setEditOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingJob(row.original); setDeleteOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('recruitment.job_postings')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('recruitment.add_job')}</Button>} />
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <div className="flex items-center gap-2 flex-1">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t('recruitment.search_titles')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
-        </div>
-        <Select value={statusFilter} onValueChange={v => setStatusFilter(v === 'all' ? '' : v)}>
-          <SelectTrigger className="w-32"><SelectValue placeholder={t('recruitment.status')} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('recruitment.all')}</SelectItem>
-            <SelectItem value="open">{t('recruitment.open')}</SelectItem>
-            <SelectItem value="closed">{t('recruitment.closed')}</SelectItem>
-            <SelectItem value="draft">{t('recruitment.draft')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="bg-card rounded-lg border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('recruitment.title')}</th>
-              <th className="text-left font-medium text-muted-foreground px-4 py-3">{t('recruitment.department')}</th>
-              <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('recruitment.status')}</th>
-              <th className="text-right font-medium text-muted-foreground px-4 py-3">{t('recruitment.openings')}</th>
-              <th className="text-center font-medium text-muted-foreground px-4 py-3">{t('recruitment.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">{t('recruitment.loading')}</td></tr>
-            ) : data?.data?.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">{t('recruitment.no_jobs')}</td></tr>
-            ) : (
-              data?.data?.map((job: any) => (
-                <tr key={job._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{job.title}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{job.departmentId?.name || '-'}</td>
-                  <td className="px-4 py-3 text-center"><StatusBadge status={job.status} /></td>
-                  <td className="px-4 py-3 text-right">{job.openings}</td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/recruitment/candidates?jobPostingId=${job._id}`)}><Users className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingJob(job); setEditOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setDeletingJob(job); setDeleteOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.data || []}
+        isLoading={isLoading}
+        emptyMessage={t('recruitment.no_jobs')}
+        getRowId={(row) => row._id}
+        toolbar={
+          <>
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input placeholder={t('recruitment.search_titles')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
+            <Select value={statusFilter} onValueChange={v => setStatusFilter(v === 'all' ? '' : v)}>
+              <SelectTrigger className="w-32"><SelectValue placeholder={t('recruitment.status')} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('recruitment.all')}</SelectItem>
+                <SelectItem value="open">{t('recruitment.open')}</SelectItem>
+                <SelectItem value="closed">{t('recruitment.closed')}</SelectItem>
+                <SelectItem value="draft">{t('recruitment.draft')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createColumnHelper } from '@tanstack/react-table';
 import { leavesApi } from '../../api/leaves';
 import { leaveBalanceApi } from '../../api/leave-balance';
 import { PageHeader } from '../../components/shared/page-header';
@@ -10,15 +11,19 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent } from '../../components/ui/card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
+import { DataTable } from '../../components/ui/data-table';
+import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { StatusBadge } from '../../components/shared/status-badge';
-import { SkeletonCard, SkeletonTable } from '../../components/shared/skeleton';
+import { SkeletonCard } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useAuth } from '../../context/auth-context';
 import { employeesApi } from '../../api/employees';
 import { Plus } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
+import { Leave } from '../../types';
+
+const columnHelper = createColumnHelper<Leave>();
 
 export default function MyLeavesPage() {
   const { t } = useTranslation();
@@ -71,6 +76,29 @@ type LeaveForm = z.infer<typeof leaveSchema>;
     { label: t('leaves.personal_leave'), used: balance.personalUsed, total: balance.personalTotal },
   ] : [];
 
+  const columns = [
+    columnHelper.accessor('type', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.type')} />,
+      cell: ({ getValue }) => <span className="capitalize">{getValue()}</span>,
+    }),
+    columnHelper.accessor('startDate', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.start')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('endDate', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.end')} />,
+      cell: ({ getValue }) => formatDate(getValue()),
+    }),
+    columnHelper.accessor('status', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.status')} className="justify-center" />,
+      cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
+    }),
+    columnHelper.accessor('reason', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('leaves.reason')} />,
+      cell: ({ getValue }) => getValue() || '-',
+    }),
+  ];
+
   return (
     <div>
       <PageHeader title={t('leaves.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('leaves.request')}</Button>} />
@@ -95,31 +123,13 @@ type LeaveForm = z.infer<typeof leaveSchema>;
         </div>
       )}
 
-      {isLoading ? (
-        <div className="bg-card rounded-lg border p-4">
-          <SkeletonTable rows={4} cols={5} />
-        </div>
-      ) : (
-        <div className="bg-card rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow><TableHead>{t('leaves.type')}</TableHead><TableHead>{t('leaves.start')}</TableHead><TableHead>{t('leaves.end')}</TableHead><TableHead>{t('leaves.status')}</TableHead><TableHead>{t('leaves.reason')}</TableHead></TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.data?.map((leave: any) => (
-                <TableRow key={leave._id}>
-                  <TableCell className="capitalize">{leave.type}</TableCell>
-                  <TableCell>{formatDate(leave.startDate)}</TableCell>
-                  <TableCell>{formatDate(leave.endDate)}</TableCell>
-                  <TableCell><StatusBadge status={leave.status} /></TableCell>
-                  <TableCell>{leave.reason || '-'}</TableCell>
-                </TableRow>
-              ))}
-              {(!data?.data || data.data.length === 0) && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t('leaves.no_results')}</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={data?.data || []}
+        isLoading={isLoading}
+        emptyMessage={t('leaves.no_results')}
+        getRowId={(row) => row._id}
+      />
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
         <DialogContent>
