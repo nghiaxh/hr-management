@@ -21,7 +21,7 @@ const STATUS_META: Record<string, { color: string; bar: string }> = {
 
 export default function AttendanceReportPage() {
   const { t } = useTranslation();
-  const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
   const records = Array.isArray(data) ? data : data?.data || [];
 
@@ -54,6 +54,10 @@ export default function AttendanceReportPage() {
       cell: ({ getValue }) => <div className="text-center"><StatusBadge status={getValue()} /></div>,
     }),
   ];
+
+  if (isError) {
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || t('attendance.load_failed')}</p></div>;
+  }
 
   return (
     <div>
@@ -116,6 +120,7 @@ export default function AttendanceReportPage() {
         columns={columns}
         data={records}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('attendance.load_failed') : undefined}
         emptyMessage={t('attendance.no_records')}
         getRowId={(row) => row._id}
       />

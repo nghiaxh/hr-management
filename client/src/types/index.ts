@@ -23,7 +23,7 @@ export interface Employee {
   phone?: string;
   contractType?: string;
   contractExpiry?: string;
-  documents?: { name: string; url: string; type: string; uploadedAt: string }[];
+  documents?: { _id: string; name: string; url: string; type: string; uploadedAt: string }[];
   createdAt: string;
   updatedAt: string;
 }

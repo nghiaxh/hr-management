@@ -19,7 +19,8 @@ import { StatusBadge } from '../../components/shared/status-badge';
 import { SkeletonList } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useToast } from '../../hooks/use-toast';
-import { Plus, Search, Trash2, Download } from 'lucide-react';
+import { useDebounce } from '../../hooks/use-debounce';
+import { Plus, Search, Trash2, Download, Loader2 } from 'lucide-react';
 import { Employee } from '../../types';
 
 const columnHelper = createColumnHelper<Employee>();
@@ -40,16 +41,18 @@ export default function EmployeesListPage() {
     userId: z.string().min(1, t('validation.user_id_required')),
   });
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [open, setOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
+  const [exporting, setExporting] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['employees', search, pagination.pageIndex + 1],
-    queryFn: () => employeesApi.getAll({ search, page: pagination.pageIndex + 1, limit: pagination.pageSize }),
+  const { data, isLoading, isError, error: queryError } = useQuery({
+    queryKey: ['employees', debouncedSearch, pagination.pageIndex + 1],
+    queryFn: () => employeesApi.getAll({ search: debouncedSearch, page: pagination.pageIndex + 1, limit: pagination.pageSize }),
   });
   const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.getAll() });
 
@@ -59,7 +62,9 @@ export default function EmployeesListPage() {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setOpen(false);
       createForm.reset();
+      toast({ title: t('employees.created') });
     },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('employees.create_failed'), variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -81,7 +86,20 @@ export default function EmployeesListPage() {
       setRowSelection({});
       toast({ title: `${ids.length} ${t('employees.bulk_deleted')}` });
     },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('employees.bulk_delete_failed'), variant: 'destructive' }),
   });
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await employeesApi.exportCsv();
+      toast({ title: t('employees.exported') });
+    } catch {
+      toast({ title: t('employees.export_failed'), variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const createForm = useForm<z.infer<typeof createSchema>>({
     resolver: zodResolver(createSchema),
@@ -106,6 +124,7 @@ export default function EmployeesListPage() {
           checked={table.getIsAllPageRowsSelected()}
           ref={(el) => { if (el) el.indeterminate = table.getIsSomePageRowsSelected(); }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
+          aria-label="Select all rows"
         />
       ),
       cell: ({ row }) => (
@@ -115,6 +134,7 @@ export default function EmployeesListPage() {
           checked={row.getIsSelected()}
           disabled={!row.getCanSelect()}
           onChange={row.getToggleSelectedHandler()}
+          aria-label={`Select row ${row.id}`}
         />
       ),
     }),
@@ -142,7 +162,7 @@ export default function EmployeesListPage() {
       id: 'actions',
       header: t('departments.actions'),
       cell: ({ row }) => (
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }} aria-label={t('employees.delete')}>
           <Trash2 className="h-4 w-4" />
         </Button>
       ),
@@ -157,6 +177,7 @@ export default function EmployeesListPage() {
       <DataTable
         columns={columns}
         data={data?.data || []}
+        error={isError ? (queryError as any)?.response?.data?.message || t('employees.load_failed') : undefined}
         emptyMessage={t('employees.no_results')}
         pagination={pagination}
         onPaginationChange={setPagination}
@@ -179,8 +200,8 @@ export default function EmployeesListPage() {
                   </Button>
                 </>
               )}
-              <Button variant="outline" size="sm" onClick={() => employeesApi.exportCsv()}>
-                <Download className="h-3.5 w-3.5 mr-1.5" />
+              <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                {exporting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
                 {t('employees.export_csv')}
               </Button>
             </div>
@@ -268,23 +289,17 @@ export default function EmployeesListPage() {
         onConfirm={() => { bulkDeleteMutation.mutate(selectedIds); setBulkDeleteOpen(false); }}
       />
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('employees.delete_title')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">{t('employees.delete_confirm_sr')}</DialogDescription>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {t('departments.delete_confirm')} <strong>{deleteTarget?.firstName} {deleteTarget?.lastName}</strong>? {t('departments.delete_warning')}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('employees.cancel')}</Button>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteTarget!._id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? t('employees.deleting') : t('employees.delete')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title={t('employees.delete_title')}
+        description={(<>{t('employees.delete_confirm')} <strong>{deleteTarget?.firstName} {deleteTarget?.lastName}</strong>? {t('employees.delete_warning')}</>)}
+        confirmLabel={t('employees.delete')}
+        cancelLabel={t('dialog.cancel')}
+        variant="destructive"
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget._id); }}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

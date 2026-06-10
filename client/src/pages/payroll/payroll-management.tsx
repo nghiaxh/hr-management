@@ -14,6 +14,7 @@ import { StatusBadge } from '../../components/shared/status-badge';
 import { formatCurrency } from '../../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { toast } from '../../hooks/use-toast';
 import { useTranslation } from '../../context/language-context';
 import { Play, CheckCircle } from 'lucide-react';
 import { Payroll } from '../../types';
@@ -26,17 +27,19 @@ export default function PayrollManagementPage() {
   const [payTarget, setPayTarget] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
   const { data: employees } = useQuery({ queryKey: ['employees'], queryFn: () => employeesApi.getAll() });
 
   const processMutation = useMutation({
     mutationFn: (d: any) => payrollApi.process(d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payroll'] }); setOpen(false); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payroll'] }); setOpen(false); toast({ title: t('payroll.processed') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('payroll.process_failed'), variant: 'destructive' }),
   });
 
   const payMutation = useMutation({
     mutationFn: (id: string) => payrollApi.pay(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payroll'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payroll'] }); setPayTarget(null); toast({ title: t('payroll.marked_paid') }); },
+    onError: (err: any) => { setPayTarget(null); toast({ title: err?.response?.data?.message || t('payroll.pay_failed'), variant: 'destructive' }); },
   });
 
   const handleProcess = (e: React.FormEvent) => {
@@ -143,6 +146,7 @@ export default function PayrollManagementPage() {
         columns={columns}
         data={records}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('payroll.load_failed') : undefined}
         emptyMessage={t('payroll.no_records_management')}
         getRowId={(row) => row._id}
       />
@@ -176,7 +180,7 @@ export default function PayrollManagementPage() {
                 )}
               </div>
             </div>
-            <Button type="submit" className="w-full">{t('payroll.process_btn')}</Button>
+            <Button type="submit" className="w-full" disabled={processMutation.isPending}>{processMutation.isPending ? t('payroll.processing') : t('payroll.process_btn')}</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -189,7 +193,7 @@ export default function PayrollManagementPage() {
         confirmLabel={t('payroll.mark_paid')}
         cancelLabel={t('dialog.cancel')}
         variant="default"
-        onConfirm={() => { if (payTarget) payMutation.mutate(payTarget); setPayTarget(null); }}
+        onConfirm={() => { if (payTarget) payMutation.mutate(payTarget); }}
       />
     </div>
   );

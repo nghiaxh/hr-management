@@ -12,7 +12,7 @@ export default function NotificationsListPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading, isError, error: queryError } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => notificationsApi.getAll(),
     refetchInterval: 15000,
@@ -26,8 +26,13 @@ export default function NotificationsListPage() {
 
   const markAllReadMutation = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['notifications'] }); toast({ title: t('notifications.marked_all_read') }); },
+    onError: () => toast({ title: t('notifications.failed_mark_all'), variant: 'destructive' }),
   });
+
+  if (isError) {
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || t('notifications.load_failed')}</p></div>;
+  }
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
 

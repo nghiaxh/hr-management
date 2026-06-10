@@ -7,10 +7,14 @@ import { Building2, User, Users } from 'lucide-react';
 
 export default function OrgChartPage() {
   const { t } = useTranslation();
-  const { data: orgData, isLoading } = useQuery({
+  const { data: orgData, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['org-chart'],
     queryFn: () => departmentsApi.getOrgChart(),
   });
+
+  if (isError) {
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || 'Failed to load organisation chart'}</p></div>;
+  }
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
 

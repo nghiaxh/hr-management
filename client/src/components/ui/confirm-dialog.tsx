@@ -1,3 +1,4 @@
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './dialog';
 import { Button } from './button';
 
@@ -5,7 +6,7 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: string | React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'default' | 'destructive';

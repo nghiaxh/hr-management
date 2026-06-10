@@ -10,9 +10,11 @@ import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
+import { useDebounce } from '../../hooks/use-debounce';
 import { useSearchParams } from 'react-router-dom';
 import { Candidate } from '../../types';
 
@@ -28,13 +30,14 @@ export default function CandidatesPage() {
   const [deletingCandidate, setDeletingCandidate] = useState<Candidate | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const debouncedSearch = useDebounce(search, 300);
   const queryClient = useQueryClient();
 
   const filterJobPostingId = searchParams.get('jobPostingId') || undefined;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['candidates', search, statusFilter, filterJobPostingId],
-    queryFn: () => recruitmentApi.getCandidates({ search, status: statusFilter || undefined, jobPostingId: filterJobPostingId }),
+  const { data, isLoading, isError, error: queryError } = useQuery({
+    queryKey: ['candidates', debouncedSearch, statusFilter, filterJobPostingId],
+    queryFn: () => recruitmentApi.getCandidates({ search: debouncedSearch || undefined, status: statusFilter || undefined, jobPostingId: filterJobPostingId }),
   });
   const { data: jobPostings } = useQuery({
     queryKey: ['job-postings-list'],
@@ -44,14 +47,17 @@ export default function CandidatesPage() {
   const createMutation = useMutation({
     mutationFn: (d: any) => recruitmentApi.createCandidate(d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['candidates'] }); setOpen(false); toast({ title: t('recruitment.candidate_created') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.candidate_create_failed'), variant: 'destructive' }),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => recruitmentApi.updateCandidate(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['candidates'] }); setEditOpen(false); setEditingCandidate(null); toast({ title: t('recruitment.candidate_updated') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.candidate_update_failed'), variant: 'destructive' }),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => recruitmentApi.deleteCandidate(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['candidates'] }); setDeleteOpen(false); setDeletingCandidate(null); toast({ title: t('recruitment.candidate_deleted') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.candidate_delete_failed'), variant: 'destructive' }),
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -62,8 +68,9 @@ export default function CandidatesPage() {
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingCandidate) return;
     const form = new FormData(e.target as HTMLFormElement);
-    updateMutation.mutate({ id: editingCandidate!._id, data: Object.fromEntries(form) });
+    updateMutation.mutate({ id: editingCandidate._id, data: Object.fromEntries(form) });
   };
 
   const columns = [
@@ -110,6 +117,7 @@ export default function CandidatesPage() {
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('recruitment.candidates_load_failed') : undefined}
         emptyMessage={t('recruitment.no_candidates')}
         getRowId={(row) => row._id}
         toolbar={
@@ -127,6 +135,18 @@ export default function CandidatesPage() {
             </select>
           </>
         }
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeletingCandidate(null); }}
+        title={t('recruitment.delete_candidate_title')}
+        description={<>{t('recruitment.delete_candidate_confirm')} <strong>{deletingCandidate?.firstName} {deletingCandidate?.lastName}</strong>?</>}
+        confirmLabel={t('recruitment.delete_candidate')}
+        cancelLabel={t('dialog.cancel')}
+        variant="destructive"
+        onConfirm={() => { if (deletingCandidate) deleteMutation.mutate(deletingCandidate._id); }}
+        loading={deleteMutation.isPending}
       />
     </div>
   );

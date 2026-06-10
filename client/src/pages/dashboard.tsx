@@ -41,11 +41,22 @@ export default function DashboardPage() {
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager';
 
-  const { data: dash, isLoading } = useQuery({
+  const { data: dash, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.get(),
     enabled: !!user,
   });
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-64 gap-3 text-center p-8">
+        <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+          <span className="text-destructive text-lg font-bold">!</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{(queryError as any)?.response?.data?.message || 'Failed to load dashboard'}</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

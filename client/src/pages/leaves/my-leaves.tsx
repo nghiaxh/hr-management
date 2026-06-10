@@ -19,11 +19,19 @@ import { SkeletonCard } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useAuth } from '../../context/auth-context';
 import { employeesApi } from '../../api/employees';
+import { toast } from '../../hooks/use-toast';
 import { Plus } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { Leave } from '../../types';
 
+const MAX_LEAVE_DAYS = 30;
+
 const columnHelper = createColumnHelper<Leave>();
+
+function daysBetween(start: string, end: string) {
+  const s = new Date(start), e = new Date(end);
+  return Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+}
 
 export default function MyLeavesPage() {
   const { t } = useTranslation();
@@ -36,7 +44,10 @@ export default function MyLeavesPage() {
   }).refine(data => {
     if (!data.startDate || !data.endDate) return true;
     return new Date(data.endDate) >= new Date(data.startDate);
-  }, { message: t('validation.end_after_start'), path: ['endDate'] });
+  }, { message: t('validation.end_after_start'), path: ['endDate'] }).refine(data => {
+    if (!data.startDate || !data.endDate) return true;
+    return daysBetween(data.startDate, data.endDate) <= MAX_LEAVE_DAYS;
+  }, { message: `${t('validation.max_leave_days')} ${MAX_LEAVE_DAYS}.`, path: ['endDate'] });
 
 type LeaveForm = z.infer<typeof leaveSchema>;
 
@@ -44,7 +55,7 @@ type LeaveForm = z.infer<typeof leaveSchema>;
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({ queryKey: ['leaves'], queryFn: () => leavesApi.getAll() });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['leaves'], queryFn: () => leavesApi.getAll() });
 
   const { data: employee } = useQuery({
     queryKey: ['my-employee'],
@@ -63,7 +74,16 @@ type LeaveForm = z.infer<typeof leaveSchema>;
 
   const createMutation = useMutation({
     mutationFn: (d: LeaveForm) => leavesApi.create(d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leaves'] }); setOpen(false); reset(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      setOpen(false);
+      reset();
+      toast({ title: t('leaves.created') });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.message || t('leaves.create_failed'), variant: 'destructive' });
+    },
   });
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<LeaveForm>({
@@ -127,6 +147,7 @@ type LeaveForm = z.infer<typeof leaveSchema>;
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('leaves.load_failed') : undefined}
         emptyMessage={t('leaves.no_results')}
         getRowId={(row) => row._id}
       />

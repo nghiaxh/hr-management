@@ -74,9 +74,9 @@ const typeConfig: Record<string, { icon: any }> = {
     defaultValues: { type: 'raise', newValue: '', previousValue: '', effectiveDate: '', note: '' },
   });
 
-  const { data: emp, isLoading } = useQuery({ queryKey: ['employee', id], queryFn: () => employeesApi.getOne(id!) });
+  const { data: emp, isLoading, isError: empError } = useQuery({ queryKey: ['employee', id], queryFn: () => employeesApi.getOne(id!) });
   const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.getAll() });
-  const { data: history = [] } = useQuery({ queryKey: ['employee-history', id], queryFn: () => employeeHistoryApi.getAll(id!), enabled: !!id });
+  const { data: history = [], isError: historyError } = useQuery({ queryKey: ['employee-history', id], queryFn: () => employeeHistoryApi.getAll(id!), enabled: !!id });
 
   useEffect(() => {
     if (emp) {
@@ -100,6 +100,9 @@ const typeConfig: Record<string, { icon: any }> = {
       queryClient.invalidateQueries({ queryKey: ['employee-history', id] });
       setHistoryOpen(false);
       toast({ title: t('employees.history_added') });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.message || t('employees.history_failed'), variant: 'destructive' });
     },
   });
 
@@ -133,10 +136,13 @@ const typeConfig: Record<string, { icon: any }> = {
       queryClient.invalidateQueries({ queryKey: ['employee', id] });
       toast({ title: t('employees.document_removed') });
     },
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.message || t('employees.remove_doc_failed'), variant: 'destructive' });
+    },
   });
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
-  if (!emp) return <div className="text-center py-8">{t('employees.not_found')}</div>;
+  if (empError || !emp) return <div className="text-center py-8 text-destructive">{empError ? t('employees.load_failed') : t('employees.not_found')}</div>;
 
   const onHistorySubmit = (data: z.infer<typeof historySchema>) => {
     historyMutation.mutate({

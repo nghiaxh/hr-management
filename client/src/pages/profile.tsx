@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../context/auth-context';
 import { useTranslation } from '../context/language-context';
 import { Button } from '../components/ui/button';
@@ -8,46 +11,68 @@ import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../hooks/use-toast';
 import { authApi } from '../api/auth';
-import { Pencil, Lock } from 'lucide-react';
+import { Pencil, Lock, Eye, EyeOff } from 'lucide-react';
+
+const profileSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const profileForm = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { name: user?.name || '', email: user?.email || '' },
+  });
+
+  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+  });
+
+  const handleSave = async (data: z.infer<typeof profileSchema>) => {
+    setProfileLoading(true);
     try {
-      const updated = await authApi.updateProfile({ name, email });
-      setName(updated.name || '');
+      const updated = await authApi.updateProfile(data);
+      profileForm.reset({ name: updated.name || '', email: updated.email || '' });
       toast({ title: t('profile.updated') });
       setProfileOpen(false);
     } catch {
       toast({ title: t('profile.failed_update'), variant: 'destructive' });
+    } finally {
+      setProfileLoading(false);
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast({ title: t('profile.passwords_mismatch'), variant: 'destructive' });
-      return;
-    }
+  const handleChangePassword = async (data: z.infer<typeof passwordSchema>) => {
+    setPasswordLoading(true);
     try {
-      await authApi.changePassword(currentPassword, newPassword);
+      await authApi.changePassword(data.currentPassword, data.newPassword);
       toast({ title: t('profile.password_changed') });
       setPasswordOpen(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      passwordForm.reset();
     } catch {
       toast({ title: t('profile.password_failed'), variant: 'destructive' });
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -65,7 +90,7 @@ export default function ProfilePage() {
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('user.info')}</h2>
-            <Button variant="outline" size="sm" onClick={() => { setName(user?.name || ''); setEmail(user?.email || ''); setProfileOpen(true); }}>
+            <Button variant="outline" size="sm" onClick={() => { profileForm.reset({ name: user?.name || '', email: user?.email || '' }); setProfileOpen(true); }}>
               <Pencil className="h-4 w-4 mr-2" />{t('user.edit_profile')}
             </Button>
           </div>
@@ -90,35 +115,77 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('profile.security')}</h2>
-            <Button variant="outline" size="sm" onClick={() => setPasswordOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => { passwordForm.reset(); setPasswordOpen(true); }}>
               <Lock className="h-4 w-4 mr-2" />{t('profile.change_password')}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+      <Dialog open={profileOpen} onOpenChange={(o) => { setProfileOpen(o); if (!o) profileForm.reset(); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('user.edit_profile')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">{t('profile.edit_sr')}</DialogDescription>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div><Label>{t('user.name')}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-            <div><Label>{t('user.email')}</Label><Input value={email} onChange={e => setEmail(e.target.value)} required /></div>
-            <div><Label>{t('user.role')}</Label><Input value={user?.role || ''} disabled /></div>
-            <Button type="submit" className="w-full">{t('user.save')}</Button>
+          <form onSubmit={profileForm.handleSubmit(handleSave)} className="space-y-4">
+            <div>
+              <Label>{t('user.name')}</Label>
+              <Input {...profileForm.register('name')} />
+              {profileForm.formState.errors.name && <p className="text-xs text-destructive mt-1">{profileForm.formState.errors.name.message}</p>}
+            </div>
+            <div>
+              <Label>{t('user.email')}</Label>
+              <Input {...profileForm.register('email')} />
+              {profileForm.formState.errors.email && <p className="text-xs text-destructive mt-1">{profileForm.formState.errors.email.message}</p>}
+            </div>
+            <div>
+              <Label>{t('user.role')}</Label>
+              <Input value={user?.role || ''} disabled />
+            </div>
+            <Button type="submit" className="w-full" disabled={profileLoading}>
+              {profileLoading ? t('user.saving') : t('user.save')}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+      <Dialog open={passwordOpen} onOpenChange={(o) => { setPasswordOpen(o); if (!o) passwordForm.reset(); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('profile.change_password')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">{t('profile.password_sr')}</DialogDescription>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div><Label>{t('profile.current_password')}</Label><Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required /></div>
-            <div><Label>{t('profile.new_password')}</Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} /></div>
-            <div><Label>{t('profile.confirm_password')}</Label><Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} /></div>
-            <Button type="submit" className="w-full">{t('profile.change_password')}</Button>
+          <form onSubmit={passwordForm.handleSubmit(handleChangePassword)} className="space-y-4">
+            <div>
+              <Label>{t('profile.current_password')}</Label>
+              <div className="relative">
+                <Input type={showCurrent ? 'text' : 'password'} {...passwordForm.register('currentPassword')} />
+                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showCurrent ? 'Hide password' : 'Show password'}>
+                  {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {passwordForm.formState.errors.currentPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
+            </div>
+            <div>
+              <Label>{t('profile.new_password')}</Label>
+              <div className="relative">
+                <Input type={showNew ? 'text' : 'password'} {...passwordForm.register('newPassword')} />
+                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showNew ? 'Hide password' : 'Show password'}>
+                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {passwordForm.formState.errors.newPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
+            </div>
+            <div>
+              <Label>{t('profile.confirm_password')}</Label>
+              <div className="relative">
+                <Input type={showConfirm ? 'text' : 'password'} {...passwordForm.register('confirmPassword')} />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {passwordForm.formState.errors.confirmPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
+            </div>
+            <Button type="submit" className="w-full" disabled={passwordLoading}>
+              {passwordLoading ? t('user.saving') : t('profile.change_password')}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

@@ -26,7 +26,7 @@ export default function ReviewManagementPage() {
   const [editingReview, setEditingReview] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['performance-reviews-management'],
     queryFn: () => performanceReviewsApi.getAll(),
   });
@@ -38,10 +38,12 @@ export default function ReviewManagementPage() {
   const createMutation = useMutation({
     mutationFn: (d: any) => performanceReviewsApi.create(d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['performance-reviews-management'] }); setOpen(false); toast({ title: t('performance_reviews.created') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('performance_reviews.create_failed'), variant: 'destructive' }),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => performanceReviewsApi.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['performance-reviews-management'] }); setEditOpen(false); setEditingReview(null); toast({ title: t('performance_reviews.updated') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('performance_reviews.update_failed'), variant: 'destructive' }),
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -52,6 +54,7 @@ export default function ReviewManagementPage() {
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingReview) return;
     const form = new FormData(e.target as HTMLFormElement);
     updateMutation.mutate({ id: editingReview._id, data: Object.fromEntries(form) });
   };
@@ -121,6 +124,7 @@ export default function ReviewManagementPage() {
         columns={columns}
         data={reviews}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('performance_reviews.load_failed') : undefined}
         emptyMessage={t('performance_reviews.no_reviews_found')}
         getRowId={(row) => row._id}
       />

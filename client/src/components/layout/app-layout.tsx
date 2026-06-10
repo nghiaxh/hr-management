@@ -1,4 +1,5 @@
 import { Outlet, Navigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
 import { Sidebar } from './sidebar';
@@ -23,11 +24,16 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-background via-background to-muted/50">
       <Sidebar />
-      <main className="flex-1 p-3 md:p-8 pt-14 md:pt-8 min-w-0 animate-fade-in">
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="flex-1 p-3 md:p-8 pt-14 md:pt-8 min-w-0"
+      >
         <div className="mx-auto max-w-7xl">
           <Outlet />
         </div>
-      </main>
+      </motion.main>
     </div>
   );
 }

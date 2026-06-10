@@ -1,20 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createColumnHelper } from '@tanstack/react-table';
 import { departmentsApi } from '../../api/departments';
+import { employeesApi } from '../../api/employees';
 import { PageHeader } from '../../components/shared/page-header';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Label } from '../../components/ui/label';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
+import { useDebounce } from '../../hooks/use-debounce';
 import { Department } from '../../types';
 
 const columnHelper = createColumnHelper<Department>();
+
+const deptSchema = z.object({
+  name: z.string().min(1, 'Department name is required'),
+  description: z.string().optional(),
+  managerId: z.string().optional(),
+});
 
 export default function DepartmentsListPage() {
   const { t } = useTranslation();
@@ -24,37 +36,42 @@ export default function DepartmentsListPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingDept, setDeletingDept] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({ queryKey: ['departments', search], queryFn: () => departmentsApi.getAll({ search }) });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['departments', debouncedSearch], queryFn: () => departmentsApi.getAll({ search: debouncedSearch }) });
+  const { data: employees } = useQuery({ queryKey: ['employees-min'], queryFn: () => employeesApi.getAll({ limit: 100 }) });
+
+  const managers = employees?.data?.filter((e: any) => e.userId?.role === 'manager' || e.userId?.role === 'admin') || [];
+
+  const createForm = useForm<z.infer<typeof deptSchema>>({ resolver: zodResolver(deptSchema), defaultValues: { name: '', description: '', managerId: '' } });
+  const editForm = useForm<z.infer<typeof deptSchema>>({ resolver: zodResolver(deptSchema) });
+
+  useEffect(() => {
+    if (editingDept) {
+      editForm.reset({
+        name: editingDept.name || '',
+        description: editingDept.description || '',
+        managerId: editingDept.managerId?._id || editingDept.managerId || '',
+      });
+    }
+  }, [editingDept]);
 
   const createMutation = useMutation({
     mutationFn: (d: any) => departmentsApi.create(d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setOpen(false); toast({ title: t('departments.created') }); },
-    onError: () => toast({ title: t('departments.create_failed'), variant: 'destructive' }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setOpen(false); createForm.reset(); toast({ title: t('departments.created') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('departments.create_failed'), variant: 'destructive' }),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => departmentsApi.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setEditOpen(false); setEditingDept(null); toast({ title: t('departments.updated') }); },
-    onError: () => toast({ title: t('departments.update_failed'), variant: 'destructive' }),
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('departments.update_failed'), variant: 'destructive' }),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => departmentsApi.delete(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); setDeleteOpen(false); setDeletingDept(null); toast({ title: t('departments.deleted') }); },
-    onError: () => toast({ title: t('departments.delete_failed'), variant: 'destructive' }),
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('departments.delete_failed'), variant: 'destructive' }),
   });
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = new FormData(e.target as HTMLFormElement);
-    createMutation.mutate(Object.fromEntries(form));
-  };
-
-  const handleEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = new FormData(e.target as HTMLFormElement);
-    updateMutation.mutate({ id: editingDept._id, data: Object.fromEntries(form) });
-  };
 
   const columns = [
     columnHelper.accessor('name', {
@@ -73,8 +90,8 @@ export default function DepartmentsListPage() {
       header: t('departments.actions'),
       cell: ({ row }) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }} aria-label={t('departments.edit')}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }} aria-label={t('departments.delete')}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     }),
@@ -87,6 +104,7 @@ export default function DepartmentsListPage() {
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('departments.load_failed') : undefined}
         emptyMessage={t('departments.no_results')}
         getRowId={(row) => row._id}
         toolbar={
@@ -97,40 +115,59 @@ export default function DepartmentsListPage() {
         }
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) createForm.reset(); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('departments.add')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">{t('departments.create_sr')}</DialogDescription>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div><Label>{t('departments.name')}</Label><Input name="name" required /></div>
-            <div><Label>{t('departments.description')}</Label><Input name="description" /></div>
-            <Button type="submit" className="w-full">{t('departments.create')}</Button>
+          <form onSubmit={createForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+            <div><Label>{t('departments.name')}</Label><Input {...createForm.register('name')} /></div>
+            <div><Label>{t('departments.description')}</Label><Input {...createForm.register('description')} /></div>
+            <div>
+              <Label>{t('departments.manager')}</Label>
+              <select {...createForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <option value="">{t('employees.none')}</option>
+                {managers.map((m: any) => <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
+              </select>
+            </div>
+            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+              {createMutation.isPending ? t('departments.creating') : t('departments.create')}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(o) => { if (!o) { setEditOpen(false); setEditingDept(null); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('departments.edit')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">{t('departments.edit_sr')}</DialogDescription>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div><Label>{t('departments.name')}</Label><Input name="name" defaultValue={editingDept?.name} required /></div>
-            <div><Label>{t('departments.description')}</Label><Input name="description" defaultValue={editingDept?.description} /></div>
-            <Button type="submit" className="w-full">{t('departments.save')}</Button>
+          <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate({ id: editingDept._id, data }))} className="space-y-4">
+            <div><Label>{t('departments.name')}</Label><Input {...editForm.register('name')} /></div>
+            <div><Label>{t('departments.description')}</Label><Input {...editForm.register('description')} /></div>
+            <div>
+              <Label>{t('departments.manager')}</Label>
+              <select {...editForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <option value="">{t('employees.none')}</option>
+                {managers.map((m: any) => <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
+              </select>
+            </div>
+            <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? t('departments.saving') : t('departments.save')}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('departments.delete')}</DialogTitle></DialogHeader>
-          <DialogDescription>{t('departments.delete_confirm')} <strong>{deletingDept?.name}</strong>? {t('departments.delete_warning')}</DialogDescription>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>{t('dialog.cancel')}</Button>
-            <Button variant="destructive" onClick={() => deleteMutation.mutate(deletingDept._id)}>{t('departments.delete')}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={t('departments.delete')}
+        description={<>{t('departments.delete_confirm')} <strong>{deletingDept?.name}</strong>? {t('departments.delete_warning')}</>}
+        confirmLabel={t('departments.delete')}
+        cancelLabel={t('dialog.cancel')}
+        variant="destructive"
+        onConfirm={() => { if (deletingDept) deleteMutation.mutate(deletingDept._id); }}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

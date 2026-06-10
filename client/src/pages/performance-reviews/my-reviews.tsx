@@ -9,10 +9,14 @@ import { useTranslation } from '../../context/language-context';
 
 export default function MyReviewsPage() {
   const { t } = useTranslation();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['performance-reviews'],
     queryFn: () => performanceReviewsApi.getAll(),
   });
+
+  if (isError) {
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || t('performance_reviews.load_failed')}</p></div>;
+  }
 
   if (isLoading) return <div className="text-center py-8 text-muted-foreground">{t('performance_reviews.loading')}</div>;
 

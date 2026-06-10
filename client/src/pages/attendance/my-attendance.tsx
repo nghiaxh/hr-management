@@ -17,13 +17,13 @@ const columnHelper = createColumnHelper<Attendance>();
 export default function MyAttendancePage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['attendance'] });
 
   const checkInMutation = useMutation({
     mutationFn: () => attendanceApi.checkIn(),
-    onSuccess: () => refresh(),
+    onSuccess: () => { refresh(); toast({ title: t('attendance.checked_in') }); },
     onError: (err: any) => {
       toast({ title: err?.response?.data?.message || t('attendance.already_checked_in'), variant: 'destructive' });
       refresh();
@@ -32,7 +32,7 @@ export default function MyAttendancePage() {
 
   const checkOutMutation = useMutation({
     mutationFn: (id: string) => attendanceApi.checkOut(id),
-    onSuccess: () => refresh(),
+    onSuccess: () => { refresh(); toast({ title: t('attendance.checked_out') }); },
     onError: (err: any) => {
       toast({ title: err?.response?.data?.message || t('attendance.check_out_failed'), variant: 'destructive' });
       refresh();
@@ -84,6 +84,7 @@ export default function MyAttendancePage() {
         columns={columns}
         data={records}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('attendance.load_failed') : undefined}
         emptyMessage={t('attendance.no_records')}
         getRowId={(row) => row._id}
       />

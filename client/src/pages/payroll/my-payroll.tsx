@@ -6,6 +6,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
+import { SkeletonCard } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { formatCurrency } from '../../lib/utils';
 import { Payroll } from '../../types';
@@ -14,7 +15,7 @@ const columnHelper = createColumnHelper<Payroll>();
 
 export default function MyPayrollPage() {
   const { t } = useTranslation();
-  const { data, isLoading } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
+  const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
 
   const records = data?.data || [];
   const totalPaid = records.filter((r: any) => r.status === 'paid').reduce((s: number, r: any) => s + r.netPay, 0);
@@ -52,6 +53,11 @@ export default function MyPayrollPage() {
     <div className="space-y-6">
       <PageHeader title={t('payroll.title')} description={t('payroll.period')} />
 
+      {isLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card className="overflow-hidden">
           <div className="h-1 bg-emerald-500" />
@@ -82,11 +88,13 @@ export default function MyPayrollPage() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       <DataTable
         columns={columns}
         data={records}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('payroll.load_failed') : undefined}
         emptyMessage={t('payroll.no_records')}
         getRowId={(row) => row._id}
       />

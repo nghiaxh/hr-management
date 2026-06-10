@@ -12,9 +12,11 @@ import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Plus, Pencil, Trash2, Search, Users } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
+import { useDebounce } from '../../hooks/use-debounce';
 import { useNavigate } from 'react-router-dom';
 import { JobPosting } from '../../types';
 
@@ -30,11 +32,12 @@ export default function JobPostingsPage() {
   const [deletingJob, setDeletingJob] = useState<any>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['job-postings', search, statusFilter],
-    queryFn: () => recruitmentApi.getJobPostings({ search, status: statusFilter || undefined }),
+  const { data, isLoading, isError, error: queryError } = useQuery({
+    queryKey: ['job-postings', debouncedSearch, statusFilter],
+    queryFn: () => recruitmentApi.getJobPostings({ search: debouncedSearch || undefined, status: statusFilter || undefined }),
   });
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -44,14 +47,17 @@ export default function JobPostingsPage() {
   const createMutation = useMutation({
     mutationFn: (d: any) => recruitmentApi.createJobPosting(d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['job-postings'] }); setOpen(false); toast({ title: t('recruitment.job_created') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.job_create_failed'), variant: 'destructive' }),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => recruitmentApi.updateJobPosting(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['job-postings'] }); setEditOpen(false); setEditingJob(null); toast({ title: t('recruitment.job_updated') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.job_update_failed'), variant: 'destructive' }),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => recruitmentApi.deleteJobPosting(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['job-postings'] }); setDeleteOpen(false); setDeletingJob(null); toast({ title: t('recruitment.job_deleted') }); },
+    onError: (err: any) => toast({ title: err?.response?.data?.message || t('recruitment.job_delete_failed'), variant: 'destructive' }),
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -62,6 +68,7 @@ export default function JobPostingsPage() {
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingJob) return;
     const form = new FormData(e.target as HTMLFormElement);
     updateMutation.mutate({ id: editingJob._id, data: Object.fromEntries(form) });
   };
@@ -102,6 +109,7 @@ export default function JobPostingsPage() {
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
+        error={isError ? (queryError as any)?.response?.data?.message || t('recruitment.jobs_load_failed') : undefined}
         emptyMessage={t('recruitment.no_jobs')}
         getRowId={(row) => row._id}
         toolbar={
@@ -182,16 +190,17 @@ export default function JobPostingsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('recruitment.delete_title')}</DialogTitle></DialogHeader>
-          <DialogDescription>{t('recruitment.delete_confirm')} <strong>{deletingJob?.title}</strong>? {t('recruitment.delete_warning')}</DialogDescription>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>{t('recruitment.cancel')}</Button>
-            <Button variant="destructive" onClick={() => deleteMutation.mutate(deletingJob._id)}>{t('recruitment.delete')}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeletingJob(null); }}
+        title={t('recruitment.delete_title')}
+        description={<>{t('recruitment.delete_confirm')} <strong>{deletingJob?.title}</strong>? {t('recruitment.delete_warning')}</>}
+        confirmLabel={t('recruitment.delete')}
+        cancelLabel={t('dialog.cancel')}
+        variant="destructive"
+        onConfirm={() => { if (deletingJob) deleteMutation.mutate(deletingJob._id); }}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
@@ -66,7 +67,7 @@ export function Sidebar() {
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-end px-1">
-        <button onClick={() => setMobileOpen(false)} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer">
+        <button onClick={() => setMobileOpen(false)} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer" aria-label="Close sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -120,17 +121,17 @@ export function Sidebar() {
           <User className="h-4 w-4" />
           {!collapsed && t('user.profile')}
         </NavLink>
-        <button onClick={() => setSettingsOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-foreground/70 hover:text-foreground hover:bg-accent/50 w-full rounded-lg transition-all cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')}>
+        <button onClick={() => setSettingsOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-foreground/70 hover:text-foreground hover:bg-accent/50 w-full rounded-lg transition-all cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')} aria-label={t('settings')}>
           <Settings className="h-4 w-4" />
           {!collapsed && t('settings')}
         </button>
-        <button onClick={() => setLogoutOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 w-full rounded-lg transition-all cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')}>
+        <button onClick={() => setLogoutOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 w-full rounded-lg transition-all cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')} aria-label={t('nav.logout')}>
           <LogOut className="h-4 w-4" />
           {!collapsed && t('nav.logout')}
         </button>
       </div>
 
-      <button onClick={toggleCollapsed} className="hidden md:flex items-center justify-center gap-2.5 px-2 py-1.5 mt-2 text-sm text-foreground/50 hover:text-foreground hover:bg-accent/50 w-full text-left rounded-lg transition-all cursor-pointer border-t border-border/50 pt-2">
+      <button onClick={toggleCollapsed} className="hidden md:flex items-center justify-center gap-2.5 px-2 py-1.5 mt-2 text-sm text-foreground/50 hover:text-foreground hover:bg-accent/50 w-full text-left rounded-lg transition-all cursor-pointer border-t border-border/50 pt-2" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
         <ChevronLeft className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
       </button>
 
@@ -149,12 +150,18 @@ export function Sidebar() {
 
   return (
     <>
-      <button onClick={() => setMobileOpen(true)} className="fixed top-3 left-3 z-40 p-2 rounded-xl bg-background/80 backdrop-blur-xl border shadow-sm md:hidden hover:bg-accent/50 transition-all cursor-pointer">
+      <button onClick={() => setMobileOpen(true)} className="fixed top-3 left-3 z-40 p-2 rounded-xl bg-background/80 backdrop-blur-xl border shadow-sm md:hidden hover:bg-accent/50 transition-all cursor-pointer" aria-label="Open menu">
         <Menu className="h-5 w-5" />
       </button>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden animate-fade-in" onClick={() => setMobileOpen(false)} />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
       <aside className={cn(

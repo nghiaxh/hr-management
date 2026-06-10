@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
+import { motion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -15,10 +16,17 @@ SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 const SelectValue = SelectPrimitive.Value;
 const SelectContent = React.forwardRef<React.ElementRef<typeof SelectPrimitive.Content>, React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>>(({ className, children, position = 'popper', ...props }, ref) => (
   <SelectPrimitive.Portal>
-    <SelectPrimitive.Content ref={ref} className={cn('relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border bg-popover/95 backdrop-blur-xl text-popover-foreground shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0', position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1', className)} position={position} {...props}>
-      <SelectPrimitive.Viewport className={cn('p-1', position === 'popper' && 'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]')}>
-        {children}
-      </SelectPrimitive.Viewport>
+    <SelectPrimitive.Content asChild ref={ref} position={position} {...props}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15 }}
+        className={cn('relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border bg-popover/95 backdrop-blur-xl text-popover-foreground shadow-xl', position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1', className)}
+      >
+        <SelectPrimitive.Viewport className={cn('p-1', position === 'popper' && 'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]')}>
+          {children}
+        </SelectPrimitive.Viewport>
+      </motion.div>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
