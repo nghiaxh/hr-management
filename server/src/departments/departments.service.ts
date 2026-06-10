@@ -61,7 +61,7 @@ export class DepartmentsService {
     const result: any[] = [];
     for (const dept of departments) {
       const employees = await this.employeeModel
-        .find({ departmentId: dept._id })
+        .find({ departmentId: dept._id.toString() })
         .populate('userId', '-passwordHash')
         .lean();
       result.push({
