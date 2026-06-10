@@ -1,3 +1,5 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -15,23 +17,37 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   private userSockets = new Map<string, Set<string>>();
 
+  constructor(private jwtService: JwtService) {}
+
   handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId as string;
-    if (userId) {
-      if (!this.userSockets.has(userId)) {
-        this.userSockets.set(userId, new Set());
+    const token = client.handshake.auth?.token || client.handshake.query?.token as string;
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+    try {
+      const payload = this.jwtService.verify(token);
+      const userId = payload.sub;
+      if (userId) {
+        if (!this.userSockets.has(userId)) {
+          this.userSockets.set(userId, new Set());
+        }
+        this.userSockets.get(userId)!.add(client.id);
+        client.join(`user:${userId}`);
       }
-      this.userSockets.get(userId)!.add(client.id);
-      client.join(`user:${userId}`);
+    } catch {
+      client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    const userId = client.handshake.query.userId as string;
-    if (userId && this.userSockets.has(userId)) {
-      this.userSockets.get(userId)!.delete(client.id);
-      if (this.userSockets.get(userId)!.size === 0) {
-        this.userSockets.delete(userId);
+    for (const [userId, sockets] of this.userSockets.entries()) {
+      if (sockets.has(client.id)) {
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+          this.userSockets.delete(userId);
+        }
+        break;
       }
     }
   }
