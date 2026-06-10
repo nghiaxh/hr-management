@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { EmployeesModule } from './employees/employees.module';
@@ -16,6 +18,7 @@ import { StartupSeedService } from './startup-seed.service';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/hr-management'),
     AuthModule,
     EmployeesModule,
@@ -30,6 +33,9 @@ import { StartupSeedService } from './startup-seed.service';
     RecruitmentModule,
     PerformanceReviewModule,
   ],
-  providers: [StartupSeedService],
+  providers: [
+    StartupSeedService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
