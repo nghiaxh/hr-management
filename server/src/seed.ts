@@ -8,6 +8,9 @@ import { EmployeesService } from './employees/employees.service';
 import { DepartmentsService } from './departments/departments.service';
 import { LeaveBalanceService } from './leave-balance/leave-balance.service';
 import { EmployeeHistoryService } from './employee-history/employee-history.service';
+import { getModelToken } from '@nestjs/mongoose';
+import { User } from './auth/schemas/user.schema';
+import { Model } from 'mongoose';
 
 const DEPARTMENTS = [
   { name: 'Engineering', description: 'Software development & infrastructure' },
@@ -113,16 +116,19 @@ async function seed() {
   const departmentsService = app.get(DepartmentsService);
   const leaveBalanceService = app.get(LeaveBalanceService);
   const historyService = app.get(EmployeeHistoryService);
+  const userModel = app.get<Model<any>>(getModelToken(User.name));
 
   // 1. Admin
-  const admin = await authService.register({ email: 'admin@hr.com', password: 'admin123', role: 'admin' });
+  const admin = await authService.register({ email: 'admin@hr.com', password: 'admin123' });
+  await userModel.findByIdAndUpdate(admin.user.id, { role: 'admin' });
 
   // 2. Managers + departments
   interface DeptInfo { _id: any; name: string; managerEmpId: any }
   const deptInfos: DeptInfo[] = [];
 
   for (const mgrData of MANAGERS) {
-    const mgr = await authService.register({ email: mgrData.email, password: 'manager123', role: 'manager' });
+    const mgr = await authService.register({ email: mgrData.email, password: 'manager123' });
+    await userModel.findByIdAndUpdate(mgr.user.id, { role: 'manager' });
     const dept = DEPARTMENTS[mgrData.deptIdx];
     const createdDept = await departmentsService.create({
       name: dept.name,
@@ -152,7 +158,7 @@ async function seed() {
     const empList = EMPLOYEES_BY_DEPT[d];
     for (const empData of empList) {
       const email = `emp${String(empIndex++).padStart(2, '0')}@hr.com`;
-      const user = await authService.register({ email, password: 'employee123', role: 'employee' });
+      const user = await authService.register({ email, password: 'employee123' });
       const hireDate = new Date(Date.UTC(2022, 5, 1) + Math.floor(rand() * 700 * 86400000));
       const emp = await employeesService.create({
         userId: user.user.id.toString(),

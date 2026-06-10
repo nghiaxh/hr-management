@@ -19,10 +19,12 @@ export class StartupSeedService implements OnApplicationBootstrap {
     const count = await this.userModel.countDocuments();
     if (count > 0) return;
 
-    const admin = await this.authService.register({ email: 'admin@hr.com', password: 'admin123', role: 'admin' });
-    const manager = await this.authService.register({ email: 'manager@hr.com', password: 'manager123', role: 'manager' });
-    const empUser = await this.authService.register({ email: 'employee@hr.com', password: 'employee123', role: 'employee' });
-    const empUser2 = await this.authService.register({ email: 'employee2@hr.com', password: 'employee123', role: 'employee' });
+    const admin = await this.authService.register({ email: 'admin@hr.com', password: 'admin123' });
+    await this.userModel.findByIdAndUpdate(admin.user.id, { role: 'admin' });
+    const manager = await this.authService.register({ email: 'manager@hr.com', password: 'manager123' });
+    await this.userModel.findByIdAndUpdate(manager.user.id, { role: 'manager' });
+    const empUser = await this.authService.register({ email: 'employee@hr.com', password: 'employee123' });
+    const empUser2 = await this.authService.register({ email: 'employee2@hr.com', password: 'employee123' });
 
     const engineering = await this.departmentsService.create({ name: 'Engineering', description: 'Engineering department', managerId: manager.user.id.toString() });
     const hr = await this.departmentsService.create({ name: 'HR', description: 'Human Resources' });
