@@ -40,9 +40,19 @@ export class DashboardService {
 
     const departmentStats = await this.employeeModel.aggregate([
       { $group: { _id: '$departmentId', count: { $sum: 1 } } },
-      { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'dept' } },
+      { $match: { _id: { $ne: null } } },
+      { $lookup: {
+          from: 'departments',
+          let: { deptId: '$_id' },
+          pipeline: [
+            { $addFields: { strId: { $toString: '$_id' } } },
+            { $match: { $expr: { $eq: ['$strId', '$$deptId'] } } },
+          ],
+          as: 'dept',
+        },
+      },
       { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
-      { $project: { name: '$dept.name', count: 1 } },
+      { $project: { name: '$dept.name', count: 1, _id: 0 } },
     ]);
 
     const recentLeaves = await this.leaveModel.find()
