@@ -7,6 +7,7 @@ import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
 import { CreateCandidateDto } from './dto/create-candidate.dto';
 import { UpdateCandidateDto } from './dto/update-candidate.dto';
+import { escapeRegex } from '../utils/security';
 
 @Injectable()
 export class RecruitmentService {
@@ -21,7 +22,7 @@ export class RecruitmentService {
     if (status) filter.status = status;
     if (departmentId) filter.departmentId = departmentId;
     if (search) {
-      filter.title = new RegExp(search, 'i');
+      filter.title = new RegExp(escapeRegex(search), 'i');
     }
     const total = await this.jobPostingModel.countDocuments(filter);
     const data = await this.jobPostingModel
@@ -60,10 +61,11 @@ export class RecruitmentService {
     if (status) filter.status = status;
     if (jobPostingId) filter.jobPostingId = jobPostingId;
     if (search) {
+      const escaped = escapeRegex(search);
       filter.$or = [
-        { firstName: new RegExp(search, 'i') },
-        { lastName: new RegExp(search, 'i') },
-        { email: new RegExp(search, 'i') },
+        { firstName: new RegExp(escaped, 'i') },
+        { lastName: new RegExp(escaped, 'i') },
+        { email: new RegExp(escaped, 'i') },
       ];
     }
     const total = await this.candidateModel.countDocuments(filter);

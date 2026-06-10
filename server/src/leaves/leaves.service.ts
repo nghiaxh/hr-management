@@ -7,6 +7,7 @@ import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
 import { EmployeesService } from '../employees/employees.service';
 import { LeaveBalanceService } from '../leave-balance/leave-balance.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { sanitizeFilter } from '../utils/security';
 
 @Injectable()
 export class LeavesService {
@@ -23,17 +24,20 @@ export class LeavesService {
 
     if (user.role === 'employee') {
       const emp = await this.employeesService.findByUserId(user.id);
-      if (emp) filter.employeeId = emp._id;
+      if (!emp) filter._id = null;
+      else filter.employeeId = emp._id;
     } else if (user.role === 'manager') {
       const emp = await this.employeesService.findByUserId(user.id);
-      if (emp) {
-        const deptEmps = await this.employeesService.findAll({ departmentId: emp.departmentId?.toString() }, user);
+      if (!emp || !emp.departmentId) filter._id = null;
+      else {
+        const deptEmps = await this.employeesService.findAll({ departmentId: emp.departmentId.toString() }, user);
         filter.employeeId = { $in: deptEmps.data.map(e => e._id) };
       }
+    } else if (user.role === 'admin' && employeeId) {
+      filter.employeeId = sanitizeFilter(employeeId);
     }
-    if (employeeId) filter.employeeId = employeeId;
-    if (status) filter.status = status;
-    if (type) filter.type = type;
+    if (status) filter.status = sanitizeFilter(status);
+    if (type) filter.type = sanitizeFilter(type);
 
     const total = await this.leaveModel.countDocuments(filter);
     const data = await this.leaveModel
@@ -52,6 +56,21 @@ export class LeavesService {
       .populate('employeeId')
       .populate('approvedBy', '-passwordHash');
     if (!leave) throw new NotFoundException('Leave not found');
+
+    if (user.role === 'employee') {
+      const emp = await this.employeesService.findByUserId(user.id);
+      if (!emp || leave.employeeId.toString() !== emp._id.toString()) {
+        throw new ForbiddenException('Access denied');
+      }
+    } else if (user.role === 'manager') {
+      const emp = await this.employeesService.findByUserId(user.id);
+      if (!emp || !emp.departmentId) throw new ForbiddenException('Access denied');
+      const leaveEmp = await this.employeesService.findOne(leave.employeeId.toString());
+      if (!leaveEmp || !leaveEmp.departmentId || leaveEmp.departmentId.toString() !== emp.departmentId.toString()) {
+        throw new ForbiddenException('Access denied');
+      }
+    }
+
     return leave;
   }
 
@@ -65,7 +84,7 @@ export class LeavesService {
 
     const overlap = await this.leaveModel.findOne({
       employeeId: emp._id,
-      status: 'approved',
+      status: { $in: ['pending', 'approved'] },
       startDate: { $lte: dto.endDate },
       endDate: { $gte: dto.startDate },
     });
@@ -79,12 +98,12 @@ export class LeavesService {
     if (!leave) throw new NotFoundException('Leave not found');
     if (leave.status !== 'pending') throw new BadRequestException('Can only update pending leaves');
 
+    const emp = await this.employeesService.findOne(leave.employeeId.toString());
+
     leave.status = dto.status;
     leave.approvedBy = userId as any;
     if (dto.rejectionReason) leave.rejectionReason = dto.rejectionReason;
     await leave.save();
-
-    const emp = await this.employeesService.findOne(leave.employeeId.toString());
 
     if (dto.status === 'approved') {
       const days = Math.ceil((leave.endDate.getTime() - leave.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -98,7 +117,7 @@ export class LeavesService {
       }
 
       await this.notificationsService.create({
-        userId: emp.userId._id.toString(),
+        userId: emp.userId?._id?.toString() || userId,
         title: 'Leave Approved',
         message: `Your ${leave.type} leave (${leave.startDate.toISOString().split('T')[0]} - ${leave.endDate.toISOString().split('T')[0]}) has been approved.`,
         type: 'leave_approved',
@@ -107,7 +126,7 @@ export class LeavesService {
       });
     } else if (dto.status === 'rejected') {
       await this.notificationsService.create({
-        userId: emp.userId._id.toString(),
+        userId: emp.userId?._id?.toString() || userId,
         title: 'Leave Rejected',
         message: `Your ${leave.type} leave request has been rejected.${dto.rejectionReason ? ' Reason: ' + dto.rejectionReason : ''}`,
         type: 'leave_rejected',

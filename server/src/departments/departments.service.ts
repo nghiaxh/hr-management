@@ -5,6 +5,7 @@ import { Department, DepartmentDocument } from './schemas/department.schema';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { Employee, EmployeeDocument } from '../employees/schemas/employee.schema';
+import { escapeRegex } from '../utils/security';
 
 @Injectable()
 export class DepartmentsService {
@@ -21,7 +22,7 @@ export class DepartmentsService {
       filter.managerId = user.id;
     }
     if (search) {
-      filter.name = new RegExp(search, 'i');
+      filter.name = new RegExp(escapeRegex(search), 'i');
     }
 
     const total = await this.departmentModel.countDocuments(filter);

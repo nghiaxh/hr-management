@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { Payroll, PayrollDocument } from './schemas/payroll.schema';
 import { ProcessPayrollDto } from './dto/process-payroll.dto';
 import { EmployeesService } from '../employees/employees.service';
-import { Employee } from '../employees/schemas/employee.schema';
+import { sanitizeFilter } from '../utils/security';
 
 @Injectable()
 export class PayrollService {
@@ -20,11 +20,27 @@ export class PayrollService {
     if (user.role === 'employee') {
       const emp = await this.employeesService.findByUserId(user.id);
       if (emp) filter.employeeId = emp._id;
+    } else if (user.role === 'admin' && employeeId) {
+      filter.employeeId = employeeId;
+    } else if (user.role === 'manager') {
+      const emp = await this.employeesService.findByUserId(user.id);
+      if (!emp || !emp.departmentId) filter._id = null;
+      else {
+        const deptEmps = await this.employeesService.findAll({ departmentId: emp.departmentId.toString() }, user);
+        filter.employeeId = { $in: deptEmps.data.map(e => e._id) };
+        if (employeeId) {
+          const targetEmp = await this.employeesService.findOne(employeeId).catch(() => null);
+          if (!targetEmp || !targetEmp.departmentId || targetEmp.departmentId.toString() !== emp.departmentId.toString()) {
+            filter._id = null;
+          } else {
+            filter.employeeId = employeeId;
+          }
+        }
+      }
     }
-    if (employeeId) filter.employeeId = employeeId;
-    if (month) filter.month = month;
-    if (year) filter.year = year;
-    if (status) filter.status = status;
+    if (month) filter.month = sanitizeFilter(month);
+    if (year) filter.year = sanitizeFilter(year);
+    if (status) filter.status = sanitizeFilter(status);
 
     const total = await this.payrollModel.countDocuments(filter);
     const data = await this.payrollModel

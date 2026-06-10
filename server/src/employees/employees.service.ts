@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Employee, EmployeeDocument } from './schemas/employee.schema';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { escapeRegex } from '../utils/security';
 
 @Injectable()
 export class EmployeesService {
@@ -21,7 +22,8 @@ export class EmployeesService {
       if (dept) filter.departmentId = dept.departmentId;
     }
     if (search) {
-      const regex = new RegExp(search, 'i');
+      const escaped = escapeRegex(search);
+      const regex = new RegExp(escaped, 'i');
       filter.$or = [{ firstName: regex }, { lastName: regex }, { position: regex }];
     }
 
@@ -42,8 +44,11 @@ export class EmployeesService {
       .populate('userId', '-passwordHash')
       .populate('departmentId');
     if (!employee) throw new NotFoundException('Employee not found');
-    if (user?.role === 'employee' && employee.userId._id.toString() !== user.id) {
-      throw new ForbiddenException('Access denied');
+    if (user?.role === 'employee') {
+      const empUserId = employee.userId?._id?.toString();
+      if (!empUserId || empUserId !== user.id) {
+        throw new ForbiddenException('Access denied');
+      }
     }
     return employee;
   }
@@ -64,12 +69,20 @@ export class EmployeesService {
   }
 
   async bulkDelete(ids: string[]) {
+    if (!ids?.length || ids.length > 100) {
+      throw new BadRequestException('Invalid or too many IDs (max 100)');
+    }
     await this.employeeModel.deleteMany({ _id: { $in: ids } });
     return { deleted: ids.length };
   }
 
-  async exportCsv() {
-    const employees = await this.employeeModel.find()
+  async exportCsv(user?: any) {
+    const filter: any = {};
+    if (user?.role === 'manager') {
+      const emp = await this.employeeModel.findOne({ userId: user.id }).select('departmentId');
+      if (emp) filter.departmentId = emp.departmentId;
+    }
+    const employees = await this.employeeModel.find(filter)
       .populate('userId', '-passwordHash')
       .populate('departmentId');
 
