@@ -20,8 +20,8 @@ export class PerformanceReviewController {
 
   @Get(':id')
   @Roles('admin', 'manager', 'employee')
-  findOne(@Param('id') id: string) {
-    return this.performanceReviewService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.performanceReviewService.findOne(id, user);
   }
 
   @Post()

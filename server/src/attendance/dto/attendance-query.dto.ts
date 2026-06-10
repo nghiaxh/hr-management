@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsDate } from 'class-validator';
+import { IsOptional, IsString, IsDate, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AttendanceQueryDto {
@@ -13,7 +13,7 @@ export class AttendanceQueryDto {
   to?: Date;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   employeeId?: string;
 
   @IsOptional()

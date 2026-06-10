@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, ForbiddenException } from '@nestjs/common';
 import { LeaveBalanceService } from './leave-balance.service';
 import { EmployeesService } from '../employees/employees.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,7 +15,7 @@ export class LeaveBalanceController {
   ) {}
 
   @Get('my')
-  @Roles('employee')
+  @Roles('admin', 'manager', 'employee')
   async getMyBalance(@CurrentUser() user: any) {
     const employee = await this.employeesService.findByUserId(user.id);
     if (!employee) {
@@ -25,8 +25,8 @@ export class LeaveBalanceController {
   }
 
   @Get(':employeeId')
-  @Roles('admin', 'manager', 'employee')
-  getByEmployee(@Param('employeeId') employeeId: string) {
+  @Roles('admin', 'manager')
+  getByEmployee(@Param('employeeId') employeeId: string, @CurrentUser() user: any) {
     return this.balanceService.findByEmployee(employeeId);
   }
 }

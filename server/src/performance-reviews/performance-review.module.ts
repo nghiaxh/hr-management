@@ -4,11 +4,13 @@ import { PerformanceReviewController } from './performance-review.controller';
 import { PerformanceReviewService } from './performance-review.service';
 import { PerformanceReview, PerformanceReviewSchema } from './schemas/performance-review.schema';
 import { AuthModule } from '../auth/auth.module';
+import { EmployeesModule } from '../employees/employees.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: PerformanceReview.name, schema: PerformanceReviewSchema }]),
     AuthModule,
+    EmployeesModule,
   ],
   controllers: [PerformanceReviewController],
   providers: [PerformanceReviewService],

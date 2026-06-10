@@ -70,13 +70,18 @@ export class DashboardService {
     if (!emp) return {};
     const dept = await this.departmentModel.findById(emp.departmentId);
     const today = new Date(); today.setHours(0, 0, 0, 0);
+    const now = new Date();
+
+    const deptEmployeeIds = (await this.employeeModel.find(
+      { departmentId: emp.departmentId }
+    ).select('_id').lean()).map(e => e._id);
 
     const [totalEmployees, pendingLeaves, presentToday, payrollResult] = await Promise.all([
       this.employeeModel.countDocuments({ departmentId: emp.departmentId }),
-      this.leaveModel.countDocuments({ status: 'pending' }),
-      this.attendanceModel.countDocuments({ date: today, status: { $in: ['present', 'late'] } }),
+      this.leaveModel.countDocuments({ status: 'pending', employeeId: { $in: deptEmployeeIds } }),
+      this.attendanceModel.countDocuments({ date: today, status: { $in: ['present', 'late'] }, employeeId: { $in: deptEmployeeIds } }),
       this.payrollModel.aggregate([
-        { $match: { month: new Date().getMonth() + 1, year: new Date().getFullYear() } },
+        { $match: { month: now.getMonth() + 1, year: now.getFullYear(), employeeId: { $in: deptEmployeeIds } } },
         { $group: { _id: null, total: { $sum: '$netPay' } } },
       ]),
     ]);
