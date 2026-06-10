@@ -12,8 +12,8 @@ import { User, UserSchema } from './schemas/user.schema';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'hr-management-secret-key-2026',
-      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '1d') as any },
     }),
   ],
   controllers: [AuthController],
