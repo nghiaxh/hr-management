@@ -3,6 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/auth-context';
 import { LanguageProvider } from './context/language-context';
 import { AppLayout } from './components/layout/app-layout';
+import { ProtectedRoute } from './components/layout/protected-route';
+import { ErrorBoundary } from './components/shared/error-boundary';
+import { RouteLoadingIndicator } from './components/shared/route-loading';
+import { KeyboardShortcuts } from './components/shared/keyboard-shortcuts';
 import LoginPage from './pages/login';
 import DashboardPage from './pages/dashboard';
 import EmployeesListPage from './pages/employees/employees-list';
@@ -30,31 +34,35 @@ const queryClient = new QueryClient();
 function AppContent() {
   return (
     <>
+      <RouteLoadingIndicator />
+      <KeyboardShortcuts />
       <SocketInit />
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/employees" element={<EmployeesListPage />} />
-          <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/departments" element={<DepartmentsListPage />} />
-          <Route path="/org-chart" element={<OrgChartPage />} />
-          <Route path="/leaves" element={<MyLeavesPage />} />
-          <Route path="/leaves/approvals" element={<LeaveApprovalsPage />} />
-          <Route path="/attendance" element={<MyAttendancePage />} />
-          <Route path="/attendance/report" element={<AttendanceReportPage />} />
-          <Route path="/payroll" element={<MyPayrollPage />} />
-          <Route path="/payroll/manage" element={<PayrollManagementPage />} />
-          <Route path="/notifications" element={<NotificationsListPage />} />
-          <Route path="/recruitment/job-postings" element={<JobPostingsPage />} />
-          <Route path="/recruitment/candidates" element={<CandidatesPage />} />
-          <Route path="/performance-reviews" element={<MyReviewsPage />} />
-          <Route path="/performance-reviews/manage" element={<ReviewManagementPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><DashboardPage /></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute roles={['admin', 'manager']}><EmployeesListPage /></ProtectedRoute>} />
+            <Route path="/employees/:id" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><EmployeeDetailPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><ProfilePage /></ProtectedRoute>} />
+            <Route path="/departments" element={<ProtectedRoute roles={['admin', 'manager']}><DepartmentsListPage /></ProtectedRoute>} />
+            <Route path="/org-chart" element={<ProtectedRoute roles={['admin', 'manager']}><OrgChartPage /></ProtectedRoute>} />
+            <Route path="/leaves" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><MyLeavesPage /></ProtectedRoute>} />
+            <Route path="/leaves/approvals" element={<ProtectedRoute roles={['admin', 'manager']}><LeaveApprovalsPage /></ProtectedRoute>} />
+            <Route path="/attendance" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><MyAttendancePage /></ProtectedRoute>} />
+            <Route path="/attendance/report" element={<ProtectedRoute roles={['admin', 'manager']}><AttendanceReportPage /></ProtectedRoute>} />
+            <Route path="/payroll" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><MyPayrollPage /></ProtectedRoute>} />
+            <Route path="/payroll/manage" element={<ProtectedRoute roles={['admin']}><PayrollManagementPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><NotificationsListPage /></ProtectedRoute>} />
+            <Route path="/recruitment/job-postings" element={<ProtectedRoute roles={['admin', 'manager']}><JobPostingsPage /></ProtectedRoute>} />
+            <Route path="/recruitment/candidates" element={<ProtectedRoute roles={['admin', 'manager']}><CandidatesPage /></ProtectedRoute>} />
+            <Route path="/performance-reviews" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><MyReviewsPage /></ProtectedRoute>} />
+            <Route path="/performance-reviews/manage" element={<ProtectedRoute roles={['admin', 'manager']}><ReviewManagementPage /></ProtectedRoute>} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </ErrorBoundary>
     </>
   );
 }
