@@ -8,49 +8,54 @@ Two independent packages: `server/` (NestJS + MongoDB) and `client/` (React + Vi
 # Server (port 3001)
 cd server
 npm install
-npm run seed    # 4 demo accounts, 2 departments, 4 employees, leave balances, history entries
-npm run dev     # ts-node, not NestJS CLI (no nest-cli.json)
+cp .env.example .env   # then edit JWT_SECRET
+npm run seed           # 1 admin, 6 managers, ~50 employees across 6 departments
+npm run dev            # ts-node, not NestJS CLI (no nest-cli.json)
 
 # Client (port 5173)
 cd client
 npm install
-npm run dev     # Vite
-npm run build   # tsc && vite build
+npm run dev            # Vite
+npm run build          # tsc && vite build
 ```
 
 ## Server feature modules
 
 All modules follow the NestJS convention: `module` → `controller` → `service` → `schemas/` + `dto/`.
 
-| Module       | Entry file                  | Notes                              |
-|--------------|-----------------------------|------------------------------------|
-| Auth         | `server/src/auth/`          | JWT + passport-jwt + bcryptjs      |
-| Employees    | `server/src/employees/`     | Scoped by role via `findAll` query |
-| Departments  | `server/src/departments/`   | Manager assignment                 |
-| Leaves       | `server/src/leaves/`        | Validation: max 30d, no overlap    |
-| Attendance   | `server/src/attendance/`    | Auto late/half-day logic           |
-| Payroll      | `server/src/payroll/`       | Monthly batch processing           |
-| Dashboard    | `server/src/dashboard/`     | Stats vary by user role            |
-| EmployeeHistory | `server/src/employee-history/` | Raise/promotion/transfer timeline |
-| LeaveBalance | `server/src/leave-balance/` | Auto-deduct on leave approval      |
-| Notifications | `server/src/notifications/` | In-app notifications + mark-read   |
+| Module           | Entry file                        | Notes                              |
+|------------------|-----------------------------------|------------------------------------|
+| Auth             | `server/src/auth/`                | JWT + passport-jwt + bcryptjs      |
+| Employees        | `server/src/employees/`           | Scoped by role via `findAll` query |
+| Departments      | `server/src/departments/`         | Manager assignment                 |
+| Leaves           | `server/src/leaves/`              | Validation: max 30d, no overlap    |
+| Attendance       | `server/src/attendance/`          | Auto late/half-day logic           |
+| Payroll          | `server/src/payroll/`             | Monthly batch processing           |
+| Dashboard        | `server/src/dashboard/`           | Stats vary by user role            |
+| EmployeeHistory  | `server/src/employee-history/`    | Raise/promotion/transfer timeline  |
+| LeaveBalance     | `server/src/leave-balance/`       | Auto-deduct on leave approval      |
+| Notifications    | `server/src/notifications/`       | In-app notifications + mark-read   |
+| Recruitment      | `server/src/recruitment/`         | Job postings + candidates          |
+| PerformanceReview| `server/src/performance-reviews/` | Employee performance reviews       |
 
 ## Architecture
 
-- **Server** (`server/src/main.ts`): NestJS, global prefix `/api`, CORS to `http://localhost:5173`. Config from `server/.env` (loaded by `dotenv/config`). Default MongoDB at `mongodb://localhost:27017/hr-management`, JWT secret `hr-management-secret-key-2026`. Path alias `@/*` → `src/*`.
-- **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `http://localhost:3001/api`, JWT from localStorage. Path alias `@/` → `./src/*`.
-- **Auth**: JWT (passport-jwt), `@Roles()` decorator + `RolesGuard`. Tokens expire in 7d by default.
+- **Server** (`server/src/main.ts`): NestJS, global prefix `/api`, CORS from env `CORS_ORIGIN`. Config from `server/.env`. Path alias `@/*` → `src/*`.
+- **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
+- **Auth**: JWT (passport-jwt), `@Roles()` decorator + `RolesGuard`. Tokens expire in `JWT_EXPIRES_IN` (default `1d`). `JWT_SECRET` is **required** at startup.
 - **RBAC roles**: `admin` (full access), `manager` (department-scoped), `employee` (self only).
-- **Data model**: `User` (auth credentials + role) and `Employee` (HR profile + salary + department + contractType + documents) are separate schemas linked by `userId`. Additional models: `EmployeeHistory`, `LeaveBalance`, `Notification`.
-- **Client routes** (App.tsx): `/login`, `/dashboard`, `/employees`, `/employees/:id`, `/departments`, `/org-chart`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/profile`.
+- **Data model**: `User` (auth credentials + role) and `Employee` (HR profile + salary + department + contractType + documents) are separate schemas linked by `userId`. Additional models: `EmployeeHistory`, `LeaveBalance`, `Notification`, `JobPosting`, `Candidate`, `PerformanceReview`.
+- **Security**: Rate limiting (60 req/min via `@nestjs/throttler`), helmet headers, file uploads limited to 5MB (JPEG/PNG/GIF/PDF/DOC/DOCX), passwords require min 8 chars with uppercase+lowercase+digit, WebSocket auth via JWT handshake, search inputs regex-escaped.
+- **Registration**: Always creates `employee` role — admin/manager roles are set via seed or direct DB update.
 
 ## Key facts
 
 - **No tests, no linter, no CI, no typecheck script.** No pre-commit hooks.
-- Seed is required before first dev run. Drops no data — safe to re-run.
+- Seed is required before first dev run. Drops all data and recreates — safe to re-run.
 - Client uses `"type": "module"`; server uses CommonJS.
 - All API routes are protected by `JwtAuthGuard` + `RolesGuard` (except `/api/auth/login` and `/api/auth/register`).
-- `server/.env` is NOT tracked in git — if missing, copy defaults from `server/src/main.ts` and `server/src/auth/auth.module.ts`.
+- `server/.env` is NOT tracked in git — copy from `.env.example`.
+- `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
 
 ## Git commit convention
 
