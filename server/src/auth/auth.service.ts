@@ -18,7 +18,7 @@ export class AuthService {
     const existing = await this.userModel.findOne({ email: dto.email });
     if (existing) throw new ConflictException('Email already exists');
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.userModel.create({ email: dto.email, passwordHash, role: dto.role });
+    const user = await this.userModel.create({ email: dto.email, passwordHash, role: 'employee' });
     return this.generateToken(user);
   }
 
