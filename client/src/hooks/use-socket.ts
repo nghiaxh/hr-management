@@ -5,15 +5,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from './use-toast';
 
 export function useSocket() {
-  const { user } = useAuth();
+  const { token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!token) return;
 
-    const socket = io('http://localhost:3001', {
-      query: { userId: user.id },
+    const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001', {
+      auth: { token },
       transports: ['websocket', 'polling'],
     });
 
@@ -28,10 +28,13 @@ export function useSocket() {
     });
 
     return () => {
-      socket.disconnect();
+      socket.removeAllListeners();
+      if (socket.connected) {
+        socket.disconnect();
+      }
       socketRef.current = null;
     };
-  }, [user?.id, queryClient]);
+  }, [token, queryClient]);
 
   return socketRef;
 }
