@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Res, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -23,8 +23,8 @@ export class EmployeesController {
 
   @Get('export')
   @Roles('admin', 'manager')
-  async exportCsv(@Res() res: any) {
-    const csv = await this.employeesService.exportCsv();
+  async exportCsv(@Res() res: any, @CurrentUser() user: any) {
+    const csv = await this.employeesService.exportCsv(user);
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=employees.csv');
     res.send(csv);
@@ -58,6 +58,14 @@ export class EmployeesController {
         cb(null, unique + extname(file.originalname));
       },
     }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedMimes.includes(file.mimetype)) {
+        return cb(new BadRequestException('Invalid file type. Allowed: JPEG, PNG, GIF, PDF, DOC, DOCX'), false);
+      }
+      cb(null, true);
+    },
   }))
   uploadDocument(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     return this.employeesService.addDocument(id, file);
