@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { LeaveBalance, LeaveBalanceDocument } from './schemas/leave-balance.schema';
+import { LeaveBalance, LeaveBalanceDocument } from './schemas/leave-balance.schema.js';
 
 @Injectable()
 export class LeaveBalanceService {

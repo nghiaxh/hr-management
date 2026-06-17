@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Payroll, PayrollDocument } from './schemas/payroll.schema';
-import { ProcessPayrollDto } from './dto/process-payroll.dto';
-import { EmployeesService } from '../employees/employees.service';
-import { sanitizeFilter } from '../utils/security';
+import { Payroll, PayrollDocument } from './schemas/payroll.schema.js';
+import { ProcessPayrollDto } from './dto/process-payroll.dto.js';
+import { EmployeesService } from '../employees/employees.service.js';
+import { sanitizeFilter } from '../utils/security.js';
 
 @Injectable()
 export class PayrollService {

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EmployeesController } from './employees.controller';
-import { EmployeesService } from './employees.service';
-import { Employee, EmployeeSchema } from './schemas/employee.schema';
-import { AuthModule } from '../auth/auth.module';
+import { EmployeesController } from './employees.controller.js';
+import { EmployeesService } from './employees.service.js';
+import { Employee, EmployeeSchema } from './schemas/employee.schema.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [

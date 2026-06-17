@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Employee, EmployeeDocument } from '../employees/schemas/employee.schema';
-import { Department, DepartmentDocument } from '../departments/schemas/department.schema';
-import { Leave, LeaveDocument } from '../leaves/schemas/leave.schema';
-import { Attendance, AttendanceDocument } from '../attendance/schemas/attendance.schema';
-import { Payroll, PayrollDocument } from '../payroll/schemas/payroll.schema';
+import { Employee, EmployeeDocument } from '../employees/schemas/employee.schema.js';
+import { Department, DepartmentDocument } from '../departments/schemas/department.schema.js';
+import { Leave, LeaveDocument } from '../leaves/schemas/leave.schema.js';
+import { Attendance, AttendanceDocument } from '../attendance/schemas/attendance.schema.js';
+import { Payroll, PayrollDocument } from '../payroll/schemas/payroll.schema.js';
 
 @Injectable()
 export class DashboardService {

@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { JobPosting, JobPostingDocument } from './schemas/job-posting.schema';
-import { Candidate, CandidateDocument } from './schemas/candidate.schema';
-import { CreateJobPostingDto } from './dto/create-job-posting.dto';
-import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
-import { CreateCandidateDto } from './dto/create-candidate.dto';
-import { UpdateCandidateDto } from './dto/update-candidate.dto';
-import { escapeRegex } from '../utils/security';
+import { JobPosting, JobPostingDocument } from './schemas/job-posting.schema.js';
+import { Candidate, CandidateDocument } from './schemas/candidate.schema.js';
+import { CreateJobPostingDto } from './dto/create-job-posting.dto.js';
+import { UpdateJobPostingDto } from './dto/update-job-posting.dto.js';
+import { CreateCandidateDto } from './dto/create-candidate.dto.js';
+import { UpdateCandidateDto } from './dto/update-candidate.dto.js';
+import { escapeRegex } from '../utils/security.js';
 
 @Injectable()
 export class RecruitmentService {

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { EmployeeHistory, EmployeeHistoryDocument } from './schemas/employee-history.schema';
-import { CreateEmployeeHistoryDto } from './dto/create-employee-history.dto';
+import { EmployeeHistory, EmployeeHistoryDocument } from './schemas/employee-history.schema.js';
+import { CreateEmployeeHistoryDto } from './dto/create-employee-history.dto.js';
 
 @Injectable()
 export class EmployeeHistoryService {

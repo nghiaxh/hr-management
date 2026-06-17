@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Leave, LeaveDocument } from './schemas/leave.schema';
-import { CreateLeaveDto } from './dto/create-leave.dto';
-import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
-import { EmployeesService } from '../employees/employees.service';
-import { LeaveBalanceService } from '../leave-balance/leave-balance.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { sanitizeFilter } from '../utils/security';
+import { Leave, LeaveDocument } from './schemas/leave.schema.js';
+import { CreateLeaveDto } from './dto/create-leave.dto.js';
+import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto.js';
+import { EmployeesService } from '../employees/employees.service.js';
+import { LeaveBalanceService } from '../leave-balance/leave-balance.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { sanitizeFilter } from '../utils/security.js';
 
 @Injectable()
 export class LeavesService {

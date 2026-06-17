@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DashboardController } from './dashboard.controller';
-import { DashboardService } from './dashboard.service';
-import { Employee, EmployeeSchema } from '../employees/schemas/employee.schema';
-import { Department, DepartmentSchema } from '../departments/schemas/department.schema';
-import { Leave, LeaveSchema } from '../leaves/schemas/leave.schema';
-import { Attendance, AttendanceSchema } from '../attendance/schemas/attendance.schema';
-import { Payroll, PayrollSchema } from '../payroll/schemas/payroll.schema';
-import { AuthModule } from '../auth/auth.module';
+import { DashboardController } from './dashboard.controller.js';
+import { DashboardService } from './dashboard.service.js';
+import { Employee, EmployeeSchema } from '../employees/schemas/employee.schema.js';
+import { Department, DepartmentSchema } from '../departments/schemas/department.schema.js';
+import { Leave, LeaveSchema } from '../leaves/schemas/leave.schema.js';
+import { Attendance, AttendanceSchema } from '../attendance/schemas/attendance.schema.js';
+import { Payroll, PayrollSchema } from '../payroll/schemas/payroll.schema.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [

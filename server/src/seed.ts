@@ -2,14 +2,14 @@ import 'dotenv/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { getConnectionToken } from '@nestjs/mongoose';
-import { AppModule } from './app.module';
-import { AuthService } from './auth/auth.service';
-import { EmployeesService } from './employees/employees.service';
-import { DepartmentsService } from './departments/departments.service';
-import { LeaveBalanceService } from './leave-balance/leave-balance.service';
-import { EmployeeHistoryService } from './employee-history/employee-history.service';
+import { AppModule } from './app.module.js';
+import { AuthService } from './auth/auth.service.js';
+import { EmployeesService } from './employees/employees.service.js';
+import { DepartmentsService } from './departments/departments.service.js';
+import { LeaveBalanceService } from './leave-balance/leave-balance.service.js';
+import { EmployeeHistoryService } from './employee-history/employee-history.service.js';
 import { getModelToken } from '@nestjs/mongoose';
-import { User } from './auth/schemas/user.schema';
+import { User } from './auth/schemas/user.schema.js';
 import { Model } from 'mongoose';
 
 const DEPARTMENTS = [

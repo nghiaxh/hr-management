@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { PerformanceReviewService } from './performance-review.service';
-import { CreatePerformanceReviewDto } from './dto/create-performance-review.dto';
-import { UpdatePerformanceReviewDto } from './dto/update-performance-review.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { PerformanceReviewService } from './performance-review.service.js';
+import { CreatePerformanceReviewDto } from './dto/create-performance-review.dto.js';
+import { UpdatePerformanceReviewDto } from './dto/update-performance-review.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
 
 @Controller('performance-reviews')
 @UseGuards(JwtAuthGuard, RolesGuard)

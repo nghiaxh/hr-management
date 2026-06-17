@@ -1,10 +1,10 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { AuthService } from './auth/auth.service';
-import { EmployeesService } from './employees/employees.service';
-import { DepartmentsService } from './departments/departments.service';
-import { User, UserDocument } from './auth/schemas/user.schema';
+import { AuthService } from './auth/auth.service.js';
+import { EmployeesService } from './employees/employees.service.js';
+import { DepartmentsService } from './departments/departments.service.js';
+import { User, UserDocument } from './auth/schemas/user.schema.js';
 
 @Injectable()
 export class StartupSeedService implements OnApplicationBootstrap {

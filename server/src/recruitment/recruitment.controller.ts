@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { RecruitmentService } from './recruitment.service';
-import { CreateJobPostingDto } from './dto/create-job-posting.dto';
-import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
-import { CreateCandidateDto } from './dto/create-candidate.dto';
-import { UpdateCandidateDto } from './dto/update-candidate.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { RecruitmentService } from './recruitment.service.js';
+import { CreateJobPostingDto } from './dto/create-job-posting.dto.js';
+import { UpdateJobPostingDto } from './dto/update-job-posting.dto.js';
+import { CreateCandidateDto } from './dto/create-candidate.dto.js';
+import { UpdateCandidateDto } from './dto/update-candidate.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)

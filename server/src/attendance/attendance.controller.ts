@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Patch, Param, Query, UseGuards } from '@nestjs/common';
-import { AttendanceService } from './attendance.service';
-import { AttendanceQueryDto } from './dto/attendance-query.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { AttendanceService } from './attendance.service.js';
+import { AttendanceQueryDto } from './dto/attendance-query.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, RolesGuard)

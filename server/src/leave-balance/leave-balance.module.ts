@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { LeaveBalanceController } from './leave-balance.controller';
-import { LeaveBalanceService } from './leave-balance.service';
-import { LeaveBalance, LeaveBalanceSchema } from './schemas/leave-balance.schema';
-import { EmployeesModule } from '../employees/employees.module';
-import { AuthModule } from '../auth/auth.module';
+import { LeaveBalanceController } from './leave-balance.controller.js';
+import { LeaveBalanceService } from './leave-balance.service.js';
+import { LeaveBalance, LeaveBalanceSchema } from './schemas/leave-balance.schema.js';
+import { EmployeesModule } from '../employees/employees.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EmployeeHistoryController } from './employee-history.controller';
-import { EmployeeHistoryService } from './employee-history.service';
-import { EmployeeHistory, EmployeeHistorySchema } from './schemas/employee-history.schema';
-import { AuthModule } from '../auth/auth.module';
-import { EmployeesModule } from '../employees/employees.module';
+import { EmployeeHistoryController } from './employee-history.controller.js';
+import { EmployeeHistoryService } from './employee-history.service.js';
+import { EmployeeHistory, EmployeeHistorySchema } from './schemas/employee-history.schema.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { EmployeesModule } from '../employees/employees.module.js';
 
 @Module({
   imports: [

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AttendanceController } from './attendance.controller';
-import { AttendanceService } from './attendance.service';
-import { Attendance, AttendanceSchema } from './schemas/attendance.schema';
-import { AuthModule } from '../auth/auth.module';
-import { EmployeesModule } from '../employees/employees.module';
+import { AttendanceController } from './attendance.controller.js';
+import { AttendanceService } from './attendance.service.js';
+import { Attendance, AttendanceSchema } from './schemas/attendance.schema.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { EmployeesModule } from '../employees/employees.module.js';
 
 @Module({
   imports: [

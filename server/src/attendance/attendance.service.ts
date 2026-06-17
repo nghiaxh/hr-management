@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Attendance, AttendanceDocument } from './schemas/attendance.schema';
-import { AttendanceQueryDto } from './dto/attendance-query.dto';
-import { EmployeesService } from '../employees/employees.service';
+import { Attendance, AttendanceDocument } from './schemas/attendance.schema.js';
+import { AttendanceQueryDto } from './dto/attendance-query.dto.js';
+import { EmployeesService } from '../employees/employees.service.js';
 
 @Injectable()
 export class AttendanceService {

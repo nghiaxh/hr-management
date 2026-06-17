@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { LeavesService } from './leaves.service';
-import { CreateLeaveDto } from './dto/create-leave.dto';
-import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { LeavesService } from './leaves.service.js';
+import { CreateLeaveDto } from './dto/create-leave.dto.js';
+import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
 
 @Controller('leaves')
 @UseGuards(JwtAuthGuard, RolesGuard)

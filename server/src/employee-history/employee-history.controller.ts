@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Body, Param, UseGuards, ForbiddenException } from '@nestjs/common';
-import { EmployeeHistoryService } from './employee-history.service';
-import { CreateEmployeeHistoryDto } from './dto/create-employee-history.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { EmployeesService } from '../employees/employees.service';
+import { EmployeeHistoryService } from './employee-history.service.js';
+import { CreateEmployeeHistoryDto } from './dto/create-employee-history.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { EmployeesService } from '../employees/employees.service.js';
 
 @Controller('employees/:employeeId/history')
 @UseGuards(JwtAuthGuard, RolesGuard)
