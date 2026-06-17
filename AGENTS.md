@@ -29,13 +29,19 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 
 ---
 
-## Docker (MongoDB)
+## Docker
 
 ```bash
+# Full stack (MongoDB + server)
 docker compose up -d
+
+# MongoDB only (server runs natively)
+docker compose up -d mongodb
 ```
 
-Connects to MongoDB at `localhost:27017`. The server runs natively (not in Docker).
+The server is built from `server/Dockerfile` (multi-stage, `node:24-alpine`).  
+`JWT_SECRET` is loaded from `server/.env`.  
+`MONGODB_URI` is automatically set to `mongodb://mongodb:27017/hr-management` via Docker DNS.
 
 ---
 
