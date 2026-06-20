@@ -62,7 +62,7 @@ Hệ thống là một ứng dụng web SPA với kiến trúc client-server ph�
 
 - **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173.
 - **Server (NestJS 11)**: API backend xử lý nghiệp vụ, port 3001.
-- **Database (MongoDB)**: Lưu trữ dữ liệu, chạy local hoặc container Docker.
+- **Database (MongoDB)**: Lưu trữ dữ liệu, chạy local.
 
 Client giao tiếp với Server qua REST API với xác thực JWT Bearer token. Server giao tiếp với MongoDB qua Mongoose ODM. Ngoài ra, Server còn hỗ trợ WebSocket qua Socket.IO để đẩy thông báo thời gian thực đến Client.
 
@@ -230,7 +230,7 @@ Hệ thống phục vụ ba vai trò người dùng, mỗi vai trò có quyền 
 | NFR-07 | Validation đầu vào | Tất cả dữ liệu đầu vào phải được kiểm tra trước khi xử lý. | Whitelist validation + forbidNonWhitelisted trên NestJS. |
 | NFR-08 | CORS | Chỉ cho phép các domain được ủy quyền gọi API. | Cấu hình CORS_ORIGIN, mặc định là localhost:5173. |
 | NFR-09 | Database indexing | Đánh index cho các trường thường xuyên được truy vấn. | Compound indexes trên employeeId, status, date. |
-| NFR-10 | Khả năng triển khai | Hệ thống phải đóng gói được để triển khai linh hoạt. | Dockerfile cho server, docker-compose cho full stack. |
+
 
 ---
 

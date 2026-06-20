@@ -140,7 +140,7 @@ graph TB
 | UI/UX Designer      | Designer   | Mockup, prototype, design system                  |
 | QA Lead             | QA Lead    | Test plan, test cases, test execution             |
 | QA Engineer         | QA Eng     | Manual + automation testing                       |
-| DevOps Engineer     | DevOps     | CI/CD, Docker, deployment, monitoring             |
+| DevOps Engineer     | DevOps     | CI/CD, deployment, monitoring                     |
 
 ### 3.3 Phân công theo module
 
@@ -350,7 +350,7 @@ gantt
 
 | Task                          | SP | Assignee | Mô tả                            |
 |-------------------------------|:--:|:--------:|----------------------------------|
-| Docker setup                  | 3  | DevOps   | Dockerfile, docker-compose       |
+| CI/CD setup                   | 3  | DevOps   | CI/CD pipeline setup             |
 | CI/CD pipeline                | 5  | DevOps   | GitHub Actions                   |
 | Staging deployment            | 3  | DevOps   | Test environment                 |
 | Production deployment         | 5  | DevOps   | Production release               |
@@ -534,7 +534,7 @@ graph LR
     A[Git Push] --> B[GitHub Actions]
     B --> C[Build]
     C --> D[Run Tests]
-    D -->|Pass| E[Docker Build]
+    D -->|Pass| E[Build]
     D -->|Fail| A
     E --> F[Push to Registry]
     F --> G[Deploy to Staging]
@@ -546,8 +546,8 @@ graph LR
 ### 10.3 Rollback plan
 
 Nếu production gặp sự cố:
-1. Giữ nguyên phiên bản trước (previous Docker image)
-2. Chạy `docker-compose down && docker-compose up`
+1. Giữ nguyên phiên bản trước
+2. Rollback phiên bản
 3. Thông báo cho team
 4. Debug và hotfix
 

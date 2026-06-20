@@ -39,7 +39,7 @@ Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho 
 | Database | MongoDB + Mongoose | 8.x |
 | Authentication | Passport.js + JWT | - |
 | Validation | class-validator + class-transformer | - |
-| Containerization | Docker + docker-compose | - |
+
 
 ---
 
@@ -1165,72 +1165,7 @@ sequenceDiagram
 
 ---
 
-## 9. Triển khai
 
-### 9.1 Docker Architecture
-
-```mermaid
-graph TB
-    subgraph "Docker Network"
-        subgraph "mongodb container"
-            MONGODB[MongoDB 8<br/>Port 27017]
-        end
-
-        subgraph "server container"
-            SERVER[NestJS Server<br/>Port 3001]
-            SERVER_ENV[JWT_SECRET<br/>MONGODB_URI<br/>CORS_ORIGIN]
-        end
-    end
-
-    subgraph "Host Machine"
-        CLIENT[React Dev Server<br/>Port 5173]
-        BROWSER[Web Browser]
-    end
-
-    BROWSER -->|http://localhost:5173| CLIENT
-    CLIENT -->|http://localhost:3001/api| SERVER
-    SERVER -->|mongodb://mongodb:27017| MONGODB
-```
-
-### 9.2 Docker Compose
-
-```yaml
-services:
-  mongodb:
-    image: mongo:8
-    ports: ["27017:27017"]
-    volumes: ["mongodb_data:/data/db"]
-
-  server:
-    build: ./server
-    ports: ["3001:3001"]
-    env_file: ./server/.env
-    environment:
-      MONGODB_URI: mongodb://mongodb:27017/hr-management
-    depends_on: [mongodb]
-```
-
-### 9.3 Server Dockerfile
-
-```dockerfile
-# Multi-stage build
-FROM node:24-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:24-alpine AS production
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package*.json ./
-EXPOSE 3001
-CMD ["node", "dist/main.js"]
-```
-
----
 
 ## 10. Component thiết kế chi tiết
 
@@ -1443,9 +1378,7 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Developer Machine"
-        subgraph "Docker Containers"
-            MCON["MongoDB 8<br/>Port 27017<br/>volumes: mongodb_data"]
-        end
+        MCON["MongoDB 8<br/>Port 27017"]
 
         subgraph "Node Processes"
             SRV["NestJS Server<br/>Port 3001<br/>npm run dev (tsx)"]
@@ -1470,10 +1403,8 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Production Server"
-        subgraph "Docker Network"
-            MONGODB[MongoDB 8<br/>Port 27017]
-            SERVER[NestJS Server<br/>Port 3001]
-        end
+        MONGODB[MongoDB 8<br/>Port 27017]
+        SERVER[NestJS Server<br/>Port 3001]
         NGINX[Static File Server<br/>Serves React build + reverse proxy]
     end
 
@@ -1633,6 +1564,5 @@ Hệ thống Quản lý Nhân sự được thiết kế theo kiến trúc **cli
 - **JWT** cho xác thực không trạng thái
 - **Socket.IO** cho thông báo thời gian thực
 - **TanStack Query** cho quản lý cache và đồng bộ dữ liệu client-server
-- **Docker** cho triển khai nhất quán giữa các môi trường
 
 Thiết kế module hóa giúp dễ dàng mở rộng, bảo trì và thêm tính năng mới.
