@@ -8,9 +8,6 @@ A role-based (RBAC) HR management system built with NestJS, MongoDB, React, and 
 - Node.js 18+
 - MongoDB 7+ running (default `localhost:27017`)
 
-### Docker
-- Docker + Docker Compose
-
 ## Quick Start
 
 ### 1. Environment Setup
@@ -28,10 +25,6 @@ cp server/.env.example server/.env
 Choose one:
 
 ```bash
-# Option A: Docker (MongoDB + server)
-docker compose up -d
-
-# Option B: Native
 cd server
 npm install
 npm run seed    # Create demo data (1 admin, 6 managers, ~50 employees)
@@ -115,7 +108,7 @@ hr-management/
 
 ### Development Workflow
 
-1. **Start MongoDB** — `docker compose up -d mongodb` or run locally (default port 27017)
+1. **Start MongoDB** — run locally (default port 27017)
 2. **Configure `server/.env`** — copy from `.env.example` and set `JWT_SECRET`
 3. **Run seed** (`npm run seed` in `server/`) — creates demo data. Safe to re-run (clears & recreates)
 4. **Start server** (`npm run dev` in `server/`) — hot-reload via tsx
