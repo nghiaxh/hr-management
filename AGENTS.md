@@ -44,7 +44,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/main.ts`): NestJS, global prefix `/api`, CORS from env `CORS_ORIGIN`. Config from `server/.env`. Path alias `@/*` → `src/*`.
+- **Server** (`server/src/index.ts`): Express, global prefix `/api`, CORS from env `CORS_ORIGIN`. Config from `server/.env`. Path alias `@/*` → `src/*`.
 - **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
@@ -162,22 +162,22 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ## Server Feature Modules
 
-All modules follow the NestJS convention: `module` → `controller` → `service` → `schemas/` + `dto/`.
+All modules follow the Express convention: `routes/` → `services/` → `models/` + `schemas/`.
 
 | Module           | Entry file                        | Notes                              |
 |------------------|-----------------------------------|------------------------------------|
-| Auth             | `server/src/auth/`                | JWT + passport-jwt + bcryptjs      |
-| Employees        | `server/src/employees/`           | Scoped by role via `findAll` query |
-| Departments      | `server/src/departments/`         | Manager assignment                 |
-| Leaves           | `server/src/leaves/`              | Validation: max 30d, no overlap    |
-| Attendance       | `server/src/attendance/`          | Auto late/half-day logic           |
-| Payroll          | `server/src/payroll/`             | Monthly batch processing           |
-| Dashboard        | `server/src/dashboard/`           | Stats vary by user role            |
-| EmployeeHistory  | `server/src/employee-history/`    | Raise/promotion/transfer timeline  |
-| LeaveBalance     | `server/src/leave-balance/`       | Auto-deduct on leave approval      |
-| Notifications    | `server/src/notifications/`       | In-app notifications + mark-read   |
-| Recruitment      | `server/src/recruitment/`         | Job postings + candidates          |
-| PerformanceReview| `server/src/performance-reviews/` | Employee performance reviews       |
+| Auth             | `server/src/routes/auth.routes.ts` | JWT + bcrypt + middleware          |
+| Employees        | `server/src/services/employees.service.ts` | Business logic for employees |
+| Departments      | `server/src/services/departments.service.ts` | Department management |
+| Leaves           | `server/src/services/leaves.service.ts` | Leave requests with validation |
+| Attendance       | `server/src/services/attendance.service.ts` | Check-in/out with auto logic |
+| Payroll          | `server/src/services/payroll.service.ts` | Monthly batch processing |
+| Dashboard        | `server/src/services/dashboard.service.ts` | Role-based statistics |
+| EmployeeHistory  | `server/src/services/employee-history.service.ts` | Timeline of changes |
+| LeaveBalance     | `server/src/services/leave-balance.service.ts` | Auto-deduct on approval |
+| Notifications    | `server/src/services/notifications.service.ts` | In-app notifications |
+| Recruitment      | `server/src/services/recruitment.service.ts` | Job postings + candidates |
+| PerformanceReview| `server/src/services/performance-review.service.ts` | Performance reviews |
 
 ---
 
@@ -277,7 +277,7 @@ Client receives → shows toast + invalidates notification query
 
 | Choice | Reason |
 |--------|--------|
-| **NestJS** over Express | Structured modules, dependency injection, built-in guards/pipes |
+| **Express** over NestJS | Simpler, more flexible architecture with explicit route handling |
 | **MongoDB** over SQL | Flexible schema for HR documents array, easy to iterate |
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
 | **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |

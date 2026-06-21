@@ -1,6 +1,6 @@
 # HR Management System
 
-A role-based (RBAC) HR management system built with NestJS, MongoDB, React, and shadcn/ui.
+A role-based (RBAC) HR management system built with Express, MongoDB, React, and shadcn/ui.
 
 ## Requirements
 
@@ -74,20 +74,17 @@ npm run dev     # UI at http://localhost:5173
 
 ```
 hr-management/
-├── server/                    # NestJS API (CommonJS)
+├── server/                    # Express API (CommonJS)
 │   ├── src/
-│   │   ├── auth/              # JWT auth + authorization
-│   │   ├── employees/         # Employee CRUD
-│   │   ├── departments/       # Department CRUD
-│   │   ├── leaves/            # Leave requests
-│   │   ├── attendance/        # Check-in/out
-│   │   ├── payroll/           # Monthly payroll
-│   │   ├── dashboard/         # Role-based stats
-│   │   ├── employee-history/  # Raises, promotions
-│   │   ├── leave-balance/     # Leave balance tracking
-│   │   ├── notifications/     # In-app notifications
-│   │   ├── recruitment/       # Job postings + candidates
-│   │   ├── performance-reviews/ # Performance reviews
+│   │   ├── routes/           # Express route handlers
+│   │   ├── services/          # Business logic services
+│   │   ├── models/            # Mongoose models
+│   │   ├── schemas/           # Zod validation schemas
+│   │   ├── middleware/        # Auth, validation, upload, roles
+│   │   ├── utils/             # Security utilities
+│   │   ├── websocket.ts       # Socket.IO server
+│   │   ├── config.ts          # Environment config
+│   │   ├── index.ts           # Express app entry point
 │   │   └── seed.ts            # Full demo data seeder
 │   ├── .env                   # Server config (not tracked)
 │   └── package.json
@@ -98,7 +95,7 @@ hr-management/
     │   ├── components/
     │   │   ├── ui/            # shadcn primitives
     │   │   ├── layout/        # Sidebar, AppLayout
-    │   │   └── shared/        # StatusBadge, PageHeader
+    │   │   └── shared/         # StatusBadge, PageHeader
     │   ├── context/           # AuthContext, LanguageContext
     │   ├── hooks/             # useSocket, useTheme
     │   ├── pages/             # Route pages by feature
@@ -111,7 +108,7 @@ hr-management/
 1. **Start MongoDB** — run locally (default port 27017)
 2. **Configure `server/.env`** — copy from `.env.example` and set `JWT_SECRET`
 3. **Run seed** (`npm run seed` in `server/`) — creates demo data. Safe to re-run (clears & recreates)
-4. **Start server** (`npm run dev` in `server/`) — hot-reload via tsx
+4. **Start server** (`npm run dev` in `server/`) — Express server with hot-reload via tsx
 5. **Start client** (`npm run dev` in `client/`) — Vite dev server with HMR
 
 ### Security Notes
@@ -354,9 +351,9 @@ hr-management/
 |---------------|------------------------------------------|
 | Frontend      | React 18, Vite, TypeScript               |
 | UI            | shadcn/ui, Tailwind CSS, Radix primitives|
-| Backend       | NestJS (Express)                         |
+| Backend       | Express (Node.js)                        |
 | Database      | MongoDB 8+, Mongoose ODM                  |
-| Auth          | JWT (passport-jwt), bcrypt               |
+| Auth          | JWT (jsonwebtoken), bcrypt               |
 | Client State  | TanStack React Query                     |
 | Icons         | lucide-react                             |
 | Dates         | date-fns                                 |

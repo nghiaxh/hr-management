@@ -35,10 +35,10 @@ Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho 
 | Form Validation | React Hook Form + Zod | 7.x / 3.x |
 | Charts | Recharts | 2.x |
 | Real-time | Socket.IO (client) | 4.x |
-| Backend | NestJS | 11.x |
+| Backend | Express | 4.x |
 | Database | MongoDB + Mongoose | 8.x |
-| Authentication | Passport.js + JWT | - |
-| Validation | class-validator + class-transformer | - |
+| Authentication | JWT (jsonwebtoken) | - |
+| Validation | Zod + express-validator | - |
 
 
 ---
@@ -56,27 +56,29 @@ graph TB
         CACHE[TanStack Query Cache]
     end
 
-    subgraph "Server (NestJS)"
-        subgraph "Tầng bảo vệ"
-            JG[JwtAuthGuard]
-            RG[RolesGuard]
-            TG[ThrottlerGuard]
-            H[Helmet]
+    subgraph "Server (Express)"
+        subgraph "Tầng middleware"
+            AUTH[JWT Middleware]
+            ROLES[Role Middleware]
+            VALIDATE[Input Validation]
+            UPLOAD[File Upload]
+            RATE[Rate Limiting]
+            SECURITY[Helmet]
         end
         
-        subgraph "Tầng Controller"
-            AC[Auth Controller]
-            EC[Employee Controller]
-            DC[Dept Controller]
-            LC[Leave Controller]
-            ATC[Attendance Controller]
-            PC[Payroll Controller]
-            RC[Recruitment Controller]
-            PRC[Performance Review Controller]
-            NC[Notification Controller]
-            DBC[Dashboard Controller]
-            EHC[Employee History Controller]
-            LBC[Leave Balance Controller]
+        subgraph "Tầng Route Handlers"
+            AC[Auth Routes]
+            EC[Employee Routes]
+            DC[Dept Routes]
+            LC[Leave Routes]
+            ATC[Attendance Routes]
+            PC[Payroll Routes]
+            RC[Recruitment Routes]
+            PRC[Performance Review Routes]
+            NC[Notification Routes]
+            DBC[Dashboard Routes]
+            EHC[Employee History Routes]
+            LBC[Leave Balance Routes]
         end
 
         subgraph "Tầng Service"
@@ -111,22 +113,23 @@ graph TB
     BROWSER --> UI
     UI --> API_Layer
     UI --> SC
-    API_Layer -->|HTTP/REST| JG
-    JG --> RG
-    RG --> TG
-    TG --> H
-    H --> AC
-    H --> EC
-    H --> DC
-    H --> LC
-    H --> ATC
-    H --> PC
-    H --> RC
-    H --> PRC
-    H --> NC
-    H --> DBC
-    H --> EHC
-    H --> LBC
+    API_Layer -->|HTTP/REST| AUTH
+    AUTH --> ROLES
+    ROLES --> VALIDATE
+    VALIDATE --> RATE
+    RATE --> SECURITY
+    SECURITY --> AC
+    SECURITY --> EC
+    SECURITY --> DC
+    SECURITY --> LC
+    SECURITY --> ATC
+    SECURITY --> PC
+    SECURITY --> RC
+    SECURITY --> PRC
+    SECURITY --> NC
+    SECURITY --> DBC
+    SECURITY --> EHC
+    SECURITY --> LBC
     AC --> AS
     EC --> ES
     DC --> DS
@@ -158,27 +161,27 @@ graph TB
     GW --> NS
 ```
 
-### 2.2 Kiến trúc module (NestJS)
+### 2.2 Kiến trúc Express
 
 ```mermaid
 graph TB
-    subgraph "AppModule"
-        TM[ThrottlerModule]
-        MM[MongooseModule]
-        AM[AuthModule]
+    subgraph "Express App"
+        TM[express-rate-limit]
+        MM[Mongoose]
+        AM[Auth Middleware]
         
-        subgraph "Feature Modules"
-            EM[EmployeesModule]
-            DM[DepartmentsModule]
-            LM[LeavesModule]
-            ATM[AttendanceModule]
-            PM[PayrollModule]
-            DBM[DashboardModule]
-            EHM[EmployeeHistoryModule]
-            LBM[LeaveBalanceModule]
-            NM[NotificationsModule]
-            RM[RecruitmentModule]
-            PRM[PerformanceReviewModule]
+        subgraph "Route Handlers"
+            EM[EmployeesRoutes]
+            DM[DepartmentsRoutes]
+            LM[LeavesRoutes]
+            ATM[AttendanceRoutes]
+            PM[PayrollRoutes]
+            DBM[DashboardRoutes]
+            EHM[EmployeeHistoryRoutes]
+            LBM[LeaveBalanceRoutes]
+            NM[NotificationsRoutes]
+            RM[RecruitmentRoutes]
+            PRM[PerformanceReviewRoutes]
         end
     end
 
@@ -207,8 +210,8 @@ graph TB
 
     NM --> GW[NotificationsGateway]
 
-    subgraph "Guards Global"
-        GG[APP_GUARD: ThrottlerGuard]
+    subgraph "Global Middleware"
+        GG[Rate Limiting]
     end
 
     TM --> GG
@@ -221,7 +224,7 @@ sequenceDiagram
     participant B as Browser
     participant R as React App
     participant I as Axios Interceptor
-    participant API as NestJS API
+    participant API as Express API
     participant G as Guards
     participant CO as Controller
     participant S as Service
@@ -233,21 +236,20 @@ sequenceDiagram
     
     I->>API: HTTP Request + JWT Bearer
     
-    API->>G: JwtAuthGuard xác thực token
+    API->>M: JWT Middleware xác thực token
     alt Token không hợp lệ
-        G-->>I: 401 Unauthorized
+        M-->>I: 401 Unauthorized
         I->>I: Xóa token, redirect /login
     end
     
-    G->>G: RolesGuard kiểm tra role
+    M->>R: Role Middleware kiểm tra role
     alt Role không phù hợp
-        G-->>I: 403 Forbidden
+        R-->>I: 403 Forbidden
     end
     
-    G->>CO: Request đến controller
-    CO->>CO: ValidationPipe (DTO)
-    alt DTO không hợp lệ
-        CO-->>I: 400 Bad Request
+    R->>V: Validation Middleware (Zod)
+    alt Dữ liệu không hợp lệ
+        V-->>I: 400 Bad Request
     end
     
     CO->>S: Gọi service xử lý nghiệp vụ
@@ -412,7 +414,7 @@ graph LR
         AXI[Axios Instance]
         SOCK[Socket.IO]
         QUERY[TanStack Query Cache]
-        SERVER[NestJS Server]
+        SERVER[Express Server]
     end
 
     USER -->|Click/Input| COMP
@@ -532,118 +534,95 @@ classDiagram
 
 ## 4. Kiến trúc Server
 
-### 4.1 Module NestJS
+### 4.1 Express Route Structure
 
 ```mermaid
 graph TB
-    subgraph AppModule
+    subgraph ExpressApp
         direction TB
-        AM[AppModule]
-        AM -->|imports| TM[ThrottlerModule]
-        AM -->|imports| MM[MongooseModule]
-        AM -->|imports| AuthM[AuthModule]
-        AM -->|providers| SS[StartupSeedService]
-        AM -->|providers| TG[ThrottlerGuard Global]
+        APP[Express App]
+        APP -->|uses| TM[express-rate-limit]
+        APP -->|uses| MM[Mongoose]
+        APP -->|uses| AM[Auth Middleware]
+        APP -->|uses| VAL[express-validator]
+        APP -->|uses| MUL[multer]
+        
+        subgraph "Route Handlers"
+            EM[EmployeesRoutes]
+            DM[DepartmentsRoutes]
+            LM[LeavesRoutes]
+            ATM[AttendanceRoutes]
+            PM[PayrollRoutes]
+            DBM[DashboardRoutes]
+            EHM[EmployeeHistoryRoutes]
+            LBM[LeaveBalanceRoutes]
+            NM[NotificationsRoutes]
+            RM[RecruitmentRoutes]
+            PRM[PerformanceReviewRoutes]
+        end
     end
 
-    subgraph AuthModule
-        direction TB
-        AUTHM[AuthModule]
-        AUTHM -->|controllers| AC[AuthController]
-        AUTHM -->|providers| AS[AuthService]
-        AUTHM -->|providers| JS[JwtStrategy]
-        AUTHM -->|exports| AS
-        AUTHM -->|exports| JWT[JwtModule]
-        AUTHM -->|exports| PM[PassportModule]
+    AM --> EM
+    AM --> DM
+    AM --> LM
+    AM --> ATM
+    AM --> PM
+    AM --> DBM
+    AM --> EHM
+    AM --> LBM
+    AM --> NM
+    AM --> RM
+    AM --> PRM
+
+    EM --> LM
+    EM --> LBM
+    EM --> ATM
+    EM --> PM
+    EM --> EHM
+    EM --> PRM
+    EM --> DM
+
+    LM --> LBM
+    LM --> NM
+
+    NM --> GW[NotificationsGateway]
+
+    subgraph "Global Middleware"
+        GG[Rate Limiting]
+        AUTH[JWT Authentication]
+        ROLES[Role Authorization]
+        VALIDATE[Input Validation]
+        UPLOAD[File Upload]
     end
 
-    subgraph EmployeesModule
-        EPM[EmployeesModule]
-        EPM -->|controllers| EC[EmployeesController]
-        EPM -->|providers| ES[EmployeesService]
-        EPM -->|exports| ES
-    end
-
-    subgraph LeavesModule
-        LVM[LeavesModule]
-        LVM -->|controllers| LC[LeavesController]
-        LVM -->|providers| LS[LeavesService]
-    end
-
-    subgraph NotificationsModule
-        NM[NotificationsModule]
-        NM -->|controllers| NC[NotificationsController]
-        NM -->|providers| NS[NotificationsService]
-        NM -->|providers| NG[NotificationsGateway]
-        NM -->|exports| NS
-        NM -->|exports| NG
-    end
-
-    subgraph LeaveBalanceModule
-        LBM[LeaveBalanceModule]
-        LBM -->|controllers| LBC[LeaveBalanceController]
-        LBM -->|providers| LBS[LeaveBalanceService]
-        LBM -->|exports| LBS
-    end
-
-    subgraph Other Modules
-        DM[DepartmentsModule]
-        AM2[AttendanceModule]
-        PM2[PayrollModule]
-        DBM[DashboardModule]
-        EHM[EmployeeHistoryModule]
-        RM[RecruitmentModule]
-        PRM[PerformanceReviewModule]
-    end
-
-    AUTHM -->|exported to| EPM
-    AUTHM -->|exported to| LVM
-    AUTHM -->|exported to| NM
-    AUTHM -->|exported to| LBM
-    AUTHM -->|exported to| DM
-    AUTHM -->|exported to| AM2
-    AUTHM -->|exported to| PM2
-    AUTHM -->|exported to| DBM
-    AUTHM -->|exported to| EHM
-    AUTHM -->|exported to| RM
-    AUTHM -->|exported to| PRM
-
-    EPM -->|imported by| LVM
-    EPM -->|imported by| LBM
-    EPM -->|imported by| AM2
-    EPM -->|imported by| PM2
-    EPM -->|imported by| DBM
-    EPM -->|imported by| EHM
-    EPM -->|imported by| PRM
-
-    LVM -->|imports| LBM
-    LVM -->|imports| NM
-    LBM -->|exports to| LVM
-    NM -->|exports to| LVM
+    TM --> GG
+    AUTH --> GG
+    ROLES --> GG
+    VALIDATE --> GG
+    UPLOAD --> GG
 ```
 
-### 4.2 Guards chain
+### 4.2 Middleware Chain
 
 ```mermaid
 graph LR
-    REQ[HTTP Request] --> JG[JwtAuthGuard]
-    JG -->|xác thực JWT| REQUSER[req.user = {id, email, role}]
-    REQUSER --> RG[RolesGuard]
-    RG -->|@Roles(admin) | CHECK{role trong danh sách?}
-    CHECK -->|Có| CTL[Controller]
+    REQ[HTTP Request] --> AUTH[JWT Middleware]
+    AUTH -->|xác thực JWT| REQUSER[req.user = {id, email, role}]
+    REQUSER --> ROLES[Role Middleware]
+    ROLES -->|Kiểm tra role | CHECK{role trong danh sách?}
+    CHECK -->|Có| VAL[Input Validation]
     CHECK -->|Không| 403[403 Forbidden]
-    JG -->|Token lỗi| 401[401 Unauthorized]
-    CTL --> VP[ValidationPipe]
-    VP -->|DTO hợp lệ| SRV[Service]
-    VP -->|DTO lỗi| 400[400 Bad Request]
+    AUTH -->|Token lỗi| 401[401 Unauthorized]
+    VAL -->|Dữ liệu hợp lệ| SRV[Service]
+    VAL -->|Dữ liệu lỗi| 400[400 Bad Request]
     SRV --> DB[(MongoDB)]
 ```
 
-### 4.3 Cấu trúc Controller mẫu (LeavesController)
+### 4.3 Express Route Handler (LeavesRoutes)
 
 ```mermaid
 classDiagram
-    class LeavesController {
+    class LeavesRoutes {
         +findAll(query, user)
         +findOne(id, user)
         +create(dto, userId)
@@ -681,13 +660,13 @@ classDiagram
         +rejectionReason
     }
 
-    LeavesController --> LeavesService
+    LeavesRoutes --> LeavesService
     LeavesService --> Leave
-    LeavesController --> CreateLeaveDto
-    LeavesController --> UpdateLeaveStatusDto
+    LeavesRoutes --> CreateLeaveDto
+    LeavesRoutes --> UpdateLeaveStatusDto
 ```
 
-### 4.4 File seed
+### 4.4 Seed Script
 
 ```mermaid
 graph TB
@@ -1063,15 +1042,15 @@ sequenceDiagram
 }
 ```
 
-### 7.3 RolesGuard logic
+### 7.3 Role Middleware Logic
 
 ```mermaid
 flowchart TD
-    START[Request đến route] --> JG{JwtAuthGuard}
-    JG -->|Không có token| 401[401 Unauthorized]
-    JG -->|Token hợp lệ| RG{RolesGuard}
+    START[Request đến route] --> AUTH{JWT Middleware}
+    AUTH -->|Không có token| 401[401 Unauthorized]
+    AUTH -->|Token hợp lệ| ROLES{Role Middleware}
     
-    RG --> CHECK{Route có @Roles?}
+    ROLES --> CHECK{Route có yêu cầu role?}
     CHECK -->|Không| FORBIDDEN[403 Forbidden - mặc định từ chối]
     CHECK -->|Có| MATCH{Vai trò người dùng trong danh sách?}
     MATCH -->|Có| ALLOW[200 OK - Cho phép]
@@ -1381,7 +1360,7 @@ graph TB
         MCON["MongoDB 8<br/>Port 27017"]
 
         subgraph "Node Processes"
-            SRV["NestJS Server<br/>Port 3001<br/>npm run dev (tsx)"]
+            SRV["Express Server<br/>Port 3001<br/>npm run dev (tsx)"]
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
         end
 
@@ -1404,7 +1383,7 @@ graph TB
 graph TB
     subgraph "Production Server"
         MONGODB[MongoDB 8<br/>Port 27017]
-        SERVER[NestJS Server<br/>Port 3001]
+        SERVER[Express Server<br/>Port 3001]
         NGINX[Static File Server<br/>Serves React build + reverse proxy]
     end
 
@@ -1444,7 +1423,7 @@ graph TB
     end
 
     subgraph "Lớp 5: Validation"
-        DTO[class-validator DTOs]
+        DTO[Zod DTOs]
         RBAC --> DTO
     end
 
@@ -1482,14 +1461,13 @@ graph TB
 
 ```mermaid
 flowchart TD
-    REQ[HTTP Request] --> CTL[Controller]
-    CTL --> VP[ValidationPipe]
+    REQ[HTTP Request] --> VAL[express-validator]
     
-    VP -->|DTO lỗi| BAD[400 Bad Request<br/>Trả về lỗi validation]
-    VP -->|OK| SRV[Service]
+    VAL -->|Dữ liệu lỗi| BAD[400 Bad Request<br/>Trả về lỗi validation]
+    VAL -->|OK| SRV[Service]
     
     SRV -->|Lỗi nghiệp vụ| SRV_ERR[Throw exception<br/>vd: BadRequestException]
-    SRV_ERR --> FLT[NestJS Exception Filter]
+    SRV_ERR --> FLT[Express Error Handler]
     SRV -->|OK| RESP[200/201 Response]
     
     FLT -->|400| BAD_ERR[{message, statusCode: 400}]
@@ -1558,7 +1536,7 @@ graph TB
 
 ## 15. Kết luận
 
-Hệ thống Quản lý Nhân sự được thiết kế theo kiến trúc **client-server** với **React + NestJS + MongoDB**. Hệ thống áp dụng:
+Hệ thống Quản lý Nhân sự được thiết kế theo kiến trúc **client-server** với **React + Express + MongoDB**. Hệ thống áp dụng:
 
 - **RBAC** với 3 vai trò (admin, manager, employee) để kiểm soát truy cập
 - **JWT** cho xác thực không trạng thái

@@ -61,7 +61,7 @@ Hệ thống bao gồm các phân hệ chính sau:
 Hệ thống là một ứng dụng web SPA với kiến trúc client-server phân tách rõ ràng:
 
 - **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173.
-- **Server (NestJS 11)**: API backend xử lý nghiệp vụ, port 3001.
+- **Server (Express)**: API backend xử lý nghiệp vụ, port 3001.
 - **Database (MongoDB)**: Lưu trữ dữ liệu, chạy local.
 
 Client giao tiếp với Server qua REST API với xác thực JWT Bearer token. Server giao tiếp với MongoDB qua Mongoose ODM. Ngoài ra, Server còn hỗ trợ WebSocket qua Socket.IO để đẩy thông báo thời gian thực đến Client.
@@ -69,7 +69,7 @@ Client giao tiếp với Server qua REST API với xác thực JWT Bearer token.
 ```
 ┌──────────────┐    HTTP/REST    ┌──────────────┐    Mongoose    ┌───────────┐
 │   Client     │◄──────────────►│   Server     │◄──────────────►│  MongoDB  │
-│  (React 18)  │   JWT Bearer   │  (NestJS 11) │                │  (NoSQL)  │
+│  (React 18)  │   JWT Bearer   │  (Express)   │                │  (NoSQL)  │
 │  Port 5173   │   + Socket.IO  │  Port 3001   │                │  Local    │
 └──────────────┘                └──────────────┘               └───────────┘
 ```
@@ -227,7 +227,7 @@ Hệ thống phục vụ ba vai trò người dùng, mỗi vai trò có quyền 
 | NFR-04 | Rate limiting | Giới hạn số lượng request để chống tấn công DDoS và spam. | Tối đa 60 request/phút cho mỗi IP. |
 | NFR-05 | File upload | Kiểm soát kích thước và loại file để bảo vệ server. | Tối đa 5MB, chỉ nhận JPEG/PNG/GIF/PDF/DOC/DOCX. |
 | NFR-06 | Bảo mật HTTP | Sử dụng helmet middleware để thiết lập các header bảo mật. | Cross-Origin-Resource-Policy, X-Frame-Options, etc. |
-| NFR-07 | Validation đầu vào | Tất cả dữ liệu đầu vào phải được kiểm tra trước khi xử lý. | Whitelist validation + forbidNonWhitelisted trên NestJS. |
+| NFR-07 | Validation đầu vào | Tất cả dữ liệu đầu vào phải được kiểm tra trước khi xử lý. | Zod validation + express-validator middleware. |
 | NFR-08 | CORS | Chỉ cho phép các domain được ủy quyền gọi API. | Cấu hình CORS_ORIGIN, mặc định là localhost:5173. |
 | NFR-09 | Database indexing | Đánh index cho các trường thường xuyên được truy vấn. | Compound indexes trên employeeId, status, date. |
 
@@ -773,29 +773,29 @@ sequenceDiagram
 
 ### 8.4 Luồng xác thực API
 
-Mỗi request đến server đều đi qua hai lớp bảo vệ: JwtAuthGuard (xác thực token) và RolesGuard (kiểm tra vai trò).
+Mỗi request đến server đều đi qua hai lớp middleware: JWT Middleware (xác thực token) và Role Middleware (kiểm tra vai trò).
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant JG as JwtAuthGuard
-    participant RG as RolesGuard
-    participant CO as Controller
+    participant AUTH as JWT Middleware
+    participant ROLES as Role Middleware
+    participant ROUTE as Route Handler
     participant S as Service
 
     Note over C: Gửi request + JWT Bearer
-    C->>JG: Request với Authorization header
-    JG->>JG: Giải mã và xác thực JWT
+    C->>AUTH: Request với Authorization header
+    AUTH->>AUTH: Giải mã và xác thực JWT
     alt Token hợp lệ
-        JG->>RG: req.user = {id, email, role}
-        RG->>RG: Kiểm tra role trong @Roles()
+        AUTH->>ROLES: req.user = {id, email, role}
+        ROLES->>ROLES: Kiểm tra role được yêu cầu
         alt Role hợp lệ
-            RG->>CO: Cho phép request
-            CO->>S: Xử lý nghiệp vụ
-            S-->>CO: Kết quả
-            CO-->>C: Response thành công
+            ROLES->>ROUTE: Cho phép request
+            ROUTE->>S: Xử lý nghiệp vụ
+            S-->>ROUTE: Kết quả
+            ROUTE-->>C: Response thành công
         else Role không hợp lệ
-            RG-->>C: 403 Forbidden
+            ROLES-->>C: 403 Forbidden
         end
     else Token không hợp lệ/hết hạn
         JG-->>C: 401 Unauthorized
