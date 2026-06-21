@@ -4,8 +4,6 @@
     "moduleResolution": "NodeNext",
     "declaration": true,
     "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2022",
     "sourceMap": true,

@@ -1,16 +1,17 @@
 import 'dotenv/config';
-import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import { getConnectionToken } from '@nestjs/mongoose';
-import { AppModule } from './app.module.js';
-import { AuthService } from './auth/auth.service.js';
-import { EmployeesService } from './employees/employees.service.js';
-import { DepartmentsService } from './departments/departments.service.js';
-import { LeaveBalanceService } from './leave-balance/leave-balance.service.js';
-import { EmployeeHistoryService } from './employee-history/employee-history.service.js';
-import { getModelToken } from '@nestjs/mongoose';
-import { User } from './auth/schemas/user.schema.js';
-import { Model } from 'mongoose';
+import mongoose, { connect } from 'mongoose';
+import { User } from './models/user.model.js';
+import { Department } from './models/department.model.js';
+import { Employee } from './models/employee.model.js';
+import { LeaveBalance } from './models/leave-balance.model.js';
+import { EmployeeHistory } from './models/employee-history.model.js';
+import { AuthService } from './services/auth.service.js';
+import { EmployeesService } from './services/employees.service.js';
+import { DepartmentsService } from './services/departments.service.js';
+import { LeaveBalanceService } from './services/leave-balance.service.js';
+import { EmployeeHistoryService } from './services/employee-history.service.js';
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hr-management';
 
 const DEPARTMENTS = [
   { name: 'Engineering', description: 'Software development & infrastructure' },
@@ -101,30 +102,26 @@ function seededRandom(seed: number) {
 const rand = seededRandom(42);
 
 async function seed() {
-  const app = await NestFactory.createApplicationContext(AppModule);
+  await connect(MONGODB_URI);
+  console.log('Connected to MongoDB');
 
-  // Clear all existing data (auto-seed may have run on startup)
-  const conn = app.get(getConnectionToken());
-  const client = conn.getClient();
-  const db = client.db();
   const collections = ['employeehistories', 'leavebalances', 'notifications', 'attendances', 'leaves', 'payrolls', 'employees', 'departments', 'users'];
   for (const col of collections) {
-    await db.collection(col).deleteMany({});
+    await mongoose.connection.collection(col).deleteMany({});
   }
-  const authService = app.get(AuthService);
-  const employeesService = app.get(EmployeesService);
-  const departmentsService = app.get(DepartmentsService);
-  const leaveBalanceService = app.get(LeaveBalanceService);
-  const historyService = app.get(EmployeeHistoryService);
-  const userModel = app.get<Model<any>>(getModelToken(User.name));
 
-  // 1. Admin
+  const authService = new AuthService();
+  const employeesService = new EmployeesService();
+  const departmentsService = new DepartmentsService();
+  const leaveBalanceService = new LeaveBalanceService();
+  const historyService = new EmployeeHistoryService();
+
+  const userModel = User;
+
   const admin = await authService.register({ email: 'admin@hr.com', password: 'admin123' });
   await userModel.findByIdAndUpdate(admin.user.id, { role: 'admin' });
 
-  // 2. Managers + departments
-  interface DeptInfo { _id: any; name: string; managerEmpId: any }
-  const deptInfos: DeptInfo[] = [];
+  const deptInfos: { _id: any; name: string; managerEmpId: any }[] = [];
 
   for (const mgrData of MANAGERS) {
     const mgr = await authService.register({ email: mgrData.email, password: 'manager123' });
@@ -148,9 +145,7 @@ async function seed() {
     deptInfos.push({ _id: createdDept._id, name: createdDept.name, managerEmpId: mgrEmp._id });
   }
 
-  // 3. Employees
-  interface EmpInfo { _id: any; firstName: string; lastName: string }
-  const empInfos: EmpInfo[] = [];
+  const empInfos: { _id: any; firstName: string; lastName: string }[] = [];
   let empIndex = 1;
 
   for (let d = 0; d < EMPLOYEES_BY_DEPT.length; d++) {
@@ -174,13 +169,11 @@ async function seed() {
     }
   }
 
-  // 4. Leave balances
   const allEmpIds = [...deptInfos.map(d => d.managerEmpId), ...empInfos.map(e => e._id)];
   for (const empId of allEmpIds) {
     await leaveBalanceService.findByEmployee(empId.toString());
   }
 
-  // 5. Employee history entries
   for (const empInfo of empInfos) {
     await historyService.create(empInfo._id.toString(), {
       type: 'raise',
@@ -205,9 +198,6 @@ async function seed() {
   console.log(`Password:    employee123 / manager123`);
   console.log(`Total:       ${1 + MANAGERS.length + empInfos.length} users across ${DEPARTMENTS.length} departments`);
   console.log('========================================\n');
-
-  await app.close();
-  process.exit(0);
 }
 
 seed().catch(err => { console.error(err); process.exit(1); });
