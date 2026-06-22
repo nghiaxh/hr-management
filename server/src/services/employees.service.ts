@@ -1,6 +1,8 @@
 import { Employee } from '../models/employee.model.js';
+import { EmployeeHistory } from '../models/employee-history.model.js';
 import { escapeRegex } from '../utils/security.js';
 import { CreateEmployeeInput, UpdateEmployeeInput } from '../schemas/employees.schema.js';
+import { CreateEmployeeHistoryInput } from '../schemas/employee-history.schema.js';
 
 export class EmployeesService {
   async findAll(query: { search?: string; departmentId?: string; page?: number; limit?: number }, user?: any) {
@@ -118,5 +120,13 @@ export class EmployeesService {
 
   async findByUserId(userId: string) {
     return Employee.findOne({ userId }).populate('departmentId');
+  }
+
+  async getHistory(employeeId: string) {
+    return EmployeeHistory.find({ employeeId: employeeId as any }).sort({ effectiveDate: -1 }).exec();
+  }
+
+  async addHistory(employeeId: string, dto: CreateEmployeeHistoryInput) {
+    return EmployeeHistory.create({ ...dto, employeeId: employeeId as any });
   }
 }

@@ -29,16 +29,7 @@ export class DashboardService {
     const departmentStats = await Employee.aggregate([
       { $group: { _id: '$departmentId', count: { $sum: 1 } } },
       { $match: { _id: { $ne: null } } },
-      { $lookup: {
-          from: 'departments',
-          let: { deptId: '$_id' },
-          pipeline: [
-            { $addFields: { strId: { $toString: '$_id' } } },
-            { $match: { $expr: { $eq: ['$strId', '$$deptId'] } } },
-          ],
-          as: 'dept',
-        },
-      },
+      { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'dept' } },
       { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
       { $project: { name: '$dept.name', count: 1, _id: 0 } },
     ]);

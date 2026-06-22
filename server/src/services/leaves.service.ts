@@ -108,8 +108,8 @@ export class LeavesService {
 
       await notificationsService.create({
         userId: (emp as any).userId?._id?.toString() || userId,
-        title: 'Leave Approved',
-        message: `Your ${leave.type} leave (${leave.startDate.toISOString().split('T')[0]} - ${leave.endDate.toISOString().split('T')[0]}) has been approved.`,
+        title: 'Đơn nghỉ đã duyệt',
+        message: `Đơn nghỉ ${leave.type === 'annual' ? 'phép năm' : leave.type === 'sick' ? 'ốm' : 'cá nhân'} (${leave.startDate.toISOString().split('T')[0]} - ${leave.endDate.toISOString().split('T')[0]}) đã được duyệt.`,
         type: 'leave_approved',
         relatedId: leave._id.toString(),
         relatedModel: 'Leave',
@@ -117,8 +117,8 @@ export class LeavesService {
     } else if (dto.status === 'rejected') {
       await notificationsService.create({
         userId: (emp as any).userId?._id?.toString() || userId,
-        title: 'Leave Rejected',
-        message: `Your ${leave.type} leave request has been rejected.${dto.rejectionReason ? ' Reason: ' + dto.rejectionReason : ''}`,
+        title: 'Đơn nghỉ bị từ chối',
+        message: `Đơn nghỉ ${leave.type === 'annual' ? 'phép năm' : leave.type === 'sick' ? 'ốm' : 'cá nhân'} của bạn đã bị từ chối.${dto.rejectionReason ? ' Lý do: ' + dto.rejectionReason : ''}`,
         type: 'leave_rejected',
         relatedId: leave._id.toString(),
         relatedModel: 'Leave',

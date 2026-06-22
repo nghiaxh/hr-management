@@ -1,5 +1,4 @@
 import { Notification } from '../models/notification.model.js';
-import { sendNotification as wsSend } from '../websocket.js';
 
 export class NotificationsService {
   async findByUser(userId: string, limit = 20) {
@@ -36,9 +35,6 @@ export class NotificationsService {
     relatedId?: string;
     relatedModel?: string;
   }) {
-    const notification = await Notification.create(data);
-    const plain = notification.toObject();
-    wsSend(data.userId, plain);
-    return notification;
+    return Notification.create(data);
   }
 }

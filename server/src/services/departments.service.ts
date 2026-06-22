@@ -1,6 +1,4 @@
-import { Department } from '../models/department.model.js';
-import { Employee } from '../models/employee.model.js';
-import { escapeRegex } from '../utils/security.js';
+import { Department } from '../models/department.model.js';import { escapeRegex } from '../utils/security.js';
 import { CreateDepartmentInput, UpdateDepartmentInput } from '../schemas/departments.schema.js';
 
 export class DepartmentsService {
@@ -44,30 +42,4 @@ export class DepartmentsService {
   async remove(id: string) {
     const dept = await Department.findByIdAndDelete(id);
     if (!dept) throw new Error('Department not found');
-  }
-
-  async getOrgChart() {
-    const departments = await Department.find().populate('managerId', '-passwordHash').lean();
-    const result: any[] = [];
-    for (const dept of departments) {
-      const employees = await Employee.find({ departmentId: (dept as any)._id.toString() })
-        .populate('userId', '-passwordHash')
-        .lean();
-      result.push({
-        _id: (dept as any)._id,
-        name: dept.name,
-        description: dept.description,
-        manager: dept.managerId,
-        employeeCount: employees.length,
-        employees: employees.map(e => ({
-          _id: e._id,
-          firstName: e.firstName,
-          lastName: e.lastName,
-          position: e.position,
-          user: e.userId,
-        })),
-      });
-    }
-    return result;
-  }
-}
+  }}
