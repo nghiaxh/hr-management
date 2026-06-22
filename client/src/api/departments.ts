@@ -6,5 +6,4 @@ export const departmentsApi = {
   create: (data: any) => api.post('/departments', data).then(r => r.data),
   update: (id: string, data: any) => api.put(`/departments/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/departments/${id}`),
-  getOrgChart: () => api.get('/departments/org-chart').then(r => r.data),
 };

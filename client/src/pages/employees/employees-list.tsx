@@ -156,7 +156,7 @@ export default function EmployeesListPage() {
     }),
     columnHelper.accessor('salary', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.salary')} />,
-      cell: ({ getValue }) => `$${(getValue() as number)?.toLocaleString()}`,
+      cell: ({ getValue }) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getValue() as number),
     }),
     columnHelper.display({
       id: 'actions',

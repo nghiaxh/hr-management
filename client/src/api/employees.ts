@@ -17,4 +17,6 @@ export const employeesApi = {
     return api.post(`/employees/${id}/documents`, fd).then(r => r.data);
   },
   removeDocument: (id: string, docId: string) => api.delete(`/employees/${id}/documents/${docId}`).then(r => r.data),
+  getHistory: (id: string) => api.get(`/employees/${id}/history`).then(r => r.data),
+  addHistory: (id: string, data: any) => api.post(`/employees/${id}/history`, data).then(r => r.data),
 };

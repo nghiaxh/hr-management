@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { employeesApi } from '../../api/employees';
 import { departmentsApi } from '../../api/departments';
-import { employeeHistoryApi } from '../../api/employee-history';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
@@ -76,7 +75,7 @@ const typeConfig: Record<string, { icon: any }> = {
 
   const { data: emp, isLoading, isError: empError } = useQuery({ queryKey: ['employee', id], queryFn: () => employeesApi.getOne(id!) });
   const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.getAll() });
-  const { data: history = [], isError: historyError } = useQuery({ queryKey: ['employee-history', id], queryFn: () => employeeHistoryApi.getAll(id!), enabled: !!id });
+  const { data: history = [], isError: historyError } = useQuery({ queryKey: ['employee-history', id], queryFn: () => employeesApi.getHistory(id!), enabled: !!id });
 
   useEffect(() => {
     if (emp) {
@@ -95,7 +94,7 @@ const typeConfig: Record<string, { icon: any }> = {
   }, [emp]);
 
   const historyMutation = useMutation({
-    mutationFn: (d: any) => employeeHistoryApi.create(id!, d),
+    mutationFn: (d: any) => employeesApi.addHistory(id!, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-history', id] });
       setHistoryOpen(false);

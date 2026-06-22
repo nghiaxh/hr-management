@@ -50,11 +50,11 @@ export default function MyAttendancePage() {
     }),
     columnHelper.accessor('checkIn', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_in')} />,
-      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString('vi-VN') : '-',
     }),
     columnHelper.accessor('checkOut', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_out')} />,
-      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString('vi-VN') : '-',
     }),
     columnHelper.accessor('status', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.status')} className="justify-center" />,
@@ -74,8 +74,8 @@ export default function MyAttendancePage() {
 
       {todayRecord && (
         <div className="bg-card rounded-lg border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-          <div>{t('attendance.check_in')}: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString() : '-'}</strong></div>
-          <div>{t('attendance.check_out')}: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString() : '-'}</strong></div>
+          <div>{t('attendance.check_in')}: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString('vi-VN') : '-'}</strong></div>
+          <div>{t('attendance.check_out')}: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString('vi-VN') : '-'}</strong></div>
           <div>{t('attendance.status')}: <StatusBadge status={todayRecord.status} /></div>
         </div>
       )}

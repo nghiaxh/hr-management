@@ -43,11 +43,11 @@ export default function AttendanceReportPage() {
     }),
     columnHelper.accessor('checkIn', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_in')} />,
-      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString('vi-VN') : '-',
     }),
     columnHelper.accessor('checkOut', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.check_out')} />,
-      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '-',
+      cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString('vi-VN') : '-',
     }),
     columnHelper.accessor('status', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.status')} className="justify-center" />,
@@ -74,7 +74,7 @@ export default function AttendanceReportPage() {
                   <div className={`h-1 ${meta.bar}`} />
                   <CardContent className="p-4 md:p-5">
                     <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">{key}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
                     <p className="text-xs font-medium mt-1">{pct.toFixed(0)}%</p>
                   </CardContent>
                 </Card>
@@ -105,7 +105,7 @@ export default function AttendanceReportPage() {
                   return (
                     <span key={key} className="flex items-center gap-1.5">
                       <span className={`w-2 h-2 rounded-full ${STATUS_META[key].bar}`} />
-                      <span className="capitalize">{key}</span>
+                      <span className="capitalize">{t(`status.${key.replace('-', '_')}`)}</span>
                       <span className="font-medium">{((count / total) * 100).toFixed(0)}%</span>
                     </span>
                   );

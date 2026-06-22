@@ -1,13 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/auth-context';
 import { useTranslation } from '../context/language-context';
 import { dashboardApi } from '../api/dashboard';
+import { attendanceApi } from '../api/attendance';
 import { StatusBadge } from '../components/shared/status-badge';
 import { SkeletonCard, SkeletonTable } from '../components/shared/skeleton';
+import { Button } from '../components/ui/button';
+import { toast } from '../hooks/use-toast';
+import { formatDate } from '../lib/utils';
 import {
   Users, CalendarCheck, Clock, Wallet,
-  Building2, FileText, TrendingUp, BarChart3, PieChart
+  Building2, FileText, TrendingUp, BarChart3, PieChart, LogIn, LogOut
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -45,6 +49,30 @@ export default function DashboardPage() {
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.get(),
     enabled: !!user,
+  });
+
+  const queryClient = useQueryClient();
+  const { data: attRecords } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll(), enabled: isEmployee });
+  const attList = Array.isArray(attRecords) ? attRecords : attRecords?.data || [];
+  const today = new Date().toDateString();
+  const todayRecord = attList.find((a: any) => new Date(a.date).toDateString() === today);
+
+  const checkInMutation = useMutation({
+    mutationFn: () => attendanceApi.checkIn(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      toast({ title: 'Đã chấm công vào lúc ' + new Date().toLocaleTimeString('vi-VN') });
+    },
+    onError: (err: any) => { toast({ title: err?.response?.data?.message || t('attendance.already_checked_in'), variant: 'destructive' }); },
+  });
+
+  const checkOutMutation = useMutation({
+    mutationFn: (id: string) => attendanceApi.checkOut(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      toast({ title: t('attendance.checked_out_success') });
+    },
+    onError: (err: any) => { toast({ title: err?.response?.data?.message || t('attendance.check_out_failed'), variant: 'destructive' }); },
   });
 
   if (isError) {
@@ -101,6 +129,29 @@ export default function DashboardPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{t('dashboard.welcome_back')}</p>
           </div>
+          <div className="flex gap-2">
+            {!todayRecord?.checkIn ? (
+              <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
+            ) : !todayRecord.checkOut ? (
+              <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg border p-3 md:p-4 flex flex-wrap gap-x-6 gap-y-1 text-sm items-center">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <strong className="text-base tabular-nums">{new Date().toLocaleTimeString('vi-VN')}</strong>
+          </div>
+          {todayRecord?.checkIn && (
+            <div>{t('attendance.check_in')}: <strong>{new Date(todayRecord.checkIn).toLocaleTimeString('vi-VN')}</strong></div>
+          )}
+          {todayRecord?.checkOut && (
+            <div>{t('attendance.check_out')}: <strong>{new Date(todayRecord.checkOut).toLocaleTimeString('vi-VN')}</strong></div>
+          )}
+          {todayRecord && (
+            <div>{t('attendance.status')}: <StatusBadge status={todayRecord.status} /></div>
+          )}
         </div>
 
         <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
@@ -177,7 +228,7 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium capitalize">{leave.type}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}
+                      {formatDate(leave.startDate)} — {formatDate(leave.endDate)}
                     </p>
                   </div>
                   <StatusBadge status={leave.status} />
@@ -210,7 +261,7 @@ export default function DashboardPage() {
         <StatCard title={t('dashboard.total_employees')} value={dash?.totalEmployees || 0} icon={Users} />
         <StatCard title={t('dashboard.pending_leaves')} value={dash?.pendingLeaves || 0} icon={FileText} />
         <StatCard title={t('dashboard.present_today')} value={dash?.presentToday || 0} icon={Clock} />
-        <StatCard title={t('dashboard.monthly_payroll')} value={`$${((dash?.monthlyPayroll || 0) / 1000).toFixed(1)}k`} subtitle={`${dash?.totalDepartments || 0} ${t('dashboard.departments')}`} icon={Wallet} />
+        <StatCard title={t('dashboard.monthly_payroll')} value={new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dash?.monthlyPayroll || 0)} subtitle={`${dash?.totalDepartments || 0} ${t('dashboard.departments')}`} icon={Wallet} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -258,7 +309,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium capitalize">{leave.type}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}
+                        {formatDate(leave.startDate)} — {formatDate(leave.endDate)}
                       </p>
                     </div>
                     <StatusBadge status={leave.status} />

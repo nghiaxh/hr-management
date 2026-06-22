@@ -105,56 +105,6 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
-
-export interface OrgChartNode {
-  _id: string;
-  name: string;
-  description?: string;
-  manager?: User | null;
-  employeeCount: number;
-  employees: { _id: string; firstName: string; lastName: string; position: string; user: User | string }[];
-}
-
-export interface JobPosting {
-  _id: string;
-  title: string;
-  departmentId: Department | string;
-  description?: string;
-  requirements?: string;
-  status: 'open' | 'closed' | 'draft';
-  openings: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Candidate {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  jobPostingId: JobPosting | string;
-  status: 'applied' | 'screening' | 'interview' | 'offered' | 'hired' | 'rejected';
-  resumeUrl?: string;
-  notes?: string;
-  appliedDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PerformanceReview {
-  _id: string;
-  employeeId: Employee | string;
-  reviewerId: User | string;
-  period: string;
-  rating?: number;
-  comments?: string;
-  goals?: string;
-  status: 'draft' | 'submitted' | 'acknowledged';
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number };
