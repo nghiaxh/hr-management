@@ -1,32 +1,16 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { z } from 'zod';
 
-export type LeaveBalanceDocument = LeaveBalance & Document;
+export const createLeaveBalanceSchema = z.object({
+  employeeId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid MongoDB ID'),
+  annualTotal: z.number().min(0).default(12),
+  annualUsed: z.number().min(0).default(0),
+  sickTotal: z.number().min(0).default(30),
+  sickUsed: z.number().min(0).default(0),
+  personalTotal: z.number().min(0).default(3),
+  personalUsed: z.number().min(0).default(0),
+});
 
-@Schema({ timestamps: true })
-export class LeaveBalance {
-  _id: Types.ObjectId;
+export const updateLeaveBalanceSchema = createLeaveBalanceSchema.partial();
 
-  @Prop({ required: true, unique: true, type: Types.ObjectId, ref: 'Employee' })
-  employeeId: Types.ObjectId;
-
-  @Prop({ required: true, default: 12, min: 0 })
-  annualTotal: number;
-
-  @Prop({ default: 0, min: 0 })
-  annualUsed: number;
-
-  @Prop({ required: true, default: 30, min: 0 })
-  sickTotal: number;
-
-  @Prop({ default: 0, min: 0 })
-  sickUsed: number;
-
-  @Prop({ required: true, default: 3, min: 0 })
-  personalTotal: number;
-
-  @Prop({ default: 0, min: 0 })
-  personalUsed: number;
-}
-
-export const LeaveBalanceSchema = SchemaFactory.createForClass(LeaveBalance);
+export type CreateLeaveBalanceInput = z.infer<typeof createLeaveBalanceSchema>;
+export type UpdateLeaveBalanceInput = z.infer<typeof updateLeaveBalanceSchema>;

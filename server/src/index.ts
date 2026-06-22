@@ -13,8 +13,6 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-import { setupWebSocket } from './websocket.js';
-
 import authRoutes from './routes/auth.routes.js';
 import employeesRoutes from './routes/employees.routes.js';
 import departmentsRoutes from './routes/departments.routes.js';
@@ -22,11 +20,8 @@ import leavesRoutes from './routes/leaves.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
 import payrollRoutes from './routes/payroll.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
-import employeeHistoryRoutes from './routes/employee-history.routes.js';
 import leaveBalanceRoutes from './routes/leave-balance.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
-import recruitmentRoutes from './routes/recruitment.routes.js';
-import performanceReviewRoutes from './routes/performance-review.routes.js';
 
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hr-management';
@@ -68,13 +63,8 @@ async function bootstrap() {
   app.use('/api/attendance', attendanceRoutes);
   app.use('/api/payroll', payrollRoutes);
   app.use('/api/dashboard', dashboardRoutes);
-  app.use('/api/employee-history', employeeHistoryRoutes);
   app.use('/api/leave-balance', leaveBalanceRoutes);
   app.use('/api/notifications', notificationsRoutes);
-  app.use('/api/recruitment', recruitmentRoutes);
-  app.use('/api/performance-reviews', performanceReviewRoutes);
-
-  setupWebSocket(server, JWT_SECRET);
 
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

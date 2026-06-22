@@ -5,6 +5,7 @@ import { requireRoles } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
 import { upload } from '../middleware/upload.js';
 import { createEmployeeSchema, updateEmployeeSchema } from '../schemas/employees.schema.js';
+import { createEmployeeHistorySchema } from '../schemas/employee-history.schema.js';
 
 const router = Router();
 const service = new EmployeesService();
@@ -93,6 +94,48 @@ router.delete('/:id', requireRoles('admin'), async (req: Request, res: Response)
     res.status(204).send();
   } catch (e: any) {
     res.status(404).json({ message: e.message });
+  }
+});
+
+// History (merged from employee-history module)
+router.get('/:id/history', requireRoles('admin', 'manager', 'employee'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = req.user!;
+    if (user.role === 'employee') {
+      const emp = await service.findByUserId(user.id);
+      if (!emp || emp._id.toString() !== id) { res.status(403).json({ message: 'Access denied' }); return; }
+    } else if (user.role === 'manager') {
+      const emp = await service.findByUserId(user.id);
+      const targetEmp = await service.findOne(id).catch(() => null);
+      if (!emp || !targetEmp || !(emp as any).departmentId || !(targetEmp as any).departmentId ||
+          (targetEmp as any).departmentId.toString() !== (emp as any).departmentId.toString()) {
+        res.status(403).json({ message: 'Access denied' }); return;
+      }
+    }
+    const result = await service.getHistory(id);
+    res.json(result);
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
+  }
+});
+
+router.post('/:id/history', requireRoles('admin', 'manager'), validate(createEmployeeHistorySchema), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = req.user!;
+    if (user.role === 'manager') {
+      const emp = await service.findByUserId(user.id);
+      const targetEmp = await service.findOne(id).catch(() => null);
+      if (!emp || !targetEmp || !(emp as any).departmentId || !(targetEmp as any).departmentId ||
+          (targetEmp as any).departmentId.toString() !== (emp as any).departmentId.toString()) {
+        res.status(403).json({ message: 'Access denied' }); return;
+      }
+    }
+    const result = await service.addHistory(id, req.body);
+    res.status(201).json(result);
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 });
 
