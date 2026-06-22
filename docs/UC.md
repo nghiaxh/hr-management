@@ -2,34 +2,57 @@
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
 
-| Phiên bản | Ngày       | Người soạn | Mô tả            |
-|-----------|------------|------------|------------------|
-| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên |
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | HR Team    | Cập nhật cấu trúc chuẩn       |
+
+> **Tuân theo:** Template Use Case chuẩn (Cockburn style) với Preconditions, Postconditions, Basic Flow, Alternative Flows, và Business Rules.
 
 ---
 
 ## Mục lục
 
-1. [Tổng quan Actors](#1-tổng-quan-actors)
-2. [UC-01: Đăng nhập](#2-uc-01-đăng-nhập)
-3. [UC-02: Đăng ký](#3-uc-02-đăng-ký)
-4. [UC-03: Quản lý hồ sơ cá nhân](#4-uc-03-quản-lý-hồ-sơ-cá-nhân)
-5. [UC-04: Quản lý nhân viên (Admin)](#5-uc-04-quản-lý-nhân-viên-admin)
-6. [UC-05: Quản lý phòng ban](#6-uc-05-quản-lý-phòng-ban)
-7. [UC-06: Tạo đơn nghỉ phép](#7-uc-06-tạo-đơn-nghỉ-phép)
-8. [UC-07: Duyệt/Từ chối đơn nghỉ phép](#8-uc-07-duyệttừ-chối-đơn-nghỉ-phép)
-9. [UC-08: Xem quỹ nghỉ phép](#9-uc-08-xem-quỹ-nghỉ-phép)
-10. [UC-09: Check-in/Check-out](#10-uc-09-check-incheck-out)
-11. [UC-10: Xem báo cáo chấm công](#11-uc-10-xem-báo-cáo-chấm-công)
-12. [UC-11: Xử lý bảng lương](#12-uc-11-xử-lý-bảng-lương)
-13. [UC-12: Xem bảng lương](#13-uc-12-xem-bảng-lương)
-14. [UC-13: Quản lý tuyển dụng](#14-uc-13-quản-lý-tuyển-dụng)
-15. [UC-14: Đánh giá hiệu suất](#15-uc-14-đánh-giá-hiệu-suất)
-16. [UC-15: Xem Dashboard](#16-uc-15-xem-dashboard)
-17. [UC-16: Quản lý thông báo](#17-uc-16-quản-lý-thông-báo)
-18. [UC-17: Xem sơ đồ tổ chức](#18-uc-17-xem-sơ-đồ-tổ-chức)
-19. [UC-18: Xem lịch sử nhân viên](#19-uc-18-xem-lịch-sử-nhân-viên)
-20. [UC-19: Quản lý lịch sử nhân viên](#20-uc-19-quản-lý-lịch-sử-nhân-viên)
+1. [Giới thiệu](#1-giới-thiệu)
+   1.1 [Mục đích](#11-mục-đích)
+   1.2 [Tài liệu tham khảo](#12-tài-liệu-tham-khảo)
+2. [Tổng quan Actors](#2-tổng-quan-actors)
+3. [UC-01: Đăng nhập](#3-uc-01-đăng-nhập)
+4. [UC-02: Đăng ký](#4-uc-02-đăng-ký)
+5. [UC-03: Quản lý hồ sơ cá nhân](#5-uc-03-quản-lý-hồ-sơ-cá-nhân)
+6. [UC-04: Quản lý nhân viên (Admin)](#6-uc-04-quản-lý-nhân-viên-admin)
+7. [UC-05: Quản lý phòng ban](#7-uc-05-quản-lý-phòng-ban)
+8. [UC-06: Tạo đơn nghỉ phép](#8-uc-06-tạo-đơn-nghỉ-phép)
+9. [UC-07: Duyệt/Từ chối đơn nghỉ phép](#9-uc-07-duyệttừ-chối-đơn-nghỉ-phép)
+10. [UC-08: Xem quỹ nghỉ phép](#10-uc-08-xem-quỹ-nghỉ-phép)
+11. [UC-09: Check-in/Check-out](#11-uc-09-check-incheck-out)
+12. [UC-10: Xem báo cáo chấm công](#12-uc-10-xem-báo-cáo-chấm-công)
+13. [UC-11: Xử lý bảng lương](#13-uc-11-xử-lý-bảng-lương)
+14. [UC-12: Xem bảng lương](#14-uc-12-xem-bảng-lương)
+15. [UC-13: Quản lý tuyển dụng](#15-uc-13-quản-lý-tuyển-dụng)
+16. [UC-14: Đánh giá hiệu suất](#16-uc-14-đánh-giá-hiệu-suất)
+17. [UC-15: Xem Dashboard](#17-uc-15-xem-dashboard)
+18. [UC-16: Quản lý thông báo](#18-uc-16-quản-lý-thông-báo)
+19. [UC-17: Xem sơ đồ tổ chức](#19-uc-17-xem-sơ-đồ-tổ-chức)
+20. [UC-18: Xem lịch sử nhân viên](#20-uc-18-xem-lịch-sử-nhân-viên)
+21. [UC-19: Quản lý lịch sử nhân viên](#21-uc-19-quản-lý-lịch-sử-nhân-viên)
+22. [Phụ lục: Ma trận Use Case - Role](#22-phụ-lục-ma-trận-use-case---role)
+
+---
+
+## 1. Giới thiệu
+
+### 1.1 Mục đích
+
+Tài liệu này đặc tả chi tiết các use case của hệ thống Quản lý Nhân sự (HR Management). Mỗi use case được mô tả với đầy đủ: actor, tiền điều kiện, hậu điều kiện, luồng chính, luồng thay thế, quy tắc nghiệp vụ và biểu đồ sequence.
+
+### 1.2 Tài liệu tham khảo
+
+| Tài liệu      | Mô tả                                        |
+|---------------|----------------------------------------------|
+| BRD.md        | Tài liệu Yêu cầu Nghiệp vụ                   |
+| SRS.md        | Đặc tả Yêu cầu Phần mềm                      |
+| US.md         | User Stories                                 |
 
 ---
 
@@ -616,7 +639,7 @@ sequenceDiagram
     UI->>API: POST /api/payroll/process {employeeIds, month, year}
     API->>API: Duyệt từng employeeId
     API->>API: Bỏ qua nếu đã tồn tại (employeeId + month + year)
-    API->>API: netPay = salary + bonus - deductions (min 0)
+    API->>API: netPay = salary + bonus - deductions (min 0), deductions = BHXH+BHTN+BHTNLD+Công đoàn+PIT
     API-->>UI: 201 Created
     UI-->>A: Xử lý lương thành công
 

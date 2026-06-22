@@ -4,7 +4,7 @@
 
 An HR management web app where companies can manage employees, track attendance, handle leave requests, run payroll, and manage recruitment — all with role-based access control (admin, manager, employee).
 
-Two independent packages: `server/` (NestJS + MongoDB) and `client/` (React + Vite). No root workspace config.
+Two independent packages: `server/` (Express + MongoDB) and `client/` (React + Vite). No root workspace config.
 
 ---
 
@@ -15,7 +15,7 @@ Two independent packages: `server/` (NestJS + MongoDB) and `client/` (React + Vi
 cd server
 npm install
 # edit server/.env to set JWT_SECRET
-npm run seed           # 1 admin, 6 managers, ~50 employees across 6 departments
+npm run seed           # 1 admin, 6 managers, ~50 employees across 6 departments, realistic attendance & payroll
 npm run dev            # tsx (ESM), not NestJS CLI (no nest-cli.json)
 
 # Client (port 5173)
@@ -34,13 +34,13 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 ```
 ┌─────────────┐    HTTP/REST    ┌─────────────┐   Mongoose   ┌──────────┐
 │   Client     │◄──────────────►│   Server     │◄────────────►│  MongoDB  │
-│  (React 18)  │   JWT Bearer   │  (NestJS 11) │              │  (NoSQL)  │
+│  (React 18)  │   JWT Bearer   │  (Express)   │              │  (NoSQL)  │
 │  Port 5173   │                │  Port 3001   │              │  Local    │
 └─────────────┘                └─────────────┘              └──────────┘
        │                              │
    ┌───┴───┐                    ┌─────┴──────┐
-   │ Auth  │                    │ JwtAuthGuard│
-   │Context│                    │ + RolesGuard│
+   │ Auth  │                    │ authenticate│
+   │Context│                    │ + requireRoles│
    └───────┘                    └────────────┘
 ```
 
@@ -52,11 +52,11 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 1. User enters email + password on the login page
 2. Server validates credentials via bcrypt, returns a **JWT token**
 3. Client stores the token in `localStorage` and attaches it as `Authorization: Bearer <token>` on every request
-4. Server's `JwtAuthGuard` verifies the token on every protected route
-5. `RolesGuard` checks the user's role against the route's `@Roles()` decorator
+4. Server's `authenticate` middleware (`server/src/middleware/auth.ts`) verifies the JWT
+5. `requireRoles()` middleware (`server/src/middleware/roles.ts`) checks role-based access
 
 Auth details:
-- JWT (passport-jwt), `@Roles()` decorator + `RolesGuard`. Tokens expire in `JWT_EXPIRES_IN` (default `1d`). `JWT_SECRET` is **required** at startup.
+- JWT (jsonwebtoken), `authenticate` + `requireRoles` middleware. Tokens expire in `JWT_EXPIRES_IN` (default `1d`). `JWT_SECRET` is **required** at startup.
 - Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
 
 ---
@@ -70,13 +70,13 @@ User clicks "Submit Leave"
 Client POST /api/leaves  { type, startDate, endDate, reason }
        │
        ▼
-JwtAuthGuard — extracts & verifies JWT from header
+authenticate middleware — extracts & verifies JWT from header
        │
        ▼
-RolesGuard — checks user has @Roles('employee')
+requireRoles('employee') middleware — checks user role
        │
        ▼
-LeavesController.create(dto, userId)
+leaves.routes.ts handler — calls service
        │
        ▼
 LeavesService.create(dto, userId)
@@ -136,6 +136,8 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 { _id, employeeId→Employee, month, year, basicSalary, bonus,
   deductions, netPay, status: "draft"|"paid", paidAt? }
 ```
+- Deductions: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), PIT (7 brackets lũy tiến)
+- Bonus: Tết (0.5-2x salary), quarterly performance, regular month
 
 ### EmployeeHistory
 ```
@@ -156,7 +158,7 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 { _id, userId→User, title, message, type, relatedId?,
   relatedModel?, isRead: false, createdAt }
 ```
-- Triggered by leave approval/rejection; delivered via Socket.IO in real-time
+- Triggered by leave approval/rejection; delivered via Socket.IO in real-time (planned)
 
 ---
 
@@ -175,9 +177,9 @@ All modules follow the Express convention: `routes/` → `services/` → `models
 | Dashboard        | `server/src/services/dashboard.service.ts` | Role-based statistics |
 | EmployeeHistory  | `server/src/services/employee-history.service.ts` | Timeline of changes |
 | LeaveBalance     | `server/src/services/leave-balance.service.ts` | Auto-deduct on approval |
-| Notifications    | `server/src/services/notifications.service.ts` | In-app notifications |
-| Recruitment      | `server/src/services/recruitment.service.ts` | Job postings + candidates |
-| PerformanceReview| `server/src/services/performance-review.service.ts` | Performance reviews |
+| Notifications    | `server/src/services/notifications.service.ts` | In-app notifications (API-based, Socket.IO planned) |
+| Recruitment      | `server/src/services/recruitment.service.ts` | *Planned — empty stubs* |
+| PerformanceReview| `server/src/services/performance-review.service.ts` | *Planned — empty stubs* |
 
 ---
 
@@ -190,7 +192,7 @@ All modules follow the Express convention: `routes/` → `services/` → `models
 | **employee** | Self only | View own profile/leaves/attendance/payroll, create leave requests, check in/out |
 
 Enforcement happens at two layers:
-- **Server**: `JwtAuthGuard` + `RolesGuard` with `@Roles()` decorator on every route
+- **Server**: `authenticate` + `requireRoles()` middleware on every route (except `/api/auth/login` and `/api/auth/register`)
 - **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links
 
 ---
@@ -219,23 +221,28 @@ Monthly attendance report aggregates all days
 ```
 Admin selects employees + month/year
 Server calculates: netPay = basicSalary + bonus - deductions
+Deductions include: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), PIT (7 brackets lũy tiến)
+Bonus varies by month: Tết (tháng 1/12), quarter-end performance, regular
 Creates payroll records (skips if already exists for that month)
 Admin marks each as "paid" when disbursed
 ```
 
-### Real-time Notifications
+### Notifications (API-based, Socket.IO planned)
 ```
 Server event (leave approved/rejected)
        │
        ▼
-NotificationsGateway.sendNotification(userId, data)
+NotificationsService.create() — saves notification to DB
        │
        ▼
-Socket.IO emits to user:{userId} room
+Client polls GET /api/notifications/unread-count periodically
        │
        ▼
-Client receives → shows toast + invalidates notification query
+Client shows toast + increments badge count
 ```
+
+> Socket.IO real-time push is planned but not yet implemented.
+> Notifications are currently delivered on page refresh or manual fetch.
 
 ---
 
@@ -281,7 +288,7 @@ Client receives → shows toast + invalidates notification query
 | **MongoDB** over SQL | Flexible schema for HR documents array, easy to iterate |
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
 | **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |
-| **Socket.IO** for notifications | Real-time push without polling; auto-reconnect built-in |
+| **Socket.IO** for notifications *(planned)* | Real-time push without polling; auto-reconnect built-in (API polling for now) |
 | **shadcn/ui** | Copy-paste components, full control over styling, Tailwind integration |
 | **TanStack Query** | Automatic caching, refetching, optimistic updates for API data |
 
@@ -291,10 +298,10 @@ Client receives → shows toast + invalidates notification query
 
 - **No tests, no linter, no CI, no typecheck script.** No pre-commit hooks.
 - Both packages use ES modules (`"type": "module"`). Server uses `NodeNext` module resolution with `.js` extensions in relative imports.
-- All API routes are protected by `JwtAuthGuard` + `RolesGuard` (except `/api/auth/login` and `/api/auth/register`).
+- All API routes are protected by `authenticate` + `requireRoles()` middleware (except `/api/auth/login` and `/api/auth/register`).
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
-- **Security**: Rate limiting (60 req/min via `@nestjs/throttler`), helmet headers, file uploads limited to 5MB (JPEG/PNG/GIF/PDF/DOC/DOCX), passwords require min 8 chars with uppercase+lowercase+digit, WebSocket auth via JWT handshake, search inputs regex-escaped.
+- **Security**: Rate limiting (60 req/min via `express-rate-limit`), helmet headers, file uploads limited to 5MB (JPEG/PNG/GIF/PDF/DOC/DOCX), passwords require min 8 chars with uppercase+lowercase+digit, WebSocket auth via JWT handshake, search inputs regex-escaped.
 
 ---
 

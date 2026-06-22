@@ -1,20 +1,76 @@
-# Đặc tả thiết kế phần mềm (SDD)
+# Đặc tả Thiết kế Phần mềm (SDD)
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
+
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 1016       |
+
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai. Recruitment, Performance Reviews, Org Chart page, Socket.IO chưa triển khai (đang kế hoạch).
 
 ---
 
 ## Mục lục
 
 1. [Giới thiệu](#1-giới-thiệu)
-2. [Kiến trúc tổng thể](#2-kiến-trúc-tổng-thể)
-3. [Kiến trúc Client](#3-kiến-trúc-client)
-4. [Kiến trúc Server](#4-kiến-trúc-server)
-5. [Thiết kế Database](#5-thiết-kế-database)
-6. [Thiết kế API](#6-thiết-kế-api)
-7. [Xác thực & Phân quyền](#7-xác-thực--phân-quyền)
-8. [Thông báo thời gian thực](#8-thông-báo-thời-gian-thực)
-9. [Triển khai](#9-triển-khai)
+   1.1 [Mục đích](#11-mục-đích)
+   1.2 [Phạm vi](#12-phạm-vi)
+   1.3 [Định nghĩa và từ viết tắt](#13-định-nghĩa-và-từ-viết-tắt)
+   1.4 [Tài liệu tham khảo](#14-tài-liệu-tham-khảo)
+   1.5 [Tổng quan tài liệu](#15-tổng-quan-tài-liệu)
+2. [Thiết kế kiến trúc tổng thể](#2-thiết-kế-kiến-trúc-tổng-thể)
+   2.1 [Kiến trúc hệ thống](#21-kiến-trúc-hệ-thống)
+   2.2 [Phân rã kiến trúc](#22-phân-rã-kiến-trúc)
+   2.3 [Chiến lược thiết kế](#23-chiến-lược-thiết-kế)
+   2.4 [Quyết định kiến trúc](#24-quyết-định-kiến-trúc)
+3. [Thiết kế thành phần Client](#3-thiết-kế-thành-phần-client)
+   3.1 [Phân rã thành phần](#31-phân-rã-thành-phần)
+   3.2 [Mô tả chi tiết thành phần](#32-mô-tả-chi-tiết-thành-phần)
+   3.3 [Luồng dữ liệu Client](#33-luồng-dữ-liệu-client)
+   3.4 [Chi tiết Route](#34-chi-tiết-route)
+   3.5 [Các hooks chính](#35-các-hooks-chính)
+   3.6 [Giao diện người dùng](#36-giao-diện-người-dùng)
+4. [Thiết kế thành phần Server](#4-thiết-kế-thành-phần-server)
+   4.1 [Phân rã thành phần](#41-phân-rã-thành-phần)
+   4.2 [Chi tiết Route Handlers](#42-chi-tiết-route-handlers)
+   4.3 [Chi tiết Service Layer](#43-chi-tiết-service-layer)
+   4.4 [Middleware Chain](#44-middleware-chain)
+   4.5 [Seed Script](#45-seed-script)
+5. [Thiết kế Cơ sở dữ liệu](#5-thiết-kế-cơ-sở-dữ-liệu)
+   5.1 [Mô hình thực thể - quan hệ](#51-mô-hình-thực-thể---quan-hệ)
+   5.2 [Chi tiết Schema](#52-chi-tiết-schema)
+   5.3 [Chiến lược Index](#53-chiến-lược-index)
+   5.4 [Chiến lược Embedding](#54-chiến-lược-embedding)
+6. [Thiết kế Giao diện](#6-thiết-kế-giao-diện)
+   6.1 [Thiết kế API REST](#61-thiết-kế-api-rest)
+   6.2 [Định dạng Response](#62-định-dạng-response)
+   6.3 [Mã trạng thái HTTP](#63-mã-trạng-thái-http)
+7. [Thiết kế Xác thực & Phân quyền](#7-thiết-kế-xác-thực--phân-quyền)
+   7.1 [Luồng JWT](#71-luồng-jwt)
+   7.2 [JWT Payload](#72-jwt-payload)
+   7.3 [Logic Role Middleware](#73-logic-role-middleware)
+   7.4 [Scoped Data theo Role](#74-scoped-data-theo-role)
+8. [Thiết kế Thông báo Thời gian thực](#8-thiết-kế-thông-báo-thời-gian-thực)
+   8.1 [Kiến trúc Socket.IO](#81-kiến-trúc-socketio)
+   8.2 [Vòng đời kết nối](#82-vòng-đời-kết-nối)
+9. [Thiết kế chi tiết Module](#9-thiết-kế-chi-tiết-module)
+   9.1 [Class Diagram - Service Layer](#91-class-diagram---service-layer)
+   9.2 [Sequence Diagram - Xử lý đơn nghỉ phép](#92-sequence-diagram---xử-lý-đơn-nghỉ-phép)
+   9.3 [Sequence Diagram - Xử lý lương](#93-sequence-diagram---xử-lý-lương)
+   9.4 [Sequence Diagram - Chấm công](#94-sequence-diagram---chấm-công)
+10. [Thiết kế Triển khai](#10-thiết-kế-triển-khai)
+    10.1 [Môi trường Development](#101-môi-trường-development)
+    10.2 [Môi trường Production](#102-môi-trường-production)
+11. [Thiết kế Bảo mật](#11-thiết-kế-bảo-mật)
+    11.1 [Các lớp bảo mật](#111-các-lớp-bảo-mật)
+    11.2 [Quy tắc xác thực mật khẩu](#112-quy-tắc-xác-thực-mật-khẩu)
+12. [Thiết kế Xử lý lỗi](#12-thiết-kế-xử-lý-lỗi)
+    12.1 [Server-side Error Handling](#121-server-side-error-handling)
+    12.2 [Client-side Error Handling](#122-client-side-error-handling)
+13. [Thiết kế Đa ngôn ngữ](#13-thiết-kế-đa-ngôn-ngữ)
+    13.1 [Kiến trúc i18n](#131-kiến-trúc-i18n)
+14. [Ràng buộc và Giả định thiết kế](#14-ràng-buộc-và-giả-định-thiết-kế)
 
 ---
 
@@ -22,30 +78,51 @@
 
 ### 1.1 Mục đích
 
-Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho hệ thống **Quản lý Nhân sự (HR Management)**, bao gồm kiến trúc tổng thể, thiết kế client, thiết kế server, cơ sở dữ liệu, API, và các thành phần khác.
+Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho hệ thống **Quản lý Nhân sự (HR Management)**, bao gồm kiến trúc tổng thể, thiết kế thành phần (client, server, database), thiết kế giao diện, thiết kế chi tiết module, triển khai và bảo mật. Tài liệu tuân theo chuẩn IEEE 1016 (IEEE Standard for Software Design Descriptions).
 
-### 1.2 Công nghệ sử dụng
+Đối tượng đọc: kiến trúc sư phần mềm, đội phát triển frontend và backend, đội QA, DevOps.
 
-| Thành phần | Công nghệ | Phiên bản |
-|-----------|-----------|-----------|
-| Frontend | React | 18.x |
-| UI Framework | shadcn/ui + Tailwind CSS | 4.x |
-| State Management | TanStack Query | 5.x |
-| Routing | React Router | 6.x |
-| Form Validation | React Hook Form + Zod | 7.x / 3.x |
-| Charts | Recharts | 2.x |
-| Real-time | Socket.IO (client) | 4.x |
-| Backend | Express | 4.x |
-| Database | MongoDB + Mongoose | 8.x |
-| Authentication | JWT (jsonwebtoken) | - |
-| Validation | Zod + express-validator | - |
+### 1.2 Phạm vi
 
+Tài liệu bao gồm thiết kế cho toàn bộ hệ thống HR Management với kiến trúc client-server (React + Express + MongoDB). Các module được thiết kế bao gồm: xác thực, nhân viên, phòng ban, nghỉ phép, chấm công, lương, dashboard, tuyển dụng, đánh giá hiệu suất, thông báo, lịch sử nhân viên.
+
+Tài liệu KHÔNG bao gồm: thiết kế chi tiết giao diện người dùng (UI mockups), thiết kế test cases, kế hoạch dự án.
+
+### 1.3 Định nghĩa và từ viết tắt
+
+| Thuật ngữ      | Ý nghĩa                                                          |
+|----------------|------------------------------------------------------------------|
+| Component      | Thành phần phần mềm có tính đóng gói cao, cung cấp dịch vụ qua interface |
+| Module         | Đơn vị tổ chức code (file/thư mục) trong hệ thống                |
+| Service        | Lớp xử lý nghiệp vụ, tách biệt khỏi route handler               |
+| Route Handler  | Hàm xử lý HTTP request, gọi service tương ứng                   |
+| Middleware     | Hàm xử lý trung gian trong pipeline Express                     |
+| REST           | Representational State Transfer - kiến trúc API                 |
+| SPA            | Single Page Application                                         |
+| JWT            | JSON Web Token                                                  |
+| RBAC           | Role-Based Access Control                                       |
+
+### 1.4 Tài liệu tham khảo
+
+| Tài liệu              | Mô tả                                                   |
+|-----------------------|---------------------------------------------------------|
+| IEEE Std 1016-2009    | IEEE Standard for Software Design Descriptions          |
+| SRS.md                | Đặc tả Yêu cầu Phần mềm (Software Requirements Specification) |
+| BRD.md                | Tài liệu Yêu cầu Nghiệp vụ                              |
+| UC.md                 | Đặc tả Use Case                                        |
+| AGENTS.md             | Hướng dẫn phát triển dự án                              |
+
+### 1.5 Tổng quan tài liệu
+
+Tài liệu gồm 14 phần chính: Giới thiệu, Thiết kế kiến trúc tổng thể, Thiết kế thành phần Client, Thiết kế thành phần Server, Thiết kế Cơ sở dữ liệu, Thiết kế Giao diện, Thiết kế Xác thực & Phân quyền, Thiết kế Thông báo, Thiết kế chi tiết Module, Triển khai, Bảo mật, Xử lý lỗi, Đa ngôn ngữ, và Ràng buộc thiết kế.
 
 ---
 
-## 2. Kiến trúc tổng thể
+## 2. Thiết kế kiến trúc tổng thể
 
 ### 2.1 Kiến trúc hệ thống
+
+Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Express) qua REST API và WebSocket (Socket.IO). Server kết nối với MongoDB qua Mongoose ODM.
 
 ```mermaid
 graph TB
@@ -65,7 +142,6 @@ graph TB
             RATE[Rate Limiting]
             SECURITY[Helmet]
         end
-        
         subgraph "Tầng Route Handlers"
             AC[Auth Routes]
             EC[Employee Routes]
@@ -80,7 +156,6 @@ graph TB
             EHC[Employee History Routes]
             LBC[Leave Balance Routes]
         end
-
         subgraph "Tầng Service"
             AS[Auth Service]
             ES[Employee Service]
@@ -95,11 +170,9 @@ graph TB
             EHS[Employee History Service]
             LBS[Leave Balance Service]
         end
-
         subgraph "Tầng Database"
             MONGO[MongoDB]
         end
-
         subgraph "Real-time"
             GW[Notifications Gateway]
         end
@@ -111,162 +184,61 @@ graph TB
     end
 
     BROWSER --> UI
-    UI --> API_Layer
-    UI --> SC
+    UI --> API_Layer & SC
     API_Layer -->|HTTP/REST| AUTH
-    AUTH --> ROLES
-    ROLES --> VALIDATE
-    VALIDATE --> RATE
-    RATE --> SECURITY
-    SECURITY --> AC
-    SECURITY --> EC
-    SECURITY --> DC
-    SECURITY --> LC
-    SECURITY --> ATC
-    SECURITY --> PC
-    SECURITY --> RC
-    SECURITY --> PRC
-    SECURITY --> NC
-    SECURITY --> DBC
-    SECURITY --> EHC
-    SECURITY --> LBC
-    AC --> AS
-    EC --> ES
-    DC --> DS
-    LC --> LS
-    ATC --> ATS
-    PC --> PS
-    RC --> RS
-    PRC --> PRS
-    NC --> NS
-    DBC --> DBS
-    EHC --> EHS
-    LBC --> LBS
-    AS --> MONGO
-    ES --> MONGO
-    DS --> MONGO
-    LS --> MONGO
-    ATS --> MONGO
-    PS --> MONGO
-    RS --> MONGO
-    PRS --> MONGO
-    NS --> MONGO
-    DBS --> MONGO
-    EHS --> MONGO
-    LBS --> MONGO
-    LS --> LBS
-    LS --> NS
+    AUTH --> ROLES --> VALIDATE --> RATE --> SECURITY
+    SECURITY --> AC & EC & DC & LC & ATC & PC & RC & PRC & NC & DBC & EHC & LBC
+    AC --> AS; EC --> ES; DC --> DS; LC --> LS; ATC --> ATS
+    PC --> PS; RC --> RS; PRC --> PRS; NC --> NS; DBC --> DBS; EHC --> EHS; LBC --> LBS
+    AS & ES & DS & LS & ATS & PS & RS & PRS & NS & DBS & EHS & LBS --> MONGO
+    LS --> LBS & NS
     ES -->|Upload| FS
     SC -->|WebSocket| GW
     GW --> NS
 ```
 
-### 2.2 Kiến trúc Express
+### 2.2 Phân rã kiến trúc
 
-```mermaid
-graph TB
-    subgraph "Express App"
-        TM[express-rate-limit]
-        MM[Mongoose]
-        AM[Auth Middleware]
-        
-        subgraph "Route Handlers"
-            EM[EmployeesRoutes]
-            DM[DepartmentsRoutes]
-            LM[LeavesRoutes]
-            ATM[AttendanceRoutes]
-            PM[PayrollRoutes]
-            DBM[DashboardRoutes]
-            EHM[EmployeeHistoryRoutes]
-            LBM[LeaveBalanceRoutes]
-            NM[NotificationsRoutes]
-            RM[RecruitmentRoutes]
-            PRM[PerformanceReviewRoutes]
-        end
-    end
+| Tầng             | Thành phần                    | Trách nhiệm                                        |
+|------------------|-------------------------------|----------------------------------------------------|
+| **Client**       | UI Layer (Components)         | Render giao diện, xử lý sự kiện người dùng         |
+|                  | API Layer (Axios)             | Gọi REST API, gắn JWT, xử lý response              |
+|                  | Query Layer (TanStack Query)  | Cache, refetch, optimistic updates                 |
+|                  | Socket Layer (Socket.IO)      | Kết nối WebSocket, nhận thông báo real-time        |
+| **Server**       | Middleware Layer               | JWT auth, role check, validation, rate limit       |
+|                  | Route Handler Layer            | Xử lý request, gọi service, trả về response        |
+|                  | Service Layer                  | Business logic, gọi database, orchestration        |
+|                  | Gateway Layer (Socket.IO)     | Quản lý WebSocket connections, emit events         |
+|                  | Database Layer (Mongoose)     | Schema definition, CRUD operations, indexing       |
 
-    AM --> EM
-    AM --> DM
-    AM --> LM
-    AM --> ATM
-    AM --> PM
-    AM --> DBM
-    AM --> EHM
-    AM --> LBM
-    AM --> NM
-    AM --> RM
-    AM --> PRM
+### 2.3 Chiến lược thiết kế
 
-    EM --> LM
-    EM --> LBM
-    EM --> ATM
-    EM --> PM
-    EM --> EHM
-    EM --> PRM
-    EM --> DM
+| Nguyên tắc                  | Áp dụng                                                    |
+|-----------------------------|------------------------------------------------------------|
+| Separation of Concerns      | Tách routing, business logic, data access thành 3 tầng    |
+| Single Responsibility       | Mỗi module/service chỉ xử lý một nghiệp vụ duy nhất       |
+| Dependency Inversion        | Service phụ thuộc vào interface (Mongoose Model)          |
+| DRY (Don't Repeat Yourself)| Validation, error handling dùng chung qua middleware       |
+| Convention over Configuration| Cấu trúc thư mục nhất quán: `routes/` → `services/` → `models/` |
 
-    LM --> LBM
-    LM --> NM
+### 2.4 Quyết định kiến trúc
 
-    NM --> GW[NotificationsGateway]
-
-    subgraph "Global Middleware"
-        GG[Rate Limiting]
-    end
-
-    TM --> GG
-```
-
-### 2.3 Luồng request điển hình
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant R as React App
-    participant I as Axios Interceptor
-    participant API as Express API
-    participant G as Guards
-    participant CO as Controller
-    participant S as Service
-    participant DB as MongoDB
-
-    B->>R: Thao tác người dùng
-    R->>I: Gọi hàm API
-    I->>I: Gắn JWT từ localStorage
-    
-    I->>API: HTTP Request + JWT Bearer
-    
-    API->>M: JWT Middleware xác thực token
-    alt Token không hợp lệ
-        M-->>I: 401 Unauthorized
-        I->>I: Xóa token, redirect /login
-    end
-    
-    M->>R: Role Middleware kiểm tra role
-    alt Role không phù hợp
-        R-->>I: 403 Forbidden
-    end
-    
-    R->>V: Validation Middleware (Zod)
-    alt Dữ liệu không hợp lệ
-        V-->>I: 400 Bad Request
-    end
-    
-    CO->>S: Gọi service xử lý nghiệp vụ
-    S->>DB: Truy vấn MongoDB
-    DB-->>S: Kết quả
-    S-->>CO: Dữ liệu trả về
-    CO-->>I: JSON Response
-    
-    I-->>R: Cập nhật state
-    R-->>B: Render lại giao diện
-```
+| ID   | Quyết định                            | Lý do                                                           |
+|:----:|---------------------------------------|----------------------------------------------------------------|
+| AD-01| Express (không NestJS)                | Đơn giản hơn, linh hoạt, phù hợp quy mô vừa                    |
+| AD-02| MongoDB thay vì SQL                   | Schema linh hoạt cho HR documents array, dễ iterate            |
+| AD-03| Tách User và Employee                 | Cô lập thông tin xác thực khỏi HR profile                     |
+| AD-04| JWT trong localStorage                | Đơn giản cho SPA; httpOnly cookies an toàn hơn nhưng phức tạp |
+| AD-05| Socket.IO thay vì SSE/Polling         | Real-time hai chiều, auto-reconnect, room support              |
+| AD-06| TanStack Query thay vì Redux          | Tự động cache, refetch, không cần boilerplate cho API calls   |
+| AD-07| shadcn/ui thay vì Material UI         | Copy-paste components, full control styling, Tailwind tích hợp |
+| AD-08| Zod validation (server + client)       | Chia sẻ cùng schema validation giữa FE và BE                  |
 
 ---
 
-## 3. Kiến trúc Client
+## 3. Thiết kế thành phần Client
 
-### 3.1 Component hierarchy
+### 3.1 Phân rã thành phần
 
 ```mermaid
 graph TB
@@ -284,203 +256,123 @@ graph TB
     end
 
     subgraph "Shared Components"
-        PH[PageHeader]
-        SB[StatusBadge]
-        SK[Skeleton]
-        ES[EmptyState]
-        BC[Breadcrumb]
-        EB[ErrorBoundary]
-        RL[RouteLoading]
-        KS[KeyboardShortcuts]
-        UT[UnsavedChanges]
+        PH[PageHeader] & SB[StatusBadge] & SK[Skeleton]
+        ES[EmptyState] & BC[Breadcrumb] & EB[ErrorBoundary]
+        RL[RouteLoading] & KS[KeyboardShortcuts] & UT[UnsavedChanges]
     end
 
     subgraph "UI Components (shadcn)"
-        BTN[Button]
-        BDG[Badge]
-        CRD[Card]
-        DLG[Dialog]
-        INP[Input]
-        LBL[Label]
-        SLT[Select]
-        TBL[Table]
-        TST[Toaster]
-        CMD[ConfirmDialog]
-        DT[DataTable]
-        DTP[DataTablePagination]
-        DTC[DataTableColumnHeader]
+        BTN[Button] & BDG[Badge] & CRD[Card] & DLG[Dialog]
+        INP[Input] & LBL[Label] & SLT[Select] & TBL[Table]
+        TST[Toaster] & CMD[ConfirmDialog] & DT[DataTable]
+        DTP[DataTablePagination] & DTC[DataTableColumnHeader]
         DTF[DataTableFacetedFilter]
     end
 
     subgraph "Pages"
-        LOGIN[Login Page]
-        DASH[Dashboard Page]
-        EMPL[Employees List]
-        EMPD[Employee Detail]
-        DEPT[Departments List]
-        ORG[Org Chart]
-        PROF[Profile Page]
-        NOTI[Notifications List]
-        NF[Not Found]
-
-        subgraph "Leave Pages"
-            ML[My Leaves]
-            LA[Leave Approvals]
-        end
-
-        subgraph "Attendance Pages"
-            MAT[My Attendance]
-            ATR[Attendance Report]
-        end
-
-        subgraph "Payroll Pages"
-            MYP[My Payroll]
-            PYM[Payroll Management]
-        end
-
-        subgraph "Recruitment Pages"
-            JBP[Job Postings]
-            CAD[Candidates]
-        end
-
-        subgraph "Performance Pages"
-            MPR[My Reviews]
-            PRM[Review Management]
-        end
+        LOGIN[Login Page] & DASH[Dashboard Page]
+        EMPL[Employees List] & EMPD[Employee Detail]
+        DEPT[Departments List] & ORG[Org Chart]
+        PROF[Profile Page] & NOTI[Notifications List] & NF[Not Found]
+        ML[My Leaves] & LA[Leave Approvals]
+        MAT[My Attendance] & ATR[Attendance Report]
+        MYP[My Payroll] & PYM[Payroll Management]
+        JBP[Job Postings] & CAD[Candidates]
+        MPR[My Reviews] & PRM[Review Management]
     end
 
-    QC --> BR
-    BR --> AP
-    AP --> LP
-    LP --> AL
-    AL --> SID
-    AL --> OUT
-
-    OUT --> LOGIN
-    OUT --> DASH
-    OUT --> EMPL
-    OUT --> EMPD
-    OUT --> DEPT
-    OUT --> ORG
-    OUT --> PROF
-    OUT --> NOTI
-    OUT --> NF
-    OUT --> ML
-    OUT --> LA
-    OUT --> MAT
-    OUT --> ATR
-    OUT --> MYP
-    OUT --> PYM
-    OUT --> JBP
-    OUT --> CAD
-    OUT --> MPR
-    OUT --> PRM
-
-    EMPL --> DT
-    EMPD --> PH
-    EMPD --> SB
-    DEPT --> DT
-    ML --> DT
-    LA --> DT
-    MAT --> SB
-    ATR --> DT
-    MYP --> DT
-    PYM --> DT
-    JBP --> DT
-    CAD --> DT
-    MPR --> CRD
-    PRM --> DT
-    PRM --> SB
-
-    DT --> DTP
-    DT --> DTC
-    DT --> DTF
-
-    AL --> KS
-    AL --> RL
-    AL --> UT
-    AL --> EB
-    AL --> TST
+    QC --> BR --> AP --> LP --> AL
+    AL --> SID & OUT
+    OUT --> LOGIN & DASH & EMPL & EMPD & DEPT & ORG & PROF & NOTI & NF
+    OUT --> ML & LA & MAT & ATR & MYP & PYM & JBP & CAD & MPR & PRM
+    AL --> KS & RL & UT & EB & TST
 ```
 
-### 3.2 Luồng dữ liệu client
+### 3.2 Mô tả chi tiết thành phần
+
+#### 3.2.1 Provider Layer
+
+| Thành phần            | Mô tả                                                       |
+|-----------------------|-------------------------------------------------------------|
+| `QueryClientProvider` | TanStack Query provider, quản lý cache và state async       |
+| `BrowserRouter`       | React Router v6, định tuyến client-side SPA                 |
+| `AuthProvider`        | Context cho user, token, login/logout functions             |
+| `LanguageProvider`    | Context cho i18n: lang hiện tại, `t(key)` function          |
+
+#### 3.2.2 Layout Components
+
+| Thành phần   | Mô tả                                               |
+|--------------|-----------------------------------------------------|
+| `AppLayout`  | Layout chính: sidebar trái + content area + header |
+| `Sidebar`    | Menu điều hướng, lọc theo role, badge thông báo    |
+| `Outlet`     | React Router Outlet cho nội dung trang con         |
+
+#### 3.2.3 Shared Components
+
+| Thành phần           | Mô tả                                                       |
+|----------------------|-------------------------------------------------------------|
+| `PageHeader`         | Tiêu đề trang + breadcrumb + action buttons                |
+| `StatusBadge`        | Badge màu theo trạng thái (pending/approved/rejected...)    |
+| `Skeleton`           | Loading skeleton cho danh sách và chi tiết                 |
+| `EmptyState`         | Thông báo khi không có dữ liệu                             |
+| `Breadcrumb`         | Đường dẫn điều hướng                                       |
+| `ErrorBoundary`      | Bắt lỗi React, hiển thị fallback UI                       |
+| `RouteLoading`       | Progress bar khi chuyển route                              |
+| `KeyboardShortcuts`  | Xử lý phím tắt toàn cục (G+D, G+L, Escape...)              |
+| `UnsavedChanges`     | Guard khi rời form có dữ liệu chưa lưu                     |
+
+#### 3.2.4 DataTable (Component phức hợp)
+
+| Sub-component               | Mô tả                                        |
+|-----------------------------|----------------------------------------------|
+| `DataTable`                 | Bảng dữ liệu với sort, filter, search        |
+| `DataTablePagination`       | Điều khiển phân trang (10/20/30/50 items)    |
+| `DataTableColumnHeader`     | Header cột có thể sort                       |
+| `DataTableFacetedFilter`    | Filter theo danh mục (department, status)    |
+
+### 3.3 Luồng dữ liệu Client
 
 ```mermaid
 graph LR
-    subgraph "Data Flow"
-        USER[Người dùng]
-        COMP[React Component]
-        API[API Module]
-        AXI[Axios Instance]
-        SOCK[Socket.IO]
-        QUERY[TanStack Query Cache]
-        SERVER[Express Server]
-    end
-
-    USER -->|Click/Input| COMP
-    COMP -->|useQuery/useMutation| QUERY
-    QUERY -->|Gọi API| API
-    API -->|HTTP Request| AXI
-    AXI -->|Authorization Header| SERVER
-    SERVER -->|JSON Response| AXI
-    AXI -->|Response| API
-    API -->|Dữ liệu| QUERY
-    QUERY -->|Cập nhật state| COMP
-    COMP -->|Render| USER
-
-    SERVER -->|Socket.IO Event| SOCK
+    USER[Người dùng] -->|Click/Input| COMP[React Component]
+    COMP -->|useQuery/useMutation| QUERY[TanStack Query Cache]
+    QUERY -->|Gọi API| API[API Module]
+    API -->|HTTP Request| AXI[Axios Instance]
+    AXI -->|Authorization Header| SERVER[Express Server]
+    SERVER -->|JSON Response| AXI -->|Response| API
+    API -->|Dữ liệu| QUERY -->|Cập nhật state| COMP -->|Render| USER
+    SERVER -->|Socket.IO Event| SOCK[Socket.IO]
     SOCK -->|Invalidate Query| QUERY
     SOCK -->|Toast| COMP
 ```
 
-### 3.3 Chi tiết Route
+### 3.4 Chi tiết Route
 
 ```mermaid
 graph TB
-    ROOT[/]
-    LOGIN[/login]
-    DASH[/dashboard]
-    EMP[/employees]
-    EMPID[/employees/:id]
-    PROF[/profile]
-    DEPT[/departments]
-    ORG[/org-chart]
-    LEAVES[/leaves]
-    LEAVEA[/leaves/approvals]
-    ATT[/attendance]
-    ATTR[/attendance/report]
-    PAY[/payroll]
-    PAYM[/payroll/manage]
-    NOTI[/notifications]
-    RECJ[/recruitment/job-postings]
-    RECC[/recruitment/candidates]
-    PRF[/performance-reviews]
-    PRFM[/performance-reviews/manage]
-    NF404["* (404)"]
-
-    ROOT -->|redirect| DASH
-    LOGIN -->|public| LOGIN
+    ROOT[/] -->|redirect| DASH[/dashboard]
+    LOGIN[/login] -->|public| LOGIN
     DASH -->|admin/manager/employee| DASH
-    EMP -->|admin/manager| EMP
-    EMPID -->|admin/manager/employee| EMPID
-    PROF -->|admin/manager/employee| PROF
-    DEPT -->|admin/manager| DEPT
-    ORG -->|admin/manager| ORG
-    LEAVES -->|admin/manager/employee| LEAVES
-    LEAVEA -->|admin/manager| LEAVEA
-    ATT -->|admin/manager/employee| ATT
-    ATTR -->|admin/manager| ATTR
-    PAY -->|admin/manager/employee| PAY
-    PAYM -->|admin| PAYM
-    NOTI -->|admin/manager/employee| NOTI
-    RECJ -->|admin/manager| RECJ
-    RECC -->|admin/manager| RECC
-    PRF -->|admin/manager/employee| PRF
-    PRFM -->|admin/manager| PRFM
-    NF404 -->|any| NF404
+    EMP[/employees] -->|admin/manager| EMP
+    EMPID[/employees/:id] -->|admin/manager/employee| EMPID
+    PROF[/profile] -->|all| PROF
+    DEPT[/departments] -->|admin/manager| DEPT
+    ORG[/org-chart] -->|admin/manager| ORG
+    LEAVES[/leaves] -->|employee| LEAVES
+    LEAVEA[/leaves/approvals] -->|admin/manager| LEAVEA
+    ATT[/attendance] -->|employee| ATT
+    ATTR[/attendance/report] -->|admin/manager| ATTR
+    PAY[/payroll] -->|employee| PAY
+    PAYM[/payroll/manage] -->|admin| PAYM
+    NOTI[/notifications] -->|all| NOTI
+    RECJ[/recruitment/job-postings] -->|admin/manager| RECJ
+    RECC[/recruitment/candidates] -->|admin/manager| RECC
+    PRF[/performance-reviews] -->|employee| PRF
+    PRFM[/performance-reviews/manage] -->|admin/manager| PRFM
+    NF404["* (404)"] -->|any| NF404
 ```
 
-### 3.4 Các hooks chính
+### 3.5 Các hooks chính
 
 ```mermaid
 classDiagram
@@ -491,218 +383,176 @@ classDiagram
         +login(email, password)
         +logout()
     }
-
     class useTheme {
         +theme
         +toggleTheme()
     }
-
     class useLanguage {
         +lang
         +setLang()
         +t(key)
     }
-
     class useSocket {
         -socket
         +connect()
         +disconnect()
     }
-
     class useToast {
         +toasts
         +toast()
         +dismiss()
     }
-
     class useDebounce {
         +debouncedValue
     }
-
     class useUnsavedChanges {
         +isDirty
         +setIsDirty()
         +withWarning()
         +UnsavedChangesDialog
     }
-
     useAuth --> useSocket : khởi tạo sau login
     useLanguage --> useTheme : cùng dùng trong Settings
 ```
 
+### 3.6 Giao diện người dùng
+
+| Tính năng UX             | Mô tả                                                 |
+|--------------------------|-------------------------------------------------------|
+| Responsive               | Mobile-first, sidebar ẩn trên mobile, hamburger menu |
+| Dark mode                | CSS variables, toggle trong Settings                  |
+| Đa ngôn ngữ              | LanguageProvider + translation objects (~830 keys)    |
+| Skeleton loading         | Trên mọi danh sách và chi tiết                        |
+| Empty state              | Khi không có dữ liệu                                  |
+| Error boundary           | Global + per-component ErrorBoundary                  |
+| Unsaved changes guard    | Cảnh báo khi rời form có dữ liệu chưa lưu             |
+| Keyboard shortcuts       | G+D, G+E, G+L, G+A, G+P, Escape, ? help              |
+| Phân trang               | 10/20/30/50 items per page, first/prev/next/last     |
+| Toast notifications      | Socket.IO real-time + action feedback                |
+
 ---
 
-## 4. Kiến trúc Server
+## 4. Thiết kế thành phần Server
 
-### 4.1 Express Route Structure
+### 4.1 Phân rã thành phần
 
-```mermaid
-graph TB
-    subgraph ExpressApp
-        direction TB
-        APP[Express App]
-        APP -->|uses| TM[express-rate-limit]
-        APP -->|uses| MM[Mongoose]
-        APP -->|uses| AM[Auth Middleware]
-        APP -->|uses| VAL[express-validator]
-        APP -->|uses| MUL[multer]
-        
-        subgraph "Route Handlers"
-            EM[EmployeesRoutes]
-            DM[DepartmentsRoutes]
-            LM[LeavesRoutes]
-            ATM[AttendanceRoutes]
-            PM[PayrollRoutes]
-            DBM[DashboardRoutes]
-            EHM[EmployeeHistoryRoutes]
-            LBM[LeaveBalanceRoutes]
-            NM[NotificationsRoutes]
-            RM[RecruitmentRoutes]
-            PRM[PerformanceReviewRoutes]
-        end
-    end
+| Thành phần               | Đầu vào (file)                                           |
+|--------------------------|----------------------------------------------------------|
+| **Entry point**          | `server/src/index.ts`                                    |
+| **Route Handlers**       | `server/src/routes/*.routes.ts`                          |
+| **Services**             | `server/src/services/*.service.ts`                       |
+| **Models/Schemas**       | `server/src/models/*.model.ts` + `server/src/schemas/`   |
+| **Middleware**           | `server/src/middleware/` (auth, roles, validation)       |
 
-    AM --> EM
-    AM --> DM
-    AM --> LM
-    AM --> ATM
-    AM --> PM
-    AM --> DBM
-    AM --> EHM
-    AM --> LBM
-    AM --> NM
-    AM --> RM
-    AM --> PRM
+### 4.2 Chi tiết Route Handlers
 
-    EM --> LM
-    EM --> LBM
-    EM --> ATM
-    EM --> PM
-    EM --> EHM
-    EM --> PRM
-    EM --> DM
+| Module                 | File                                      | Routes                                      |
+|------------------------|-------------------------------------------|---------------------------------------------|
+| Auth                   | `server/src/routes/auth.routes.ts`        | POST register/login, GET me, PUT profile    |
+| Employees              | `server/src/routes/employees.routes.ts`   | CRUD + bulk-delete + export + documents     |
+| Departments            | `server/src/routes/departments.routes.ts` | CRUD + org-chart                            |
+| Leaves                 | `server/src/routes/leaves.routes.ts`      | CRUD + updateStatus                         |
+| Attendance             | `server/src/routes/attendance.routes.ts`  | checkIn, checkOut, list                     |
+| Payroll                | `server/src/routes/payroll.routes.ts`     | process, pay, list                          |
+| Recruitment            | `server/src/routes/recruitment.routes.ts` | JobPosting + Candidate CRUD                 |
+| Performance Reviews    | `server/src/routes/performance.routes.ts` | CRUD                                        |
+| Notifications          | `server/src/routes/notifications.routes.ts` | list, markRead, markAllRead, unreadCount  |
+| Dashboard              | `server/src/routes/dashboard.routes.ts`   | getDashboard                                |
+| Employee History       | `server/src/routes/history.routes.ts`     | list, create                                |
+| Leave Balance          | `server/src/routes/leave-balance.routes.ts` | getMy, getByEmployeeId                    |
 
-    LM --> LBM
-    LM --> NM
+### 4.3 Chi tiết Service Layer
 
-    NM --> GW[NotificationsGateway]
+#### 4.3.1 AuthService
 
-    subgraph "Global Middleware"
-        GG[Rate Limiting]
-        AUTH[JWT Authentication]
-        ROLES[Role Authorization]
-        VALIDATE[Input Validation]
-        UPLOAD[File Upload]
-    end
+| Method                          | Tham số                                  | Trả về        | Mô tả                      |
+|---------------------------------|------------------------------------------|---------------|----------------------------|
+| `register(dto)`                 | `{ email, password }`                    | `AuthResponse` | Đăng ký, hash password    |
+| `login(dto)`                    | `{ email, password }`                    | `AuthResponse` | Xác thực, tạo JWT         |
+| `getMe(userId)`                 | `userId: string`                         | `User`         | Lấy thông tin user        |
+| `updateProfile(userId, dto)`    | `userId, { name?, email? }`              | `User`         | Cập nhật profile          |
+| `changePassword(userId, dto)`   | `userId, { currentPassword, newPassword }`| `void`        | Đổi mật khẩu              |
+| `-generateToken(user)`          | `user: User`                             | `string`       | Tạo JWT (private)         |
 
-    TM --> GG
-    AUTH --> GG
-    ROLES --> GG
-    VALIDATE --> GG
-    UPLOAD --> GG
-```
+#### 4.3.2 EmployeesService
 
-### 4.2 Middleware Chain
+| Method                          | Tham số                                  | Trả về        | Mô tả                      |
+|---------------------------------|------------------------------------------|---------------|----------------------------|
+| `findAll(query, user)`          | `{ search, department, page, limit }`    | `PaginatedResult`| Danh sách + phân trang  |
+| `findOne(id, user)`             | `id: string`                             | `Employee`    | Chi tiết, kiểm tra scope  |
+| `create(dto)`                   | Employee DTO                             | `Employee`    | Tạo mới                    |
+| `update(id, dto)`               | `id, EmployeeDTO`                        | `Employee`    | Cập nhật                   |
+| `remove(id)`                    | `id: string`                             | `void`        | Xóa                        |
+| `bulkDelete(ids)`               | `ids: string[]`                          | `void`        | Xóa hàng loạt (max 100)    |
+| `exportCsv(user)`               | `user`                                   | `Buffer`      | Xuất CSV                   |
+| `addDocument(id, file)`         | `id, file`                               | `Employee`    | Upload tài liệu            |
+| `removeDocument(id, docId)`     | `id, docId`                              | `Employee`    | Xóa tài liệu               |
+| `findByUserId(userId)`          | `userId: string`                         | `Employee`    | Tìm employee theo userId   |
+
+#### 4.3.3 LeavesService
+
+| Method                          | Tham số                                  | Trả về        | Mô tả                      |
+|---------------------------------|------------------------------------------|---------------|----------------------------|
+| `findAll(query, user)`          | `{ status, type, ... }`                  | `Leave[]`     | Danh sách, scoped         |
+| `findOne(id, user)`             | `id`                                     | `Leave`       | Chi tiết                   |
+| `create(dto, userId)`           | `{ type, startDate, endDate, reason }`   | `Leave`       | Tạo đơn + validate overlap|
+| `updateStatus(id, dto, userId)` | `{ status, rejectionReason? }`           | `Leave`       | Duyệt/từ chối + deduct    |
+| `-validateOverlap(...)`         | `employeeId, startDate, endDate`         | `void`        | Kiểm tra chồng chéo (private)|
+| `-calculateDays(...)`           | `startDate, endDate`                     | `number`      | Tính số ngày (private)     |
+
+### 4.4 Middleware Chain
 
 ```mermaid
 graph LR
     REQ[HTTP Request] --> AUTH[JWT Middleware]
-    AUTH -->|xác thực JWT| REQUSER[req.user = {id, email, role}]
+    AUTH -->|xác thực JWT| REQUSER[req.user]
     REQUSER --> ROLES[Role Middleware]
-    ROLES -->|Kiểm tra role | CHECK{role trong danh sách?}
+    ROLES -->|Kiểm tra role| CHECK{role trong danh sách?}
     CHECK -->|Có| VAL[Input Validation]
     CHECK -->|Không| 403[403 Forbidden]
     AUTH -->|Token lỗi| 401[401 Unauthorized]
-    VAL -->|Dữ liệu hợp lệ| SRV[Service]
-    VAL -->|Dữ liệu lỗi| 400[400 Bad Request]
+    VAL -->|Hợp lệ| SRV[Service]
+    VAL -->|Lỗi| 400[400 Bad Request]
     SRV --> DB[(MongoDB)]
 ```
 
-### 4.3 Express Route Handler (LeavesRoutes)
+| Middleware             | Thứ tự | Trách nhiệm                                          |
+|------------------------|:------:|------------------------------------------------------|
+| `express-rate-limit`   | 1      | Giới hạn 60 request/phút/IP                          |
+| `helmet`               | 2      | Thiết lập HTTP security headers                      |
+| `cors`                 | 3      | Cho phép origin từ `CORS_ORIGIN`                     |
+| `express.json`         | 4      | Parse JSON body                                      |
+| `authenticate`         | 5      | Xác thực JWT từ Authorization header                |
+| `requireRoles()`       | 6      | Kiểm tra user role với danh sách allowed roles       |
+| `validate` (Zod)       | 7      | Validate input từ request body/param/query           |
+| Route Handler          | 8      | Xử lý request và gọi service                         |
+| Error Handler          | -1     | Bắt tất cả exception, trả về JSON error              |
 
-```mermaid
-classDiagram
-    class LeavesRoutes {
-        +findAll(query, user)
-        +findOne(id, user)
-        +create(dto, userId)
-        +updateStatus(id, dto, userId)
-    }
+### 4.5 Seed Script
 
-    class LeavesService {
-        +findAll(query, user)
-        +findOne(id, user)
-        +create(dto, userId)
-        +updateStatus(id, dto, userId)
-        -validateOverlap(employeeId, startDate, endDate)
-    }
-
-    class Leave {
-        +employeeId
-        +type
-        +startDate
-        +endDate
-        +status
-        +approvedBy
-        +reason
-        +rejectionReason
-    }
-
-    class CreateLeaveDto {
-        +type
-        +startDate
-        +endDate
-        +reason
-    }
-
-    class UpdateLeaveStatusDto {
-        +status
-        +rejectionReason
-    }
-
-    LeavesRoutes --> LeavesService
-    LeavesService --> Leave
-    LeavesRoutes --> CreateLeaveDto
-    LeavesRoutes --> UpdateLeaveStatusDto
-```
-
-### 4.4 Seed Script
+Script tại `server/src/seed.ts` tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, employee histories, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHSS 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, thuế TNCN lũy tiến 7 bậc, thưởng Tết/tháng).
 
 ```mermaid
 graph TB
-    SEED[Seed Script] --> DROP[Drop tất cả collections]
-    DROP --> USERS[Tạo Users]
-    
-    subgraph Users
-        ADM[1 Admin: admin@hr.com]
-        MGR[6 Managers: mỗi phòng 1]
-        EMP[~50 Employees]
-    end
-
-    USERS --> DEPTS[Tạo Departments]
-    
+    SEED[Seed Script] --> DROP[Drop collections]
+    DROP --> USERS[Tạo Users: 1 Admin + 6 Managers + ~50 Employees]
+    USERS --> DEPTS[Tạo 6 Departments]
     subgraph Departments
-        D1[Engineering]
-        D2[Human Resources]
-        D3[Sales]
-        D4[Marketing]
-        D5[Finance]
-        D6[Business Analysis]
+        D1[Engineering] & D2[HR] & D3[Sales]
+        D4[Marketing] & D5[Finance] & D6[BA]
     end
-
     DEPTS --> EMPPROF[Tạo Employee Profiles]
     EMPPROF --> LB[Tạo Leave Balances]
     LB --> HIST[Tạo Employee History]
-    
     EMP -->|Gán vào| DEPTS
-    MGR -->|Gán làm manager| DEPTS
+    MGR -->|Gán manager| DEPTS
 ```
 
 ---
 
-## 5. Thiết kế Database
+## 5. Thiết kế Cơ sở dữ liệu
 
-### 5.1 Entity Relationship Diagram
+### 5.1 Mô hình thực thể - quan hệ
 
 ```mermaid
 erDiagram
@@ -719,189 +569,53 @@ erDiagram
     Department ||--o{ JobPosting : "posts"
     Employee ||--o{ PerformanceReview : "evaluated"
     User ||--o{ PerformanceReview : "reviewer"
-
-    User {
-        ObjectId _id PK
-        string email UK
-        string passwordHash
-        string role "admin|manager|employee"
-        string name
-        boolean isActive
-        date createdAt
-        date updatedAt
-    }
-
-    Employee {
-        ObjectId _id PK
-        ObjectId userId FK "unique"
-        ObjectId departmentId FK
-        string firstName
-        string lastName
-        string position
-        number salary
-        date hireDate
-        string phone
-        string contractType "permanent|contract|intern"
-        date contractExpiry
-        array documents
-    }
-
-    Department {
-        ObjectId _id PK
-        string name UK
-        string description
-        ObjectId managerId FK
-    }
-
-    Leave {
-        ObjectId _id PK
-        ObjectId employeeId FK
-        string type "sick|annual|personal"
-        date startDate
-        date endDate
-        string status "pending|approved|rejected"
-        ObjectId approvedBy FK
-        string reason
-        string rejectionReason
-    }
-
-    Attendance {
-        ObjectId _id PK
-        ObjectId employeeId FK
-        date date
-        date checkIn
-        date checkOut
-        string status "present|late|absent|half-day"
-        string note
-    }
-
-    Payroll {
-        ObjectId _id PK
-        ObjectId employeeId FK
-        number month
-        number year
-        number basicSalary
-        number bonus
-        number deductions
-        number netPay
-        string status "draft|paid"
-        date paidAt
-    }
-
-    LeaveBalance {
-        ObjectId _id PK
-        ObjectId employeeId FK "unique"
-        number annualTotal
-        number annualUsed
-        number sickTotal
-        number sickUsed
-        number personalTotal
-        number personalUsed
-    }
-
-    EmployeeHistory {
-        ObjectId _id PK
-        ObjectId employeeId FK
-        string type "raise|promotion|transfer|other"
-        string previousValue
-        string newValue
-        date effectiveDate
-        string note
-    }
-
-    Notification {
-        ObjectId _id PK
-        ObjectId userId FK
-        string title
-        string message
-        string type "leave_request|leave_approved|leave_rejected|payroll_ready|system"
-        ObjectId relatedId
-        string relatedModel
-        boolean isRead
-        date createdAt
-    }
-
-    JobPosting {
-        ObjectId _id PK
-        string title
-        ObjectId departmentId FK
-        string description
-        string requirements
-        string status "open|closed|draft"
-        number openings
-    }
-
-    Candidate {
-        ObjectId _id PK
-        string firstName
-        string lastName
-        string email
-        string phone
-        ObjectId jobPostingId FK
-        string status "applied|screening|interview|offered|hired|rejected"
-        string resumeUrl
-        string notes
-        date appliedDate
-    }
-
-    PerformanceReview {
-        ObjectId _id PK
-        ObjectId employeeId FK
-        ObjectId reviewerId FK
-        string period
-        number rating "1-5"
-        string comments
-        string goals
-        string status "draft|submitted|acknowledged"
-    }
 ```
 
-### 5.2 Database Indexes
+### 5.2 Chi tiết Schema
 
-```mermaid
-graph TB
-    subgraph "Employee Collection"
-        EI1[index: departmentId] -->|Truy vấn nhân viên theo phòng| Q1[Query: findByDepartment]
-    end
+(Xem chi tiết 12 schemas tại SRS.md Phần 4 - Mô hình dữ liệu)
 
-    subgraph "Leave Collection"
-        LI1[index: employeeId + status] -->|Truy vấn đơn theo nhân viên và trạng thái| Q2[Query: findByEmployeeAndStatus]
-        LI2[index: employeeId + startDate + endDate] -->|Kiểm tra chồng chéo| Q3[Query: overlappingLeaves]
-    end
+**Quan hệ giữa các Model:**
 
-    subgraph "Attendance Collection"
-        AI1[index: employeeId + date unique] -->|1 bản ghi/ngày| Q4[Query: findByEmployeeAndDate]
-    end
+| Model              | Reference         | Type      | Ràng buộc              |
+|--------------------|-------------------|-----------|------------------------|
+| Employee.userId    | User._id          | 1-1       | Unique                 |
+| Employee.departmentId| Department._id | N-1       | Required               |
+| Leave.employeeId   | Employee._id      | N-1       | Required               |
+| Leave.approvedBy   | User._id          | N-1       | Optional               |
+| Attendance.employeeId| Employee._id    | N-1       | Required               |
+| Payroll.employeeId | Employee._id      | N-1       | Required               |
+| LeaveBalance.employeeId| Employee._id | 1-1       | Unique                 |
+| Notification.userId| User._id          | N-1       | Required               |
+| JobPosting.departmentId| Department._id| N-1     | Required               |
+| Candidate.jobPostingId| JobPosting._id | N-1     | Required               |
+| PerformanceReview.employeeId| Employee._id| N-1  | Required               |
+| PerformanceReview.reviewerId| User._id  | N-1       | Required               |
 
-    subgraph "Payroll Collection"
-        PI1[index: employeeId + month + year unique] -->|Chống trùng lặp| Q5[Query: findByEmployeeMonthYear]
-    end
+### 5.3 Chiến lược Index
 
-    subgraph "Notification Collection"
-        NI1[index: userId + isRead + createdAt] -->|Truy vấn thông báo| Q6[Query: findByUserUnread]
-    end
+| Collection         | Index                             | Loại      | Mục đích                          |
+|--------------------|-----------------------------------|-----------|-----------------------------------|
+| User               | `email`                           | Unique    | Login lookup                      |
+| Employee           | `departmentId`                    | Single    | Lọc nhân viên theo phòng          |
+| Employee           | `userId`                          | Unique    | Tìm employee từ JWT               |
+| Leave              | `employeeId + status`             | Compound  | Lọc đơn theo NV + trạng thái      |
+| Leave              | `employeeId + startDate + endDate`| Compound  | Kiểm tra chồng chéo               |
+| Attendance         | `employeeId + date`               | Unique    | 1 bản ghi/ngày                    |
+| Payroll            | `employeeId + month + year`       | Unique    | Chống trùng lặp                   |
+| LeaveBalance       | `employeeId`                      | Unique    | 1 quỹ phép/NV                    |
+| EmployeeHistory    | `employeeId + effectiveDate`      | Compound  | Timeline giảm dần                 |
+| Notification       | `userId + isRead + createdAt`     | Compound  | Lấy thông báo chưa đọc            |
+| Department         | `name`                            | Unique    | Tên phòng không trùng             |
 
-    subgraph "EmployeeHistory Collection"
-        EHI1[index: employeeId + effectiveDate] -->|Lịch sử giảm dần| Q7[Query: historyTimeline]
-    end
-
-    subgraph "User Collection"
-        UI1[index: email unique] -->|Login| Q8[Query: findByEmail]
-    end
-```
-
-### 5.3 Document embedding strategy
+### 5.4 Chiến lược Embedding
 
 ```mermaid
 graph LR
     subgraph "Embedded Documents"
         EMP[Employee] --> DOC[documents: array]
-        DOC -->|name| N
-        DOC -->|url| U
-        DOC -->|type| T
-        DOC -->|uploadedAt| UA
+        DOC -->|name, url, type, uploadedAt| VALUES
     end
-
     subgraph "Referenced Documents (ObjectId)"
         EMP -->|userId| USR[User]
         EMP -->|departmentId| DEP[Department]
@@ -919,93 +633,110 @@ graph LR
     end
 ```
 
+**Quy tắc Embedding vs Reference:**
+
+| Tiêu chí              | Embedding                        | Reference                    |
+|-----------------------|----------------------------------|------------------------------|
+| Dữ liệu               | documents array trong Employee   | userId, departmentId         |
+| Tần suất đọc          | Luôn đọc cùng Employee           | Đọc riêng khi cần            |
+| Tần suất ghi          | Thấp (thêm/xóa tài liệu)         | Trung bình                   |
+| Kích thước            | Nhỏ (< 100 documents)            | Không giới hạn               |
+
 ---
 
-## 6. Thiết kế API
+## 6. Thiết kế Giao diện
 
-### 6.1 RESTful API design
+### 6.1 Thiết kế API REST
 
-Tất cả API đều có prefix `/api` và trả về JSON. Authentication qua `Authorization: Bearer <JWT>`.
+Tất cả API có prefix `/api`, authentication qua `Authorization: Bearer <JWT>`.
 
-```mermaid
-graph TB
-    subgraph "API Groups"
-        AUTH[/api/auth]
-        EMP[/api/employees]
-        DEPT[/api/departments]
-        LEAVE[/api/leaves]
-        ATT[/api/attendance]
-        PAY[/api/payroll]
-        DASH[/api/dashboard]
-        HIST[/api/employees/*/history]
-        LB[/api/leave-balance]
-        NOTIF[/api/notifications]
-        JP[/api/job-postings]
-        CAND[/api/candidates]
-        PR[/api/performance-reviews]
-    end
+#### 6.1.1 Auth
 
-    AUTH -->|POST| REGISTER[register]
-    AUTH -->|POST| LOGIN[login]
-    AUTH -->|GET| ME[getMe]
-    AUTH -->|PUT| PROFILE[updateProfile]
-    AUTH -->|POST| CPass[changePassword]
+| Method | Endpoint                     | Request Body                                    | Response               | Status  |
+|--------|------------------------------|-------------------------------------------------|------------------------|:-------:|
+| POST   | `/api/auth/register`         | `{ email, password }`                           | `{ token, user }`      | 201     |
+| POST   | `/api/auth/login`            | `{ email, password }`                           | `{ token, user }`      | 200     |
+| GET    | `/api/auth/me`               | -                                               | `{ user }`             | 200     |
+| PUT    | `/api/auth/profile`          | `{ name?, email? }`                             | `{ user }`             | 200     |
+| POST   | `/api/auth/change-password`  | `{ currentPassword, newPassword }`              | `{ message }`          | 200     |
 
-    EMP -->|GET| EList[findAll + pagination]
-    EMP -->|GET /:id| EOne[findOne]
-    EMP -->|POST| ECreate[create]
-    EMP -->|PUT /:id| EUpdate[update]
-    EMP -->|DELETE /:id| EDelete[delete]
-    EMP -->|POST /bulk-delete| EBulk[bulkDelete]
-    EMP -->|GET /export| ECSV[exportCsv]
-    EMP -->|POST /:id/documents| EDocAdd[addDocument]
-    EMP -->|DELETE /:id/documents/:docId| EDocDel[removeDocument]
+#### 6.1.2 Employees
 
-    DEPT -->|GET| DList[findAll]
-    DEPT -->|GET /org-chart| DOrg[getOrgChart]
-    DEPT -->|GET /:id| DOne[findOne]
-    DEPT -->|POST| DCreate[create]
-    DEPT -->|PUT /:id| DUpdate[update]
-    DEPT -->|DELETE /:id| DDelete[delete]
+| Method | Endpoint                            | Query/Params                                     | Request Body                         | Status  |
+|--------|-------------------------------------|--------------------------------------------------|--------------------------------------|:-------:|
+| GET    | `/api/employees`                    | `?search=&department=&page=&limit=`              | -                                    | 200     |
+| GET    | `/api/employees/export`             | -                                                | -                                    | 200     |
+| GET    | `/api/employees/:id`                | `:id`                                            | -                                    | 200     |
+| POST   | `/api/employees`                    | -                                                | CreateEmployeeDto                    | 201     |
+| PUT    | `/api/employees/:id`                | `:id`                                            | UpdateEmployeeDto                    | 200     |
+| DELETE | `/api/employees/:id`                | `:id`                                            | -                                    | 200     |
+| POST   | `/api/employees/bulk-delete`        | -                                                | `{ ids: string[] }`                  | 200     |
+| POST   | `/api/employees/:id/documents`      | `:id`                                            | FormData (multipart)                 | 201     |
+| DELETE | `/api/employees/:id/documents/:docId`| `:id, :docId`                                  | -                                    | 200     |
 
-    LEAVE -->|GET| LList[findAll]
-    LEAVE -->|POST| LCreate[create]
-    LEAVE -->|GET /:id| LOne[findOne]
-    LEAVE -->|PATCH /:id/status| LStatus[updateStatus]
+#### 6.1.3 Leaves
 
-    ATT -->|GET| AList[findAll]
-    ATT -->|POST /check-in| ACheckIn[checkIn]
-    ATT -->|PATCH /:id/check-out| ACheckOut[checkOut]
-```
+| Method | Endpoint                      | Query/Params     | Request Body                               | Status  |
+|--------|-------------------------------|------------------|--------------------------------------------|:-------:|
+| GET    | `/api/leaves`                 | `?status=&type=` | -                                          | 200     |
+| POST   | `/api/leaves`                 | -                | `{ type, startDate, endDate, reason }`     | 201     |
+| GET    | `/api/leaves/:id`             | `:id`            | -                                          | 200     |
+| PATCH  | `/api/leaves/:id/status`      | `:id`            | `{ status, rejectionReason? }`             | 200     |
 
-### 6.2 Response format
+#### 6.1.4 Attendance
 
-**Thành công:**
+| Method | Endpoint                        | Query/Params     | Request Body    | Status  |
+|--------|---------------------------------|------------------|-----------------|:-------:|
+| GET    | `/api/attendance`               | `?employeeId=&date=` | -           | 200     |
+| POST   | `/api/attendance/check-in`      | -                | -               | 201     |
+| PATCH  | `/api/attendance/:id/check-out` | `:id`            | -               | 200     |
+
+### 6.2 Định dạng Response
+
+**Thành công (200/201):**
 ```json
 {
   "data": { ... },
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 100
-  }
+  "meta": { "page": 1, "limit": 20, "total": 100 }
 }
 ```
 
-**Lỗi:**
+**Thành công - Danh sách:**
 ```json
 {
-  "message": "Validation failed",
-  "errors": ["email must be an email"],
+  "data": [ ... ],
+  "meta": { "page": 1, "limit": 20, "total": 100 }
+}
+```
+
+**Lỗi (400/401/403/404/500):**
+```json
+{
+  "message": "Description",
+  "errors": ["detail 1", "detail 2"],
   "statusCode": 400
 }
 ```
 
+### 6.3 Mã trạng thái HTTP
+
+| Mã  | Ý nghĩa              | Sử dụng khi                                              |
+|:---:|----------------------|----------------------------------------------------------|
+| 200 | OK                   | GET, PUT, PATCH, DELETE thành công                       |
+| 201 | Created              | POST thành công                                          |
+| 400 | Bad Request          | Validation lỗi, dữ liệu không hợp lệ                     |
+| 401 | Unauthorized         | JWT thiếu, hết hạn hoặc không hợp lệ                     |
+| 403 | Forbidden            | User không có quyền truy cập resource                    |
+| 404 | Not Found            | Resource không tồn tại                                   |
+| 409 | Conflict             | Trùng lặp (email, tên phòng ban)                         |
+| 429 | Too Many Requests    | Vượt quá rate limit                                      |
+| 500 | Internal Server Error| Lỗi không xác định                                       |
+
 ---
 
-## 7. Xác thực & Phân quyền
+## 7. Thiết kế Xác thực & Phân quyền
 
-### 7.1 JWT Flow
+### 7.1 Luồng JWT
 
 ```mermaid
 sequenceDiagram
@@ -1013,16 +744,15 @@ sequenceDiagram
     participant LG as Login Page
     participant S as Server
     participant DB as MongoDB
-
     C->>LG: Nhập email + password
     LG->>S: POST /api/auth/login
     S->>DB: Tìm user theo email
     DB-->>S: User document
     S->>S: bcrypt.compare(password, passwordHash)
     alt Mật khẩu đúng
-        S->>S: Tạo JWT: {sub: _id, email, role}
-        S->>S: Ký với JWT_SECRET, expires 1d
-        S-->>LG: {token, user}
+        S->>S: Tạo JWT: {sub, email, role, iat, exp}
+        S->>S: Ký với JWT_SECRET, expiresIn: '1d'
+        S-->>LG: 200 {token, user}
         LG->>C: Lưu token vào localStorage
         C->>C: Gắn Authorization header cho mọi request
     else Mật khẩu sai
@@ -1042,41 +772,39 @@ sequenceDiagram
 }
 ```
 
-### 7.3 Role Middleware Logic
+### 7.3 Logic Role Middleware
 
 ```mermaid
 flowchart TD
     START[Request đến route] --> AUTH{JWT Middleware}
     AUTH -->|Không có token| 401[401 Unauthorized]
     AUTH -->|Token hợp lệ| ROLES{Role Middleware}
-    
-    ROLES --> CHECK{Route có yêu cầu role?}
-    CHECK -->|Không| FORBIDDEN[403 Forbidden - mặc định từ chối]
-    CHECK -->|Có| MATCH{Vai trò người dùng trong danh sách?}
-    MATCH -->|Có| ALLOW[200 OK - Cho phép]
+    ROLES --> CHECK{Route có @Roles()?}
+    CHECK -->|Không| FORBIDDEN[403 Forbidden]
+    CHECK -->|Có| MATCH{Vai trò trong danh sách?}
+    MATCH -->|Có| ALLOW[200 OK]
     MATCH -->|Không| 403[403 Forbidden]
 ```
 
-### 7.4 Scoped data theo role
+### 7.4 Scoped Data theo Role
 
 ```mermaid
 graph TB
-    subgraph "Employee Query Scope"
-        ADMIN[Admin] -->|findAll| ALL[Toàn bộ employee records]
-        MANAGER[Manager] -->|findAll| DEPT[Employee trong phòng mình]
-        EMPLOYEE[Employee] -->|findAll| SELF[Chỉ bản thân]
-        
-        ADMIN -->|findOne/:id| ANY[Bất kỳ employee]
-        MANAGER -->|findOne/:id| DEPT_ONLY[Nếu trong phòng mình]
+    subgraph "Phạm vi truy vấn Employee"
+        ADMIN[Admin] -->|findAll| ALL[Toàn bộ]
+        MANAGER[Manager] -->|findAll| DEPT[NV trong phòng]
+        EMPLOYEE[Employee] -->|findAll| SELF[Bản thân]
+        ADMIN -->|findOne/:id| ANY[Bất kỳ]
+        MANAGER -->|findOne/:id| DEPT_ONLY[Nếu trong phòng]
         EMPLOYEE -->|findOne/:id| SELF_ONLY[Nếu là chính mình]
     end
 ```
 
 ---
 
-## 8. Thông báo thời gian thực
+## 8. Thiết kế Thông báo Thời gian thực
 
-### 8.1 Socket.IO Architecture
+### 8.1 Kiến trúc Socket.IO
 
 ```mermaid
 graph TB
@@ -1085,18 +813,15 @@ graph TB
         GW[NotificationsGateway]
         GW --> ROOM[user:{userId} room]
     end
-
     subgraph "Client"
         SC[Socket.IO Client]
         SH[useSocket Hook]
         TQ[TanStack Query]
         TS[Toast]
     end
-
     subgraph "Trigger Events"
         LV[Leave Service - approve/reject]
     end
-
     LV -->|create notification| NS
     NS -->|save to DB| DB[(MongoDB)]
     NS -->|emit event| GW
@@ -1109,7 +834,7 @@ graph TB
     API -->|updated list| UI[Giao diện]
 ```
 
-### 8.2 Connection lifecycle
+### 8.2 Vòng đời kết nối
 
 ```mermaid
 sequenceDiagram
@@ -1117,38 +842,30 @@ sequenceDiagram
     participant S as Socket Server
     participant A as Auth
     participant N as Notifications
-
     Note over C: App khởi động
-    C->>C: Kiểm tra localStorage có token
+    C->>C: Kiểm tra localStorage token
     alt Có token
-        C->>S: Kết nối Socket.IO với auth: {token}
-        S->>S: Xác thực JWT từ token
-        alt Token hợp lệ
+        C->>S: Kết nối Socket.IO + auth: {token}
+        S->>S: Xác thực JWT
+        alt Hợp lệ
             S-->>C: Kết nối thành công
             S->>S: Join room user:{userId}
-            Note over C,S: Sẵn sàng nhận thông báo
-        else Token không hợp lệ
+        else Không hợp lệ
             S-->>C: Kết nối thất bại
         end
-    else Không có token
-        Note over C: Không kết nối Socket
     end
-
     Note over A: Leave được duyệt
-    A->>N: Gửi thông báo đến userId
-    N->>S: Emit 'notification' event
-    S->>C: Push notification đến room user:{userId}
-    C->>C: Show toast + invalidate notifications query
-    C->>C: Cập nhật unread count
+    A->>N: Tạo notification
+    N->>S: Emit 'notification'
+    S->>C: Push đến room user:{userId}
+    C->>C: Show toast + invalidate queries
 ```
 
 ---
 
+## 9. Thiết kế chi tiết Module
 
-
-## 10. Component thiết kế chi tiết
-
-### 10.1 Class Diagram - Service Layer
+### 9.1 Class Diagram - Service Layer
 
 ```mermaid
 classDiagram
@@ -1160,7 +877,6 @@ classDiagram
         +changePassword(userId, currentPassword, newPassword) void
         -generateToken(user) string
     }
-
     class EmployeesService {
         +findAll(query, user) PaginatedResult
         +findOne(id, user) Employee
@@ -1173,7 +889,6 @@ classDiagram
         +removeDocument(id, docId) Employee
         +findByUserId(userId) Employee
     }
-
     class LeavesService {
         +findAll(query, user) Leave[]
         +findOne(id, user) Leave
@@ -1182,21 +897,18 @@ classDiagram
         -validateOverlap(employeeId, startDate, endDate) void
         -calculateDays(startDate, endDate) number
     }
-
     class AttendanceService {
         +findAll(query, user) Attendance[]
         +checkIn(userId) Attendance
         +checkOut(id, userId) Attendance
         -determineStatus(checkInTime) string
     }
-
     class DashboardService {
         +getDashboard(user) object
         -adminDashboard() object
         -managerDashboard(userId) object
         -employeeDashboard(userId) object
     }
-
     class NotificationsService {
         +findByUser(userId, limit) Notification[]
         +unreadCount(userId) number
@@ -1204,16 +916,21 @@ classDiagram
         +markAllRead(userId) void
         +create(data) Notification
     }
-
+    class PayrollService {
+        +process(dto) Payroll[]
+        +pay(id) Payroll
+        +findAll(query, user) Payroll[]
+    }
     AuthService --> User
     EmployeesService --> Employee
     LeavesService --> Leave
     AttendanceService --> Attendance
     DashboardService --> DashboardService
     NotificationsService --> Notification
+    PayrollService --> Payroll
 ```
 
-### 10.2 Sequence Diagram - Xử lý đơn nghỉ phép
+### 9.2 Sequence Diagram - Xử lý đơn nghỉ phép
 
 ```mermaid
 sequenceDiagram
@@ -1226,50 +943,37 @@ sequenceDiagram
 
     E->>C: POST /leaves {type, startDate, endDate, reason}
     C->>S: create(dto, userId)
-    
-    S->>S: Validate: endDate >= startDate
-    S->>S: Validate: duration <= 30 days
+    S->>S: Validate: endDate >= startDate, <= 30 days
     S->>DB: Tìm Employee theo userId
     DB-->>S: Employee
-    
-    S->>DB: Kiểm tra đơn chồng chéo
-    DB-->>S: Không có overlap
-    
-    S->>DB: create leave with status='pending'
+    S->>DB: Kiểm tra overlap
+    DB-->>S: Không overlap
+    S->>DB: create leave {status:'pending'}
     DB-->>S: Leave created
-    
-    S-->>C: 201 Created {leave}
-    C-->>E: Response thành công
+    S-->>C: 201 Created
+    C-->>E: Thành công
 
     Note over E,DB: Khi Manager duyệt
-    Manager->>C: PATCH /leaves/:id/status {status: 'approved'}
+    Manager->>C: PATCH /leaves/:id/status {status:'approved'}
     C->>S: updateStatus(id, dto, userId)
-    
-    S->>S: Kiểm tra leave đang 'pending'
+    S->>S: Kiểm tra leave đang pending
     S->>S: calculateDays(startDate, endDate)
     S->>LB: deduct(employeeId, type, days)
-    
     alt Không đủ ngày phép
-        LB-->>S: Error - insufficient balance
+        LB-->>S: Error
         S-->>Manager: 400 Bad Request
     else Đủ ngày phép
-        LB->>DB: Update leave balance
-        DB-->>LB: Success
-        
-        S->>DB: Update leave status = 'approved'
-        DB-->>S: Leave updated
-        
-        S->>N: create notification for employee
-        N->>DB: Save notification
-        N-->>S: Notification created
-        N->>N: Emit real-time via Socket.IO
-        
-        S-->>C: Leave approved
-        C-->>Manager: Success
+        LB->>DB: Update balance
+        S->>DB: Update leave status
+        S->>N: create notification
+        N->>DB: Save
+        N->>N: Emit Socket.IO
+        S-->>C: 200 OK
+        C-->>Manager: Thành công
     end
 ```
 
-### 10.3 Sequence Diagram - Xử lý lương hàng tháng
+### 9.3 Sequence Diagram - Xử lý lương
 
 ```mermaid
 sequenceDiagram
@@ -1279,36 +983,33 @@ sequenceDiagram
     participant ES as EmployeesService
     participant DB as MongoDB
 
-    A->>C: POST /payroll/process {employeeIds, month, year, bonuses, deductions}
+    A->>C: POST /payroll/process {employeeIds, month, year}
     C->>S: process(dto)
-    
     loop Mỗi employeeId
-        S->>ES: Lấy thông tin nhân viên
-        ES-->>S: Employee {salary, ...}
-        
-        S->>DB: Kiểm tra payroll đã tồn tại
+        S->>ES: Lấy employee info
+        ES-->>S: Employee {salary}
+        S->>DB: Kiểm tra tồn tại?
         alt Đã tồn tại
-            S->>S: Skip employee
+            S->>S: Skip
         else Chưa tồn tại
-            S->>S: netPay = salary + bonus - deductions
+            S->>S: netPay = salary + bonus - deductions (BHXH+BHTN+BHTNLD+Công đoàn+PIT)
             S->>S: netPay = max(0, netPay)
-            S->>DB: create payroll {status: 'draft'}
+            S->>DB: create payroll {status:'draft'}
         end
     end
-    
     DB-->>S: Payrolls created
-    S-->>C: 201 Created {payrolls}
+    S-->>C: 201 Created
     C-->>A: Danh sách payroll
 
     A->>C: PATCH /payroll/:id/pay
     C->>S: pay(id)
-    S->>DB: update {status: 'paid', paidAt: now}
+    S->>DB: update {status:'paid', paidAt:now}
     DB-->>S: Updated
     S-->>C: 200 OK
     C-->>A: Payroll marked as paid
 ```
 
-### 10.4 Sequence Diagram - Chấm công
+### 9.4 Sequence Diagram - Chấm công
 
 ```mermaid
 sequenceDiagram
@@ -1322,26 +1023,22 @@ sequenceDiagram
     C->>S: checkIn(userId)
     S->>ES: findByUserId(userId)
     ES-->>S: Employee
-    
-    S->>DB: Kiểm tra đã check-in hôm nay?
+    S->>DB: Đã check-in hôm nay?
     alt Đã check-in
-        S-->>E: 400 Bad Request - already checked in
-    else Chưa check-in
+        S-->>E: 400 Bad Request
+    else Chưa
         S->>S: now = new Date()
-        S->>S: if now.hours < 9 => status = 'present'
-        S->>S: if now.hours >= 9 => status = 'late'
-        S->>DB: create attendance {date, checkIn, status}
-        DB-->>S: Attendance created
-        S-->>C: 201 Created {attendance}
+        S->>S: < 9AM => present, >= 9AM => late
+        S->>DB: create attendance
+        DB-->>S: Created
+        S-->>C: 201 Created
         C-->>E: Check-in thành công
     end
 
     E->>C: PATCH /attendance/:id/check-out
     C->>S: checkOut(id, userId)
-    S->>S: Kiểm tra attendance thuộc về user
-    S->>S: workedHours = checkout - checkin
-    S->>S: if workedHours < 4 => status = 'half-day'
-    S->>S: if status='late' && workedHours >= 8 => status = 'present'
+    S->>S: workedHours = checkOut - checkIn
+    S->>S: < 4h => half-day
     S->>DB: update checkOut, status
     DB-->>S: Updated
     S-->>C: 200 OK
@@ -1350,197 +1047,191 @@ sequenceDiagram
 
 ---
 
-## 11. Biểu đồ Deployment
+## 10. Thiết kế Triển khai
 
-### 11.1 Development environment
+### 10.1 Môi trường Development
 
 ```mermaid
 graph TB
     subgraph "Developer Machine"
         MCON["MongoDB 8<br/>Port 27017"]
-
         subgraph "Node Processes"
             SRV["Express Server<br/>Port 3001<br/>npm run dev (tsx)"]
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
         end
-
-        subgraph "Environment Variables"
+        subgraph "Environment"
             ENV["server/.env<br/>JWT_SECRET<br/>MONGODB_URI<br/>CORS_ORIGIN<br/>PORT"]
             CLT_ENV["client/.env<br/>VITE_API_URL"]
         end
     end
-
-    BROWSER[Web Browser<br/>localhost:5173] --> CLT
-    CLT --> SRV
+    BROWSER[Web Browser:5173] --> CLT
+    CLT -->|/api/*| SRV
     SRV --> MCON
     ENV --> SRV
     CLT_ENV --> CLT
 ```
 
-### 11.2 Production-like environment
+### 10.2 Môi trường Production
 
 ```mermaid
 graph TB
     subgraph "Production Server"
         MONGODB[MongoDB 8<br/>Port 27017]
         SERVER[Express Server<br/>Port 3001]
-        NGINX[Static File Server<br/>Serves React build + reverse proxy]
+        NGINX[Static File Server + Reverse Proxy]
     end
-
     BROWSER[Web Browser] -->|HTTPS| NGINX
     NGINX -->|/api/*| SERVER
-    NGINX -->|/*| REACT_BUILD[React SPA Build Files]
+    NGINX -->|/*| REACT_BUILD[React SPA Build]
     SERVER --> MONGODB
 ```
 
+### 10.3 Chi tiết môi trường
+
+| Môi trường  | Client               | Server              | Database           | Mục đích        |
+|-------------|----------------------|---------------------|--------------------|------------------|
+| Development | Vite Dev (port 5173) | tsx watch (port 3001)| MongoDB local     | Lập trình        |
+| Staging     | Build static         | Node (port 3001)    | MongoDB Atlas     | Testing + UAT    |
+| Production  | Build static + CDN   | Node (PM2, port 3001)| MongoDB Atlas    | Production       |
+
 ---
 
-## 12. Security Design
+## 11. Thiết kế Bảo mật
 
-### 12.1 Security layers
+### 11.1 Các lớp bảo mật
 
 ```mermaid
 graph TB
     subgraph "Lớp 1: Network"
-        CORS[CORS - chỉ cho phép origin cụ thể]
+        CORS[CORS - chỉ origin cụ thể]
         RATE[Rate Limiting - 60 req/phút]
     end
-
     subgraph "Lớp 2: HTTP"
         HELMET[Helmet - Security Headers]
-        CORS --> HELMET
-        RATE --> HELMET
     end
-
     subgraph "Lớp 3: Authentication"
         JWT[JWT - JSON Web Token]
-        HELMET --> JWT
     end
-
     subgraph "Lớp 4: Authorization"
         RBAC[Role-Based Access Control]
-        JWT --> RBAC
     end
-
     subgraph "Lớp 5: Validation"
-        DTO[Zod DTOs]
-        RBAC --> DTO
+        DTO[Zod DTOs + express-validator]
     end
-
     subgraph "Lớp 6: Input Safety"
-        ESCAPE[Regex escape cho search input]
-        SIZE[File upload: max 5MB]
-        DTO --> ESCAPE
-        DTO --> SIZE
+        ESCAPE[Regex escape cho search]
+        SIZE[File upload max 5MB]
     end
-
     subgraph "Lớp 7: Data"
         BCRYPT[bcrypt - 10 rounds]
-        ESCAPE --> BCRYPT
-        SIZE --> BCRYPT
     end
+    CORS --> HELMET --> JWT --> RBAC --> DTO --> ESCAPE & SIZE --> BCRYPT
 ```
 
-### 12.2 Password validation rules
+### 11.2 Quy tắc xác thực mật khẩu
 
-```regex
-/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/
-```
-
-- Tối thiểu 8 ký tự
-- Tối đa 128 ký tự
-- Ít nhất 1 chữ hoa
-- Ít nhất 1 chữ thường
-- Ít nhất 1 chữ số
+- Regex validation: `/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/`
+- Độ dài: 8-128 ký tự
+- Ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
 
 ---
 
-## 13. Xử lý lỗi
+## 12. Thiết kế Xử lý lỗi
 
-### 13.1 Error handling flow
+### 12.1 Server-side Error Handling
 
 ```mermaid
 flowchart TD
-    REQ[HTTP Request] --> VAL[express-validator]
-    
-    VAL -->|Dữ liệu lỗi| BAD[400 Bad Request<br/>Trả về lỗi validation]
+    REQ[HTTP Request] --> VAL[Validation Middleware]
+    VAL -->|Lỗi| BAD[400 Bad Request]
     VAL -->|OK| SRV[Service]
-    
-    SRV -->|Lỗi nghiệp vụ| SRV_ERR[Throw exception<br/>vd: BadRequestException]
-    SRV_ERR --> FLT[Express Error Handler]
-    SRV -->|OK| RESP[200/201 Response]
-    
-    FLT -->|400| BAD_ERR[{message, statusCode: 400}]
-    FLT -->|401| UNAUTH[{message, statusCode: 401}]
-    FLT -->|403| FORBID[{message, statusCode: 403}]
-    FLT -->|404| NOTFOUND[{message, statusCode: 404}]
-    FLT -->|500| INT_ERR[{message, statusCode: 500}]
+    SRV -->|Business Error| EXC[Throw exception]
+    SRV -->|OK| OK_RESP[200/201]
+    EXC --> ERR[Express Error Handler]
+    ERR -->|400| B400[{message, statusCode: 400}]
+    ERR -->|401| B401[{message, statusCode: 401}]
+    ERR -->|403| B403[{message, statusCode: 403}]
+    ERR -->|404| B404[{message, statusCode: 404}]
+    ERR -->|500| B500[{message, statusCode: 500}]
 ```
 
-### 13.2 Client-side error handling
+**Error classes:**
+
+| Class                       | HTTP Status | Khi nào dùng                                         |
+|-----------------------------|:-----------:|------------------------------------------------------|
+| `BadRequestException`       | 400         | Validation lỗi, dữ liệu không hợp lệ                 |
+| `UnauthorizedException`     | 401         | Token thiếu/hết hạn/sai                              |
+| `ForbiddenException`        | 403         | Không có quyền                                       |
+| `NotFoundException`         | 404         | Resource không tồn tại                               |
+| `ConflictException`         | 409         | Trùng lặp dữ liệu                                    |
+
+### 12.2 Client-side Error Handling
 
 ```mermaid
 flowchart TD
-    API[API Call] --> AXI[Axios]
+    API[API Call] --> AXI[Axios Interceptor]
     AXI -->|401| CLEAR[Xóa token, redirect /login]
     AXI -->|400| SHOW[Hiển thị validation error]
-    AXI -->|403| HIDE[Ẩn chức năng không có quyền]
-    AXI -->|Network Error| RETRY[TanStack Query retry]
+    AXI -->|403| HIDE[Ẩn chức năng]
+    AXI -->|Network Error| RETRY[TanStack Query retry 3 lần]
     AXI -->|Success| UPDATE[Cập nhật cache]
-    RETRY -->|Hết lần retry| ERR_STATE[Hiển thị error state]
+    RETRY -->|Hết lần retry| ERR_STATE[Error state UI]
 ```
 
 ---
 
-## 14. Tính năng đa ngôn ngữ
+## 13. Thiết kế Đa ngôn ngữ
 
-### 14.1 Kiến trúc i18n
+### 13.1 Kiến trúc i18n
 
 ```mermaid
 graph TB
     subgraph "Language Context"
         LANG[language-context.tsx]
-        LANG --> EN[English Object ~830 keys]
-        LANG --> VI[Vietnamese Object ~830 keys]
+        LANG --> EN[English ~830 keys]
+        LANG --> VI[Vietnamese ~830 keys]
         LANG --> T[t(key) function]
     end
-
-    subgraph "Translation Keys Structure"
-        T --> COMMON[common.*]
-        T --> NAV[nav.*]
-        T --> ROLE[role.*]
-        T --> DASH[dashboard.*]
-        T --> EMP[employees.*]
-        T --> DEPT[departments.*]
-        T --> LEAVE[leaves.*]
-        T --> ATT[attendance.*]
-        T --> PAY[payroll.*]
-        T --> REC[recruitment.*]
-        T --> PR[performance_reviews.*]
-        T --> NOTIF[notifications.*]
-        T --> LOGIN[login.*]
-        T --> PROF[profile.*]
-        T --> SETT[settings.*]
-        T --> STAT[status.*]
-        T --> VAL[validation.*]
-        T --> AUTH[auth.*]
-        T --> HIST[history.*]
-        T --> ORG[org_chart.*]
+    subgraph "Translation Keys"
+        T --> COMMON[common.*] & NAV[nav.*] & ROLE[role.*]
+        T --> DASH[dashboard.*] & EMP[employees.*] & DEPT[departments.*]
+        T --> LEAVE[leaves.*] & ATT[attendance.*] & PAY[payroll.*]
+        T --> REC[recruitment.*] & PR[performance_reviews.*]
+        T --> NOTIF[notifications.*] & LOGIN[login.*]
+        T --> PROF[profile.*] & SETT[settings.*] & STAT[status.*]
+        T --> VAL[validation.*] & AUTH[auth.*]
+        T --> HIST[history.*] & ORG[org_chart.*]
     end
-
     COMP[React Components] -->|useLanguage()| LANG
     COMP -->|t('key')| T
 ```
 
+**Lưu trữ:** Lựa chọn ngôn ngữ được lưu trong `localStorage`, khôi phục khi reload.
+
 ---
 
-## 15. Kết luận
+## 14. Ràng buộc và Giả định thiết kế
 
-Hệ thống Quản lý Nhân sự được thiết kế theo kiến trúc **client-server** với **React + Express + MongoDB**. Hệ thống áp dụng:
+### 14.1 Ràng buộc kỹ thuật
 
-- **RBAC** với 3 vai trò (admin, manager, employee) để kiểm soát truy cập
-- **JWT** cho xác thực không trạng thái
-- **Socket.IO** cho thông báo thời gian thực
-- **TanStack Query** cho quản lý cache và đồng bộ dữ liệu client-server
+| ID      | Ràng buộc                                    | Mô tả                                                        |
+|---------|----------------------------------------------|--------------------------------------------------------------|
+| TC-01   | Express không NestJS CLI                     | Không có `nest-cli.json`, dùng tsx để chạy dev               |
+| TC-02   | ESM (`"type": "module"`)                     | Cả client và server đều dùng ES Modules                      |
+| TC-03   | NodeNext module resolution                   | Import với `.js` extension trong server relative paths       |
+| TC-04   | Không sử dụng linter/typecheck script        | Dự án không có ESLint, Prettier, typecheck script            |
+| TC-05   | `server/.env` không tracked trong git        | File env đã tồn tại với dev defaults                          |
 
-Thiết kế module hóa giúp dễ dàng mở rộng, bảo trì và thêm tính năng mới.
+### 14.2 Giả định thiết kế
+
+1. **Network**: Giả định kết nối mạng ổn định giữa client-server-database
+2. **User scale**: Hệ thống được thiết kế cho 50-500+ users, không cần load balancing phức tạp
+3. **Data volume**: Tổng số bản ghi < 1 triệu trong 2 năm đầu, không cần sharding
+4. **Browser**: Người dùng sử dụng trình duyệt hiện đại (Chrome/Firefox/Edge/Safari 2 phiên bản gần nhất)
+5. **Mobile**: Chỉ responsive web, không có native app
+6. **Auth**: JWT trong localStorage là đủ cho SPA nội bộ doanh nghiệp
+7. **File storage**: Local filesystem, không cần cloud storage (S3/GCS) ở phase đầu
+
+---
+
+*Tài liệu này được xây dựng theo chuẩn IEEE 1016 và cần được cập nhật khi có thay đổi về thiết kế.*

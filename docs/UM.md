@@ -2,9 +2,14 @@
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
 
-| Phiên bản | Ngày       | Người soạn | Mô tả            |
-|-----------|------------|------------|------------------|
-| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên |
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | HR Team    | Cập nhật cấu trúc chuẩn       |
+| 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai |
+
+> **Tuân theo:** ISO/IEC 26514 (Systems and software engineering — Requirements for designers and developers of user documentation) và Microsoft User Assistance Model.
+> **Trạng thái triển khai:** Các chức năng Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, Notifications, Profile đã có giao diện. Org Chart, Recruitment (Job Postings, Candidates), Performance Reviews chưa triển khai giao diện (đang kế hoạch). Socket.IO chưa triển khai.
 
 ---
 
@@ -405,6 +410,7 @@ graph TB
 4. Nhấn **Process**
 5. Hệ thống tự động tính:
    - `netPay = basicSalary + bonus - deductions`
+   - Khấu trừ: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), Thuế TNCN lũy tiến
 6. Bảng lương được tạo với trạng thái **Draft**
 
 ### 8.3 Đánh dấu đã trả (Admin)

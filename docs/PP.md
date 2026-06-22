@@ -2,9 +2,12 @@
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
 
-| Phiên bản | Ngày       | Người soạn | Mô tả            |
-|-----------|------------|------------|------------------|
-| 1.0       | 17/06/2026 | PM Team    | Phiên bản đầu tiên |
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | PM Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | PM Team    | Cập nhật cấu trúc chuẩn       |
+
+> **Tuân theo:** PMBOK Guide (Project Management Body of Knowledge) và Scrum Guide cho phần phát triển Agile.
 
 ---
 
@@ -13,15 +16,16 @@
 1. [Tổng quan dự án](#1-tổng-quan-dự-án)
 2. [Phạm vi và mục tiêu](#2-phạm-vi-và-mục-tiêu)
 3. [Tổ chức dự án](#3-tổ-chức-dự-án)
-4. [Phương pháp phát triển](#4-phương-pháp-phát-triển)
-5. [Kế hoạch Sprint](#5-kế-hoạch-sprint)
-6. [Lịch trình tổng thể](#6-lịch-trình-tổng-thể)
-7. [Phân bổ nguồn lực](#7-phân-bổ-nguồn-lực)
-8. [Kế hoạch quản lý rủi ro](#8-kế-hoạch-quản-lý-rủi-ro)
-9. [Kế hoạch kiểm thử](#9-kế-hoạch-kiểm-thử)
-10. [Kế hoạch triển khai](#10-kế-hoạch-triển-khai)
-11. [Kế hoạch đào tạo](#11-kế-hoạch-đào-tạo)
-12. [Ngân sách dự kiến](#12-ngân-sách-dự-kiến)
+4. [Tài liệu tham khảo](#4-tài-liệu-tham-khảo)
+5. [Phương pháp phát triển](#5-phương-pháp-phát-triển)
+6. [Kế hoạch Sprint](#6-kế-hoạch-sprint)
+7. [Lịch trình tổng thể](#7-lịch-trình-tổng-thể)
+8. [Phân bổ nguồn lực](#8-phân-bổ-nguồn-lực)
+9. [Kế hoạch quản lý rủi ro](#9-kế-hoạch-quản-lý-rủi-ro)
+10. [Kế hoạch kiểm thử](#10-kế-hoạch-kiểm-thử)
+11. [Kế hoạch triển khai](#11-kế-hoạch-triển-khai)
+12. [Kế hoạch đào tạo](#12-kế-hoạch-đào-tạo)
+13. [Ngân sách dự kiến](#13-ngân-sách-dự-kiến)
 
 ---
 
@@ -161,7 +165,20 @@ graph TB
 
 ---
 
-## 4. Phương pháp phát triển
+## 4. Tài liệu tham khảo
+
+| Tài liệu      | Mô tả                                        |
+|---------------|----------------------------------------------|
+| BRD.md        | Tài liệu Yêu cầu Nghiệp vụ                   |
+| SRS.md        | Đặc tả Yêu cầu Phần mềm                      |
+| SDD.md        | Đặc tả Thiết kế Phần mềm                     |
+| US.md         | User Stories                                 |
+| UC.md         | Đặc tả Use Case                             |
+| UM.md         | Hướng dẫn Sử dụng (User Manual)             |
+
+---
+
+## 5. Phương pháp phát triển
 
 ### 4.1 Scrum
 
@@ -203,7 +220,7 @@ graph LR
 
 ---
 
-## 5. Kế hoạch Sprint
+## 6. Kế hoạch Sprint
 
 ### 5.1 Tổng quan Phase
 
@@ -363,7 +380,7 @@ gantt
 
 ---
 
-## 6. Lịch trình tổng thể
+## 7. Lịch trình tổng thể
 
 ### 6.1 Timeline
 
@@ -408,7 +425,7 @@ gantt
 
 ---
 
-## 7. Phân bổ nguồn lực
+## 8. Phân bổ nguồn lực
 
 ### 7.1 Nhân sự
 
@@ -439,7 +456,7 @@ gantt
 
 ---
 
-## 8. Kế hoạch quản lý rủi ro
+## 9. Kế hoạch quản lý rủi ro
 
 ### 8.1 Danh sách rủi ro
 
@@ -484,7 +501,7 @@ graph TB
 
 ---
 
-## 9. Kế hoạch kiểm thử
+## 10. Kế hoạch kiểm thử
 
 ### 9.1 Chiến lược kiểm thử
 
@@ -517,7 +534,7 @@ graph TB
 
 ---
 
-## 10. Kế hoạch triển khai
+## 11. Kế hoạch triển khai
 
 ### 10.1 Môi trường
 
@@ -553,7 +570,7 @@ Nếu production gặp sự cố:
 
 ---
 
-## 11. Kế hoạch đào tạo
+## 12. Kế hoạch đào tạo
 
 ### 11.1 Đối tượng
 
@@ -572,7 +589,7 @@ Nếu production gặp sự cố:
 
 ---
 
-## 12. Ngân sách dự kiến
+## 13. Ngân sách dự kiến
 
 ### 12.1 Chi phí nhân sự (ước tính)
 

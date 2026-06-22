@@ -2,9 +2,12 @@
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
 
-| Phiên bản | Ngày       | Người soạn | Mô tả            |
-|-----------|------------|------------|------------------|
-| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên |
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | HR Team    | Cập nhật cấu trúc chuẩn BRD   |
+
+> **Tuân theo:** IEEE 830 (tham khảo), ISO 29148, và các best practices về Business Requirements Documentation.
 
 ---
 
@@ -13,13 +16,14 @@
 1. [Tổng quan dự án](#1-tổng-quan-dự-án)
 2. [Mục tiêu kinh doanh](#2-mục-tiêu-kinh-doanh)
 3. [Các bên liên quan](#3-các-bên-liên-quan)
-4. [Quy trình nghiệp vụ hiện tại](#4-quy-trình-nghiệp-vụ-hiện-tại)
-5. [Quy trình nghiệp vụ mục tiêu](#5-quy-trình-nghiệp-vụ-mục-tiêu)
-6. [Yêu cầu nghiệp vụ](#6-yêu-cầu-nghiệp-vụ)
-7. [Phạm vi dự án](#7-phạm-vi-dự-án)
-8. [Chỉ số đo lường thành công](#8-chỉ-số-đo-lường-thành-công)
-9. [Phân tích rủi ro](#9-phân-tích-rủi-ro)
-10. [Giả định và phụ thuộc](#10-giả-định-và-phụ-thuộc)
+4. [Tài liệu tham khảo](#4-tài-liệu-tham-khảo)
+5. [Quy trình nghiệp vụ hiện tại](#5-quy-trình-nghiệp-vụ-hiện-tại)
+6. [Quy trình nghiệp vụ mục tiêu](#6-quy-trình-nghiệp-vụ-mục-tiêu)
+7. [Yêu cầu nghiệp vụ](#7-yêu-cầu-nghiệp-vụ)
+8. [Phạm vi dự án](#8-phạm-vi-dự-án)
+9. [Chỉ số đo lường thành công](#9-chỉ-số-đo-lường-thành-công)
+10. [Phân tích rủi ro](#10-phân-tích-rủi-ro)
+11. [Giả định và phụ thuộc](#11-giả-định-và-phụ-thuộc)
 
 ---
 
@@ -80,7 +84,20 @@ Xây dựng hệ thống **Quản lý Nhân sự (HR Management)** — một ứ
 
 ---
 
-## 4. Quy trình nghiệp vụ hiện tại
+## 4. Tài liệu tham khảo
+
+| Tài liệu      | Mô tả                                        |
+|---------------|----------------------------------------------|
+| SRS.md        | Đặc tả Yêu cầu Phần mềm (Software Requirements Specification) |
+| SDD.md        | Đặc tả Thiết kế Phần mềm (Software Design Description) |
+| US.md         | User Stories                                 |
+| UC.md         | Đặc tả Use Case                             |
+| PP.md         | Kế hoạch Dự án (Project Plan)               |
+| UM.md         | Hướng dẫn Sử dụng (User Manual)             |
+
+---
+
+## 5. Quy trình nghiệp vụ hiện tại
 
 ### 4.1 Quy trình nghỉ phép (hiện tại)
 
@@ -128,7 +145,7 @@ flowchart LR
 
 ---
 
-## 5. Quy trình nghiệp vụ mục tiêu
+## 6. Quy trình nghiệp vụ mục tiêu
 
 ### 5.1 Quy trình nghỉ phép (mục tiêu)
 
@@ -181,7 +198,7 @@ flowchart LR
 
 ---
 
-## 6. Yêu cầu nghiệp vụ
+## 7. Yêu cầu nghiệp vụ
 
 ### 6.1 Quản lý hồ sơ nhân viên
 
@@ -226,7 +243,7 @@ flowchart LR
 | ID      | Yêu cầu                                                       | Ưu tiên | Phụ thuộc     |
 |---------|---------------------------------------------------------------|:-------:|---------------|
 | BR-040  | Admin xử lý lương theo tháng/năm cho từng nhân viên           | Cao     | BR-001        |
-| BR-041  | Tự động tính netPay = lương + thưởng - khấu trừ               | Cao     | BR-040        |
+| BR-041  | Tự động tính netPay = lương + thưởng - khấu trừ (BHSS, BHTN, BHTNLD, Công đoàn, PIT lũy tiến) | Cao     | BR-040        |
 | BR-042  | Chống tạo trùng lặp bảng lương                                | Cao     | BR-040        |
 | BR-043  | Đánh dấu trạng thái đã thanh toán                             | Trung bình | BR-041    |
 
@@ -269,7 +286,7 @@ flowchart LR
 
 ---
 
-## 7. Phạm vi dự án
+## 8. Phạm vi dự án
 
 ### 7.1 Trong phạm vi (In scope)
 
@@ -308,7 +325,7 @@ flowchart LR
 
 ---
 
-## 8. Chỉ số đo lường thành công
+## 9. Chỉ số đo lường thành công
 
 ### 8.1 KPIs sau triển khai
 
@@ -338,7 +355,7 @@ flowchart LR
 
 ---
 
-## 9. Phân tích rủi ro
+## 10. Phân tích rủi ro
 
 | ID    | Rủi ro                                      | Khả năng | Tác động | Biện pháp giảm thiểu                        |
 |-------|---------------------------------------------|:--------:|:--------:|---------------------------------------------|
@@ -352,7 +369,7 @@ flowchart LR
 
 ---
 
-## 10. Giả định và phụ thuộc
+## 11. Giả định và phụ thuộc
 
 ### 10.1 Giả định
 
@@ -371,7 +388,7 @@ flowchart LR
 
 ---
 
-## 11. Phê duyệt
+## 12. Phê duyệt
 
 | Vai trò           | Họ tên | Chữ ký | Ngày     |
 |-------------------|--------|:------:|----------|
@@ -379,3 +396,7 @@ flowchart LR
 | Trưởng phòng HR   |        |   -    | DD/MM/YYYY |
 | Giám đốc Kỹ thuật |        |   -    | DD/MM/YYYY |
 | Trưởng dự án      |        |   -    | DD/MM/YYYY |
+
+---
+
+*Tài liệu này cần được cập nhật khi có thay đổi về yêu cầu nghiệp vụ.*

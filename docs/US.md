@@ -2,15 +2,23 @@
 
 ## Hệ thống Quản lý Nhân sự (HR Management)
 
-| Phiên bản | Ngày       | Người soạn | Mô tả            |
-|-----------|------------|------------|------------------|
-| 1.0       | 17/06/2026 | PO Team    | Phiên bản đầu tiên |
+| Phiên bản | Ngày       | Người soạn | Mô tả                        |
+|-----------|------------|------------|------------------------------|
+| 1.0       | 17/06/2026 | PO Team    | Phiên bản đầu tiên           |
+| 2.0       | 22/06/2026 | PO Team    | Cập nhật cấu trúc chuẩn       |
+| 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai |
+
+> **Tuân theo:** Template User Story chuẩn (Role-Feature-Reason) với Acceptance Criteria, ước lượng Story Point (Fibonacci) và phân loại MoSCoW.
+> **Trạng thái triển khai:** US-001 đến US-062 đã triển khai. US-070, US-071 (Recruitment), US-080, US-081 (Performance Reviews), US-090 (Socket.IO real-time) chưa triển khai.
 
 ---
 
 ## Mục lục
 
 1. [Giới thiệu](#1-giới-thiệu)
+   1.1 [Cấu trúc User Story](#11-cấu-trúc-user-story)
+   1.2 [Quy ước](#12-quy-ước)
+   1.3 [Tài liệu tham khảo](#13-tài-liệu-tham-khảo)
 2. [Epic 1: Xác thực & Tài khoản](#2-epic-1-xác-thực--tài-khoản)
 3. [Epic 2: Quản lý Nhân viên](#3-epic-2-quản-lý-nhân-viên)
 4. [Epic 3: Quản lý Phòng ban](#4-epic-3-quản-lý-phòng-ban)
@@ -30,7 +38,7 @@
 
 ### 1.1 Cấu trúc User Story
 
-Mỗi user story tuân theo template:
+Mỗi user story tuân theo template chuẩn:
 
 ```
 **US-NNN**: Với tư cách là <vai trò>, tôi muốn <mục tiêu> để <lợi ích>.
@@ -42,13 +50,22 @@ Mỗi user story tuân theo template:
 **Ước lượng**: X SP
 ```
 
-### 1.2 Format
+### 1.2 Quy ước
 
 | Ký hiệu | Ý nghĩa       |
 |:-------:|---------------|
 | US      | User Story    |
-| SP      | Story Point   |
-| MoSCoW  | M - Must, S - Should, C - Could, W - Won't |
+| SP      | Story Point (Fibonacci: 1, 2, 3, 5, 8, 13) |
+| MoSCoW  | M - Must (bắt buộc), S - Should (nên có), C - Could (có thể), W - Won't (không làm) |
+
+### 1.3 Tài liệu tham khảo
+
+| Tài liệu      | Mô tả                                        |
+|---------------|----------------------------------------------|
+| BRD.md        | Tài liệu Yêu cầu Nghiệp vụ                   |
+| SRS.md        | Đặc tả Yêu cầu Phần mềm                      |
+| UC.md         | Đặc tả Use Case                             |
+| PP.md         | Kế hoạch Dự án                              |
 
 ---
 
@@ -424,7 +441,7 @@ Mỗi user story tuân theo template:
 **Acceptance Criteria**:
 - [ ] Dialog: chọn month, year, employeeIds
 - [ ] Gọi API POST /api/payroll/process
-- [ ] Tự động tính netPay = basicSalary + bonus - deductions
+- [ ] Tự động tính netPay = basicSalary + bonus - deductions (BHXH 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, PIT lũy tiến)
 - [ ] Bỏ qua nếu đã tồn tại (employeeId + month + year)
 - [ ] Payroll tạo với status "draft"
 - [ ] Danh sách payroll: period, salary, bonus, deductions, netPay, status
