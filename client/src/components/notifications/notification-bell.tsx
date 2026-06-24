@@ -45,7 +45,7 @@ export function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-md hover:bg-accent transition-colors cursor-pointer">
+      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-md hover:bg-accent transition-colors cursor-pointer" aria-label={t('nav.notifications')}>
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">

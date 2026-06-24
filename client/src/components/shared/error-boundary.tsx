@@ -11,12 +11,12 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center p-8">
+        <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center p-8" role="alert" aria-live="assertive">
           <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Something went wrong</h2>
+            <h2 className="text-lg font-semibold" id="error-heading">Something went wrong</h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">{this.state.error?.message}</p>
           </div>
           <Button variant="outline" onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}>
