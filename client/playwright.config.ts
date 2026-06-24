@@ -29,13 +29,13 @@ export default defineConfig({
     {
       command: 'cd ../server && npm run seed && npm run dev',
       url: 'http://localhost:3001/api/auth/login',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 60000,
     },
     {
       command: 'npm run dev',
       url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 60000,
     },
   ],
