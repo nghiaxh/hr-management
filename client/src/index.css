@@ -28,6 +28,11 @@
   --color-popover-foreground: hsl(var(--popover-foreground));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -35,59 +40,69 @@
 
 :root {
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 240 6% 10%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 240 6% 10%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --popover-foreground: 240 6% 10%;
+  --primary: 240 6% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 240 5% 96%;
+  --accent-foreground: 240 6% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
   --success: 142 76% 36%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 0%;
   --info: 200 98% 39%;
   --info-foreground: 0 0% 100%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 240 6% 10%;
   --radius: 0.5rem;
+  --chart-1: 240 6% 10%;
+  --chart-2: 240 4% 46%;
+  --chart-3: 240 5% 65%;
+  --chart-4: 240 6% 34%;
+  --chart-5: 240 5% 20%;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 6% 10%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 240 4% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
   --success: 142 76% 46%;
   --success-foreground: 0 0% 0%;
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 0%;
   --info: 200 98% 49%;
   --info-foreground: 0 0% 100%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --ring: 240 5% 65%;
+  --chart-1: 0 0% 98%;
+  --chart-2: 240 5% 65%;
+  --chart-3: 240 5% 46%;
+  --chart-4: 240 4% 26%;
+  --chart-5: 240 5% 80%;
 }
 
 * {
@@ -100,6 +115,29 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 ::selection {
@@ -118,9 +156,9 @@ html {
 }
 
 .glass {
-  @apply bg-background border-r border-border;
+  @apply bg-background/80 backdrop-blur-xl border-b border-border;
 }
 
 .glass-card {
-  @apply bg-card border border-border shadow-sm;
+  @apply bg-card/95 backdrop-blur-sm border border-border shadow-sm;
 }
