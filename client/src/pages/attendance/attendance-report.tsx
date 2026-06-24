@@ -13,10 +13,10 @@ import { Attendance } from '../../types';
 const columnHelper = createColumnHelper<Attendance>();
 
 const STATUS_META: Record<string, { color: string; bar: string }> = {
-  present: { color: 'text-emerald-600', bar: 'bg-emerald-500' },
-  late: { color: 'text-amber-600', bar: 'bg-amber-500' },
-  absent: { color: 'text-red-600', bar: 'bg-red-500' },
-  'half-day': { color: 'text-orange-600', bar: 'bg-orange-500' },
+  present: { color: 'text-success', bar: 'bg-success' },
+  late: { color: 'text-warning', bar: 'bg-warning' },
+  absent: { color: 'text-destructive', bar: 'bg-destructive' },
+  'half-day': { color: 'text-info', bar: 'bg-info' },
 };
 
 export default function AttendanceReportPage() {
@@ -65,14 +65,14 @@ export default function AttendanceReportPage() {
 
       {total > 0 && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             {Object.entries(STATUS_META).map(([key, meta]) => {
               const count = stats[key] || 0;
               const pct = total > 0 ? (count / total) * 100 : 0;
               return (
                 <Card key={key} className="overflow-hidden">
                   <div className={`h-1 ${meta.bar}`} />
-                  <CardContent className="p-4 md:p-5">
+                  <CardContent>
                     <p className="text-2xl font-bold">{count}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
                     <p className="text-xs font-medium mt-1">{pct.toFixed(0)}%</p>

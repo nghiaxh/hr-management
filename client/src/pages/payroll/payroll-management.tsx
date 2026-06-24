@@ -110,32 +110,32 @@ export default function PayrollManagementPage() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="overflow-hidden">
-          <div className="h-1 bg-emerald-500" />
-          <CardContent className="p-4 md:p-5 space-y-0.5">
+          <div className="h-1 bg-success" />
+          <CardContent className="space-y-0.5">
             <p className="text-xs text-muted-foreground font-medium">{t('payroll.total_paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalNet)}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
-          <div className="h-1 bg-blue-500" />
-          <CardContent className="p-4 md:p-5 space-y-0.5">
+          <div className="h-1 bg-primary/60" />
+          <CardContent className="space-y-0.5">
             <p className="text-xs text-muted-foreground font-medium">{t('payroll.status')}</p>
             <p className="text-xl md:text-2xl font-bold">{records.length}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
-          <div className="h-1 bg-amber-500" />
-          <CardContent className="p-4 md:p-5 space-y-0.5">
+          <div className="h-1 bg-warning" />
+          <CardContent className="space-y-0.5">
             <p className="text-xs text-muted-foreground font-medium">{t('payroll.waiting')}</p>
             <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalDraft)}</p>
             <p className="text-xs text-muted-foreground">{draftCount} {t('payroll.employees')?.toLowerCase()}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
-          <div className="h-1 bg-indigo-500" />
-          <CardContent className="p-4 md:p-5 space-y-0.5">
+          <div className="h-1 bg-primary" />
+          <CardContent className="space-y-0.5">
             <p className="text-xs text-muted-foreground font-medium">{t('payroll.paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{paidCount}</p>
           </CardContent>

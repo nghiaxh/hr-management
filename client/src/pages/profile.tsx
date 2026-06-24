@@ -87,7 +87,7 @@ export default function ProfilePage() {
       </div>
 
       <Card>
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('user.info')}</h2>
             <Button variant="outline" size="sm" onClick={() => { profileForm.reset({ name: user?.name || '', email: user?.email || '' }); setProfileOpen(true); }}>
@@ -112,7 +112,7 @@ export default function ProfilePage() {
       </Card>
 
       <Card className="mt-4">
-        <CardContent className="p-6">
+        <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('profile.security')}</h2>
             <Button variant="outline" size="sm" onClick={() => { passwordForm.reset(); setPasswordOpen(true); }}>
