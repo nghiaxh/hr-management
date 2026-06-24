@@ -5,7 +5,10 @@ import { useTranslation } from '../context/language-context';
 import { dashboardApi } from '../api/dashboard';
 import { attendanceApi } from '../api/attendance';
 import { StatusBadge } from '../components/shared/status-badge';
+import { StatCard } from '../components/shared/stat-card';
 import { SkeletonCard, SkeletonTable } from '../components/shared/skeleton';
+import { EmptyState } from '../components/shared/empty-state';
+import { PageHeader } from '../components/shared/page-header';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
 import { formatDate } from '../lib/utils';
@@ -18,26 +21,19 @@ import {
   PieChart as RePieChart, Pie, Cell, Legend,
 } from 'recharts';
 
-const PIE_COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6'];
+const CHART_COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
 
-function StatCard({ title, value, subtitle, icon: Icon }: { title: string; value: string | number; subtitle?: string; icon: any }) {
-  return (
-    <Card>
-      <CardContent className="p-4 md:p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1.5">
-            <p className="text-xs md:text-sm text-muted-foreground font-medium">{title}</p>
-            <p className="text-2xl md:text-3xl font-bold tracking-tight">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
-          <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
-            <Icon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+const CHART_CONFIG = {
+  grid: 'hsl(var(--border))',
+  text: 'hsl(var(--muted-foreground))',
+  primary: 'hsl(var(--primary))',
+};
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -95,12 +91,12 @@ export default function DashboardPage() {
             <div className="h-4 w-32 bg-muted/40 rounded animate-pulse mt-1" />
           </div>
         </div>
-        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <Card><CardContent className="p-5"><SkeletonTable rows={4} cols={3} /></CardContent></Card>
-          <Card><CardContent className="p-5"><SkeletonTable rows={4} cols={3} /></CardContent></Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card><CardContent><SkeletonTable rows={4} cols={3} /></CardContent></Card>
+          <Card><CardContent><SkeletonTable rows={4} cols={3} /></CardContent></Card>
         </div>
       </div>
     );
@@ -124,19 +120,19 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{t('dashboard.welcome_back')}</p>
-          </div>
-          <div className="flex gap-2">
-            {!todayRecord?.checkIn ? (
-              <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
-            ) : !todayRecord.checkOut ? (
-              <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
-            ) : null}
-          </div>
-        </div>
+        <PageHeader
+          title={t('dashboard.title')}
+          description={t('dashboard.welcome_back')}
+          action={
+            <div className="flex gap-2">
+              {!todayRecord?.checkIn ? (
+                <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
+              ) : !todayRecord.checkOut ? (
+                <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
+              ) : null}
+            </div>
+          }
+        />
 
         <div className="bg-card rounded-lg border p-3 md:p-4 flex flex-wrap gap-x-6 gap-y-1 text-sm items-center">
           <div className="flex items-center gap-2">
@@ -154,14 +150,14 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard title={t('dashboard.pending_leaves')} value={leaves.pending || 0} icon={FileText} />
           <StatCard title={t('dashboard.approved')} value={leaves.approved || 0} icon={CalendarCheck} />
           <StatCard title={t('dashboard.present_month')} value={att.present || 0} icon={Clock} />
           <StatCard title={t('dashboard.month_days')} value={att.totalDays || 0} subtitle={t('dashboard.attendance_records')} icon={TrendingUp} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="pb-0">
               <CardTitle className="text-base flex items-center gap-2">
@@ -169,14 +165,14 @@ export default function DashboardPage() {
                 {t('dashboard.leave_breakdown')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               {leaveData.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.no_leave_data')}</p>
+                <EmptyState icon={FileText} title={t('dashboard.no_leave_data')} />
               ) : (
                 <ResponsiveContainer width="100%" height={250}>
                   <RePieChart>
                     <Pie data={leaveData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                      {leaveData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      {leaveData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                     </Pie>
                     <Tooltip />
                     <Legend />
@@ -193,17 +189,17 @@ export default function DashboardPage() {
                 {t('dashboard.attendance_month')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               {attData.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.no_attendance_data')}</p>
+                <EmptyState icon={BarChart3} title={t('dashboard.no_attendance_data')} />
               ) : (
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={attData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis allowDecimals={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_CONFIG.grid} />
+                    <XAxis dataKey="name" tick={{ fill: CHART_CONFIG.text, fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fill: CHART_CONFIG.text, fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill={CHART_CONFIG.primary} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -219,7 +215,7 @@ export default function DashboardPage() {
                 {t('dashboard.upcoming_leaves')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               {my.upcomingLeaves.map((leave: any) => (
                 <div key={leave._id} className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
                   <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
@@ -248,23 +244,19 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {isManager ? t('dashboard.team_overview') : t('dashboard.company_overview')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={t('dashboard.title')}
+        description={isManager ? t('dashboard.team_overview') : t('dashboard.company_overview')}
+      />
 
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title={t('dashboard.total_employees')} value={dash?.totalEmployees || 0} icon={Users} />
         <StatCard title={t('dashboard.pending_leaves')} value={dash?.pendingLeaves || 0} icon={FileText} />
         <StatCard title={t('dashboard.present_today')} value={dash?.presentToday || 0} icon={Clock} />
         <StatCard title={t('dashboard.monthly_payroll')} value={new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dash?.monthlyPayroll || 0)} subtitle={`${dash?.totalDepartments || 0} ${t('dashboard.departments')}`} icon={Wallet} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-base flex items-center gap-2">
@@ -272,17 +264,17 @@ export default function DashboardPage() {
               {t('dashboard.employees_per_dept')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent>
             {deptData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.no_department_data')}</p>
+              <EmptyState icon={Building2} title={t('dashboard.no_department_data')} />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={deptData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" width={120} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_CONFIG.grid} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fill: CHART_CONFIG.text, fontSize: 12 }} />
+                  <YAxis type="category" dataKey="name" width={120} tick={{ fill: CHART_CONFIG.text, fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="employees" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="employees" fill={CHART_CONFIG.primary} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -296,12 +288,12 @@ export default function DashboardPage() {
               {t('dashboard.recent_leaves')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-1">
-              {(!dash?.recentLeaves || dash.recentLeaves.length === 0) ? (
-                <p className="text-sm text-muted-foreground text-center py-6">{t('dashboard.no_leaves')}</p>
-              ) : (
-                dash.recentLeaves.map((leave: any) => (
+          <CardContent>
+            {(!dash?.recentLeaves || dash.recentLeaves.length === 0) ? (
+              <EmptyState icon={CalendarCheck} title={t('dashboard.no_leaves')} />
+            ) : (
+              <div className="space-y-1">
+                {dash.recentLeaves.map((leave: any) => (
                   <div key={leave._id} className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
                     <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
                       <CalendarCheck className="h-4 w-4 text-muted-foreground" />
@@ -314,15 +306,15 @@ export default function DashboardPage() {
                     </div>
                     <StatusBadge status={leave.status} />
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {isManager && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-0">
               <CardTitle className="text-base flex items-center gap-2">
@@ -330,7 +322,7 @@ export default function DashboardPage() {
                 {t('dashboard.department_title')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               <p className="text-2xl font-bold">{dash?.departmentName || t('dashboard.na')}</p>
             </CardContent>
           </Card>
@@ -341,7 +333,7 @@ export default function DashboardPage() {
                 {t('dashboard.team_size')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               <p className="text-2xl font-bold">{dash?.totalEmployees || 0}</p>
             </CardContent>
           </Card>
@@ -352,7 +344,7 @@ export default function DashboardPage() {
                 {t('dashboard.dept_payroll')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               <p className="text-2xl font-bold">${((dash?.departmentPayroll || 0) / 1000).toFixed(1)}k</p>
             </CardContent>
           </Card>
