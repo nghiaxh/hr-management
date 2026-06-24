@@ -4,50 +4,82 @@ import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
 import { useTheme } from '../../hooks/use-theme';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { TooltipRoot, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import { notificationsApi } from '../../api/notifications';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, Building2, CalendarCheck, ClipboardCheck,
   Clock, BarChart3, Wallet, DollarSign, LogOut, Sun, Moon,
-  Menu, User, Settings, X, Bell, ChevronLeft,
+  User, X, Bell, ChevronLeft, GitGraph, Star, Briefcase, Settings,
 } from 'lucide-react';
 
 const menuItems = [
   { path: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
   { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
   { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
-  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['employee'] },
+  { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
+  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'] },
   { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
-  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['employee'] },
+  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
   { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
-  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['employee'] },
+  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'] },
   { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
+  { path: '/performance-reviews', label: 'nav.performance_reviews', icon: Star, roles: ['admin', 'manager'] },
+  { path: '/recruitment', label: 'nav.job_postings', icon: Briefcase, roles: ['admin'] },
 ];
 
-export function Sidebar() {
+function NavItem({ item, collapsed, onNav }: { item: typeof menuItems[0]; collapsed: boolean; onNav: () => void }) {
+  const { t } = useTranslation();
+  const link = (
+    <NavLink
+      to={item.path}
+      onClick={onNav}
+      className={({ isActive }) =>
+        cn(
+          'flex items-center px-2 py-1.5 rounded-md text-sm transition-colors',
+          collapsed ? 'justify-center gap-0' : 'gap-2.5',
+          isActive
+            ? 'bg-primary/10 text-primary font-medium'
+            : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
+          {!collapsed && t(item.label)}
+        </>
+      )}
+    </NavLink>
+  );
+
+  if (!collapsed) return link;
+
+  return (
+    <TooltipRoot>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{t(item.label)}</TooltipContent>
+    </TooltipRoot>
+  );
+}
+
+interface SidebarProps {
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+}
+
+export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
-
-  const queryClient = useQueryClient();
 
   const { data: unreadCount } = useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: () => notificationsApi.getUnreadCount(),
     refetchInterval: 30000,
-  });
-
-  const markAllReadMutation = useMutation({
-    mutationFn: () => notificationsApi.markAllRead(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const toggleCollapsed = () => {
@@ -58,75 +90,151 @@ export function Sidebar() {
     });
   };
 
+  const closeMobile = () => setMobileOpen(false);
+
+  function BottomNavItem({ children, label, collapsed: isCollapsed }: { children: React.ReactNode; label: string; collapsed: boolean }) {
+    if (!isCollapsed) return <>{children}</>;
+    return (
+      <TooltipRoot>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="right">{label}</TooltipContent>
+      </TooltipRoot>
+    );
+  }
+
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-end px-1">
-        <button onClick={() => setMobileOpen(false)} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer" aria-label="Close sidebar">
+        <button onClick={closeMobile} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer" aria-label="Close sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <NavLink to="/profile" onClick={() => setMobileOpen(false)} className={cn('flex items-center gap-2.5 px-2 py-2 mb-3 rounded-lg text-sm hover:bg-accent/50 transition-all w-full text-left group', collapsed && 'justify-center')}>
-        <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0">
-          {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
-        </div>
-        {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
-            <p className="text-[11px] text-muted-foreground">{t('role.' + user?.role)}</p>
-          </div>
-        )}
-      </NavLink>
+      <TooltipRoot>
+        <TooltipTrigger asChild>
+          <NavLink to="/profile" onClick={closeMobile} className={cn(
+            'flex items-center gap-2.5 px-2 py-2 mb-3 rounded-lg text-sm hover:bg-accent/50 transition-all w-full text-left group',
+            collapsed && 'justify-center'
+          )}>
+            <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0">
+              {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
+                <p className="text-[11px] text-muted-foreground">{t('role.' + user?.role)}</p>
+              </div>
+            )}
+          </NavLink>
+        </TooltipTrigger>
+        {collapsed && <TooltipContent side="right">{user?.name || user?.email}</TooltipContent>}
+      </TooltipRoot>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto">
         {menuItems.filter(item => item.roles.includes(user?.role || '')).map((item) => (
-          <NavLink key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className={({ isActive }) =>
-            cn('flex items-center px-2 py-1.5 rounded-md text-sm transition-colors',
-              collapsed ? 'justify-center gap-0' : 'gap-2.5',
+          <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
+        ))}
+      </nav>
+
+      <div className="border-t border-border pt-2 mt-2 space-y-0.5">
+        <BottomNavItem label={t('nav.notifications')} collapsed={collapsed}>
+          <NavLink to="/notifications" onClick={closeMobile} className={({ isActive }) =>
+            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
+              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
               isActive
-                ? 'bg-primary/10 text-primary font-medium'
+                ? 'bg-accent font-medium text-foreground'
                 : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
             )
           }>
             {({ isActive }) => (
               <>
-                <item.icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
-                {!collapsed && t(item.label)}
+                <div className="relative">
+                  <Bell className={cn('h-4 w-4', isActive && 'text-foreground')} />
+                  {(typeof unreadCount === 'number' && unreadCount > 0) && (
+                    <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
+                {!collapsed && t('nav.notifications')}
               </>
             )}
           </NavLink>
-        ))}
-      </nav>
+        </BottomNavItem>
 
-      <div className="border-t border-border pt-2 mt-2 space-y-0.5">
-        <NavLink to="/notifications" onClick={() => setMobileOpen(false)} className={cn('flex items-center px-2 py-1.5 text-sm text-foreground/70 hover:text-foreground hover:bg-accent/50 w-full rounded-md transition-colors', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')}>
-          <div className="relative">
-            <Bell className="h-4 w-4" />
-            {(typeof unreadCount === 'number' && unreadCount > 0) && (
-              <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+        <BottomNavItem label={t('user.profile')} collapsed={collapsed}>
+          <NavLink to="/profile" onClick={closeMobile} className={({ isActive }) =>
+            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
+              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
+              isActive
+                ? 'bg-accent font-medium text-foreground'
+                : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
+            )
+          }>
+            {({ isActive }) => (
+              <>
+                <User className={cn('h-4 w-4', isActive && 'text-foreground')} />
+                {!collapsed && t('user.profile')}
+              </>
             )}
-          </div>
-          {!collapsed && t('nav.notifications')}
-        </NavLink>
-        <NavLink to="/profile" onClick={() => setMobileOpen(false)} className={cn('flex items-center px-2 py-1.5 text-sm text-foreground/70 hover:text-foreground hover:bg-accent/50 w-full rounded-md transition-colors', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')}>
-          <User className="h-4 w-4" />
-          {!collapsed && t('user.profile')}
-        </NavLink>
-        <button onClick={() => setSettingsOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-foreground/70 hover:text-foreground hover:bg-accent/50 w-full rounded-md transition-colors cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')} aria-label={t('settings')}>
-          <Settings className="h-4 w-4" />
-          {!collapsed && t('settings')}
-        </button>
-        <button onClick={() => setLogoutOpen(true)} className={cn('flex items-center px-2 py-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 w-full rounded-md transition-colors cursor-pointer', collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left')} aria-label={t('nav.logout')}>
-          <LogOut className="h-4 w-4" />
-          {!collapsed && t('nav.logout')}
-        </button>
+          </NavLink>
+        </BottomNavItem>
+
+        <BottomNavItem label={t('settings')} collapsed={collapsed}>
+          <NavLink to="/settings" onClick={closeMobile} className={({ isActive }) =>
+            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
+              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
+              isActive
+                ? 'bg-accent font-medium text-foreground'
+                : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
+            )
+          }>
+            {({ isActive }) => (
+              <>
+                <Settings className={cn('h-4 w-4', isActive && 'text-foreground')} />
+                {!collapsed && t('settings')}
+              </>
+            )}
+          </NavLink>
+        </BottomNavItem>
+
+        <BottomNavItem label={t('nav.logout')} collapsed={collapsed}>
+          <button onClick={() => setLogoutOpen(true)} className={cn(
+            'flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm cursor-pointer',
+            collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
+            'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+          )} aria-label={t('nav.logout')}>
+            <LogOut className="h-4 w-4" />
+            {!collapsed && t('nav.logout')}
+          </button>
+        </BottomNavItem>
       </div>
 
-      <button onClick={toggleCollapsed} className="hidden md:flex items-center justify-center gap-2.5 px-2 py-1.5 mt-2 text-sm text-foreground/50 hover:text-foreground hover:bg-accent/50 w-full text-left rounded-md transition-colors cursor-pointer border-t border-border pt-2" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-        <ChevronLeft className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
-      </button>
+      <div className={cn('border-t border-border pt-2 mt-2 flex', collapsed ? 'flex-col items-center gap-1' : 'items-center justify-between')}>
+        <button
+          onClick={toggleTheme}
+          className={cn(
+            'flex items-center rounded-md transition-colors text-sm cursor-pointer hover:bg-accent/50',
+            collapsed ? 'p-2 justify-center' : 'px-2 py-1.5 gap-2',
+            theme === 'dark' ? 'text-amber-400' : 'text-muted-foreground hover:text-foreground'
+          )}
+          aria-label={theme === 'light' ? t('theme_dark') : t('theme_light')}
+        >
+          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          {!collapsed && (theme === 'light' ? t('theme_dark') : t('theme_light'))}
+        </button>
+
+        <button
+          onClick={toggleCollapsed}
+          className={cn(
+            'rounded-md transition-colors cursor-pointer hover:bg-accent/50',
+            collapsed ? 'p-2' : 'px-2 py-1.5'
+          )}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <ChevronLeft className={cn('h-4 w-4 text-muted-foreground transition-transform', collapsed && 'rotate-180')} />
+        </button>
+      </div>
 
       <ConfirmDialog
         open={logoutOpen}
@@ -143,49 +251,18 @@ export function Sidebar() {
 
   return (
     <>
-      <button onClick={() => setMobileOpen(true)} className="fixed top-3 left-3 z-40 p-2 rounded-xl bg-background/80 backdrop-blur-xl border shadow-sm md:hidden hover:bg-accent/50 transition-all cursor-pointer" aria-label="Open menu">
-        <Menu className="h-5 w-5" />
-      </button>
-
       {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/60 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={closeMobile} />
       )}
 
       <aside className={cn(
-        'glass h-screen py-4 px-3 flex flex-col transition-all duration-300 ease-in-out',
-        'md:sticky md:top-0 md:translate-x-0 fixed z-40 top-0 left-0 border-r',
+        'bg-background border-r border-border h-screen py-4 px-3 flex flex-col transition-all duration-300 ease-in-out',
+        'md:sticky md:top-0 md:translate-x-0 md:z-auto fixed z-40 top-0 left-0',
         collapsed ? 'w-16' : 'w-64',
         mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
       )}>
         {sidebar}
       </aside>
-
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('settings')}</DialogTitle></DialogHeader>
-          <DialogDescription className="sr-only">{t('settings.sr')}</DialogDescription>
-          <div className="space-y-6 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {theme === 'light' ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
-                <span className="text-sm font-medium">{t('settings.theme')}</span>
-              </div>
-              <button onClick={toggleTheme} className={cn(
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer',
-                theme === 'dark' ? 'bg-primary' : 'bg-input',
-              )}>
-                <span className={cn(
-                  'inline-block h-5 w-5 rounded-full bg-background shadow-sm ring-0 transition-transform',
-                  theme === 'dark' ? 'translate-x-5.5' : 'translate-x-0.5',
-                )} />
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

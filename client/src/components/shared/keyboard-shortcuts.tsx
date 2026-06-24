@@ -9,8 +9,13 @@ const SHORTCUTS = [
   { keys: 'G then E', label: 'Go to Employees' },
   { keys: 'G then O', label: 'Go to Departments' },
   { keys: 'G then L', label: 'Go to Leaves' },
+  { keys: 'G then V', label: 'Go to Leave Approvals' },
   { keys: 'G then A', label: 'Go to Attendance' },
+  { keys: 'G then R', label: 'Go to Attendance Report' },
   { keys: 'G then P', label: 'Go to Payroll' },
+  { keys: 'G then M', label: 'Go to Payroll Management' },
+  { keys: 'G then C', label: 'Go to Org Chart' },
+  { keys: 'G then S', label: 'Go to Settings' },
   { keys: 'G then N', label: 'Go to Notifications' },
   { keys: '?', label: 'Show keyboard shortcuts' },
 ];
@@ -20,8 +25,13 @@ const ROUTE_MAP: Record<string, string> = {
   e: '/employees',
   o: '/departments',
   l: '/leaves',
+  v: '/leaves/approvals',
   a: '/attendance',
+  r: '/attendance/report',
   p: '/payroll',
+  m: '/payroll/manage',
+  c: '/org-chart',
+  s: '/settings',
   n: '/notifications',
 };
 
