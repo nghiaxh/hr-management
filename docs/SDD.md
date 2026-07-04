@@ -122,7 +122,7 @@ Tài liệu gồm 14 phần chính: Giới thiệu, Thiết kế kiến trúc t�
 
 ### 2.1 Kiến trúc hệ thống
 
-Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Express) qua REST API và WebSocket (Socket.IO). Server kết nối với MongoDB qua Mongoose ODM.
+Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Spring Boot) qua REST API và WebSocket (Socket.IO). Server kết nối với PostgreSQL qua JPA/Hibernate.
 
 ```mermaid
 graph TB
@@ -209,7 +209,7 @@ graph TB
 |                  | Route Handler Layer            | Xử lý request, gọi service, trả về response        |
 |                  | Service Layer                  | Business logic, gọi database, orchestration        |
 |                  | Gateway Layer (Socket.IO)     | Quản lý WebSocket connections, emit events         |
-|                  | Database Layer (Mongoose)     | Schema definition, CRUD operations, indexing       |
+|                  | Database Layer (JPA Repository)| Entity mapping, CRUD operations, query methods     |
 
 ### 2.3 Chiến lược thiết kế
 
@@ -217,9 +217,9 @@ graph TB
 |-----------------------------|------------------------------------------------------------|
 | Separation of Concerns      | Tách routing, business logic, data access thành 3 tầng    |
 | Single Responsibility       | Mỗi module/service chỉ xử lý một nghiệp vụ duy nhất       |
-| Dependency Inversion        | Service phụ thuộc vào interface (Mongoose Model)          |
+| Dependency Inversion        | Service phụ thuộc vào interface (JPA Repository)          |
 | DRY (Don't Repeat Yourself)| Validation, error handling dùng chung qua middleware       |
-| Convention over Configuration| Cấu trúc thư mục nhất quán: `routes/` → `services/` → `models/` |
+| Convention over Configuration| Cấu trúc thư mục nhất quán: `controller/` → `service/` → `repository/` |
 
 ### 2.4 Quyết định kiến trúc
 
@@ -338,7 +338,7 @@ graph LR
     COMP -->|useQuery/useMutation| QUERY[TanStack Query Cache]
     QUERY -->|Gọi API| API[API Module]
     API -->|HTTP Request| AXI[Axios Instance]
-    AXI -->|Authorization Header| SERVER[Express Server]
+    AXI -->|Authorization Header| SERVER[Spring Boot Server]
     SERVER -->|JSON Response| AXI -->|Response| API
     API -->|Dữ liệu| QUERY -->|Cập nhật state| COMP -->|Render| USER
     SERVER -->|Socket.IO Event| SOCK[Socket.IO]
@@ -513,28 +513,26 @@ graph LR
     AUTH -->|Token lỗi| 401[401 Unauthorized]
     VAL -->|Hợp lệ| SRV[Service]
     VAL -->|Lỗi| 400[400 Bad Request]
-    SRV --> DB[(MongoDB)]
+    SRV --> DB[(PostgreSQL)]
 ```
 
-| Middleware             | Thứ tự | Trách nhiệm                                          |
-|------------------------|:------:|------------------------------------------------------|
-| `express-rate-limit`   | 1      | Giới hạn 60 request/phút/IP                          |
-| `helmet`               | 2      | Thiết lập HTTP security headers                      |
-| `cors`                 | 3      | Cho phép origin từ `CORS_ORIGIN`                     |
-| `express.json`         | 4      | Parse JSON body                                      |
-| `authenticate`         | 5      | Xác thực JWT từ Authorization header                |
-| `requireRoles()`       | 6      | Kiểm tra user role với danh sách allowed roles       |
-| `validate` (Zod)       | 7      | Validate input từ request body/param/query           |
-| Route Handler          | 8      | Xử lý request và gọi service                         |
-| Error Handler          | -1     | Bắt tất cả exception, trả về JSON error              |
+| Filter/Middleware          | Thứ tự | Trách nhiệm                                          |
+|---------------------------|:------:|------------------------------------------------------|
+| RateLimitingFilter        | 1      | Giới hạn 60 request/phút/IP (Spring bucket4j / express-rate-limit) |
+| Spring Security Filter    | 2      | Security headers, CORS, CSRF disable                 |
+| JwtAuthenticationFilter   | 3      | Xác thực JWT từ Authorization header                |
+| `requireRoles()`          | 4      | Kiểm tra user role với danh sách allowed roles       |
+| `@Valid` / Jakarta Validation | 5  | Validate input từ request body/param/query           |
+| Controller Handler        | 6      | Xử lý request và gọi service                         |
+| `@ControllerAdvice`       | -1     | Bắt tất cả exception, trả về JSON error              |
 
 ### 4.5 Seed Script
 
-Script tại `server/src/seed.ts` tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, employee histories, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHSS 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, thuế TNCN lũy tiến 7 bậc, thưởng Tết/tháng).
+Chạy qua Maven profile `seed`: `mvn spring-boot:run -Dspring-boot.run.profiles=seed`. `DataSeeder.java` (implements `CommandLineRunner`) tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, employee histories, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHXH 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, thuế TNCN lũy tiến 7 bậc, thưởng Tết/tháng). Seed xong tự thoát.
 
 ```mermaid
 graph TB
-    SEED[Seed Script] --> DROP[Drop collections]
+    SEED[Seed Profile: DataSeeder.run] --> DROP[Delete all tables in FK order]
     DROP --> USERS[Tạo Users: 1 Admin + 6 Managers + ~50 Employees]
     USERS --> DEPTS[Tạo 6 Departments]
     subgraph Departments
@@ -544,8 +542,9 @@ graph TB
     DEPTS --> EMPPROF[Tạo Employee Profiles]
     EMPPROF --> LB[Tạo Leave Balances]
     LB --> HIST[Tạo Employee History]
-    EMP -->|Gán vào| DEPTS
-    MGR -->|Gán manager| DEPTS
+    HIST --> ATT[Attendance ~2 tháng]
+    ATT --> PAYROLL["Payroll (3 tháng + historical)"]
+    PAYROLL --> LEAVES["Leaves (1-3/employee) + update balance"]
 ```
 
 ---
@@ -1054,19 +1053,19 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Developer Machine"
-        MCON["MongoDB 8<br/>Port 27017"]
-        subgraph "Node Processes"
-            SRV["Express Server<br/>Port 3001<br/>npm run dev (tsx)"]
+        PGSQL["PostgreSQL 16<br/>Port 5432"]
+        subgraph "Processes"
+            SRV["Spring Boot Server<br/>Port 3001<br/>mvn spring-boot:run"]
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
         end
         subgraph "Environment"
-            ENV["server/.env<br/>JWT_SECRET<br/>MONGODB_URI<br/>CORS_ORIGIN<br/>PORT"]
+            ENV["server/.env<br/>jwt.secret<br/>spring.datasource.url<br/>cors.origin<br/>server.port"]
             CLT_ENV["client/.env<br/>VITE_API_URL"]
         end
     end
     BROWSER[Web Browser:5173] --> CLT
     CLT -->|/api/*| SRV
-    SRV --> MCON
+    SRV --> PGSQL
     ENV --> SRV
     CLT_ENV --> CLT
 ```
@@ -1076,14 +1075,14 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Production Server"
-        MONGODB[MongoDB 8<br/>Port 27017]
-        SERVER[Express Server<br/>Port 3001]
+        DB[(PostgreSQL<br/>Port 5432)]
+        SERVER[Spring Boot Server<br/>Port 3001<br/>java -jar app.jar]
         NGINX[Static File Server + Reverse Proxy]
     end
     BROWSER[Web Browser] -->|HTTPS| NGINX
     NGINX -->|/api/*| SERVER
     NGINX -->|/*| REACT_BUILD[React SPA Build]
-    SERVER --> MONGODB
+    SERVER --> DB
 ```
 
 ### 10.3 Chi tiết môi trường
@@ -1116,7 +1115,7 @@ graph TB
         RBAC[Role-Based Access Control]
     end
     subgraph "Lớp 5: Validation"
-        DTO[Zod DTOs + express-validator]
+        DTO[DTOs + Jakarta Validation]
     end
     subgraph "Lớp 6: Input Safety"
         ESCAPE[Regex escape cho search]

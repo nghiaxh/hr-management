@@ -1,32 +1,29 @@
 # Hệ thống Quản lý Nhân sự
 
-Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Express, MongoDB, React và shadcn/ui.
+Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, PostgreSQL, React và shadcn/ui.
 
 ## Yêu cầu
 
 ### Hệ thống
-- Node.js 18+
-- MongoDB 7+ đang chạy (mặc định `localhost:27017`)
+- Java 25+
+- PostgreSQL 16+ đang chạy (mặc định `localhost:5432`)
+- Maven (đi kèm `mvnw` trong dự án)
 
 ## Bắt đầu nhanh
 
-### 1. Cấu hình môi trường
-
-Sao chép và cấu hình file môi trường:
+### 1. Tạo database
 
 ```bash
-# Server
-cp server/.env.example server/.env
-# Chỉnh sửa server/.env (mặc định đã hoạt động cho môi trường local)
+createdb hr_management
+# Hoặc dùng psql: CREATE DATABASE hr_management;
 ```
 
 ### 2. Server (Backend)
 
 ```bash
 cd server
-npm install
-npm run seed    # Tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên)
-npm run dev     # API tại http://localhost:3001
+mvn spring-boot:run -Dspring-boot.run.profiles=seed    # Tạo dữ liệu mẫu (seed xong tự thoát)
+mvn spring-boot:run                                     # API tại http://localhost:3001
 ```
 
 ### 3. Client (Frontend)
@@ -43,13 +40,15 @@ npm run dev     # UI tại http://localhost:5173
 
 | Biến             | Mặc định                                       | Mô tả                      |
 |------------------|------------------------------------------------|----------------------------|
-| `MONGODB_URI`    | `mongodb://localhost:27017/hr-management`      | Chuỗi kết nối MongoDB      |
-| `JWT_SECRET`     | *(bắt buộc)*                                   | Khóa bí mật JWT (tối thiểu 32 ký tự) |
-| `JWT_EXPIRES_IN` | `1d`                                           | Thời hạn token             |
-| `PORT`           | `3001`                                         | Cổng API                   |
-| `CORS_ORIGIN`    | `http://localhost:5173`                        | Nguồn CORS được phép       |
+| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/hr_management` | Chuỗi kết nối PostgreSQL |
+| `spring.datasource.username` | `postgres`                             | Tên đăng nhập DB           |
+| `spring.datasource.password` | `postgres`                             | Mật khẩu DB                |
+| `jwt.secret`     | *(bắt buộc)*                                   | Khóa bí mật JWT (tối thiểu 32 ký tự) |
+| `jwt.expiration` | `86400000`                                    | Thời hạn token (ms)        |
+| `server.port`    | `3001`                                         | Cổng API                   |
+| `cors.origin`    | `http://localhost:5173`                        | Nguồn CORS được phép       |
 
-> **Bảo mật**: `JWT_SECRET` là bắt buộc. Ứng dụng sẽ không khởi động nếu không được đặt. Sử dụng giá trị ngẫu nhiên mạnh (ví dụ: `openssl rand -hex 32`).
+> **Bảo mật**: `jwt.secret` là bắt buộc. Ứng dụng sẽ không khởi động nếu không được đặt. Sử dụng giá trị ngẫu nhiên mạnh (ví dụ: `openssl rand -hex 32`).
 
 ### Client (`client/.env`)
 
@@ -71,19 +70,25 @@ npm run dev     # UI tại http://localhost:5173
 
 ```
 hr-management/
-├── server/                    # Express API (ESM)
-│   ├── src/
-│   │   ├── routes/           # Route handlers
-│   │   ├── services/          # Xử lý nghiệp vụ
-│   │   ├── models/            # Mongoose models
-│   │   ├── schemas/           # Zod validation schemas
-│   │   ├── middleware/        # Auth, validation, upload, roles
-│   │   ├── utils/             # Tiện ích bảo mật
-│   │   ├── config.ts          # Cấu hình môi trường
-│   │   ├── index.ts           # Express app entry point
-│   │   └── seed.ts            # Seed dữ liệu mẫu
-│   ├── .env                   # Cấu hình server (không được track)
-│   └── package.json
+├── server/                    # Spring Boot + Maven
+│   ├── src/main/java/com/hrmanagement/
+│   │   ├── auth/             # Xác thực, JWT, filter
+│   │   ├── employee/         # Entity, repository, service, controller
+│   │   ├── department/       # Phòng ban
+│   │   ├── leave/            # Nghỉ phép
+│   │   ├── attendance/       # Chấm công
+│   │   ├── payroll/          # Bảng lương
+│   │   ├── notification/     # Thông báo
+│   │   ├── employeehistory/  # Lịch sử nhân viên
+│   │   ├── leavebalance/     # Ngày phép tồn
+│   │   ├── dashboard/        # Thống kê
+│   │   ├── seed/             # Seed dữ liệu mẫu (DataSeeder)
+│   │   ├── config/           # Security, CORS config
+│   │   └── common/util/      # Tiện ích
+│   ├── src/main/resources/
+│   │   └── application.properties
+│   ├── pom.xml
+│   └── mvnw
 │
 └── client/                    # React SPA (ESM)
     ├── src/
@@ -101,34 +106,34 @@ hr-management/
 
 ### Quy trình phát triển
 
-1. **Khởi động MongoDB** — chạy local (cổng mặc định 27017)
-2. **Cấu hình `server/.env`** — sao chép từ `.env.example` và đặt `JWT_SECRET`
-3. **Chạy seed** (`npm run seed` trong `server/`) — tạo dữ liệu mẫu. An toàn khi chạy lại (xóa và tạo mới)
-4. **Khởi động server** (`npm run dev` trong `server/`) — Express server với hot-reload qua tsx
+1. **Khởi động PostgreSQL** — chạy local (cổng mặc định 5432), tạo database `hr_management`
+2. **Cấu hình `server/.env`** — tạo file từ mẫu trong `application.properties`, đặt `jwt.secret`
+3. **Chạy seed** (`mvn spring-boot:run -Dspring-boot.run.profiles=seed` trong `server/`) — tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên). An toàn khi chạy lại (xóa và tạo mới)
+4. **Khởi động server** (`mvn spring-boot:run` trong `server/`) — Spring Boot API tại port 3001
 5. **Khởi động client** (`npm run dev` trong `client/`) — Vite dev server với HMR
 
 ### Ghi chú bảo mật
 
-- Tất cả API route đều được bảo vệ bởi middleware `authenticate` + `requireRoles()` (ngoại trừ `/api/auth/login` và `/api/auth/register`)
+- Tất cả API route đều được bảo vệ bởi `JwtAuthenticationFilter` + `requireRoles()` (ngoại trừ `/api/auth/login` và `/api/auth/register`)
 - Đăng ký luôn tạo tài khoản với vai trò `employee` (vai trò admin/manager chỉ được đặt qua seed)
 - Mật khẩu yêu cầu: tối thiểu 8 ký tự, ít nhất 1 chữ hoa, 1 chữ thường, 1 số
 - Giới hạn tốc độ: 60 yêu cầu mỗi phút (qua `express-rate-limit`)
-- Header bảo mật được đặt qua middleware `helmet`
+- Header bảo mật được đặt qua Spring Security + helmet
 - Upload file giới hạn 5MB, chỉ chấp nhận ảnh/PDF/DOC
-- Đầu vào tìm kiếm được regex-escape để ngăn NoSQL injection
+- Đầu vào tìm kiếm được regex-escape
 
 ### Dữ liệu mẫu
 
-Script seed (`server/src/seed.ts`) tạo:
+Chạy seed qua Maven profile `seed` — `DataSeeder.java` tạo:
 
-- **1 admin** — `admin@hr.com`
+- **1 admin** — `admin@hr.com` / `admin123`
 - **6 quản lý** — mỗi phòng ban một người (Engineering, HR, Sales, Marketing, Finance, BA)
-- **~50 nhân viên** — phân bố đều các phòng ban với tên tiếng Việt
-- **Phòng ban** với quản lý được phân công
+- **45 nhân viên** — phân bố đều các phòng ban với tên tiếng Việt
+- **6 phòng ban** với quản lý được phân công
 - **Ngày phép** được khởi tạo cho tất cả nhân viên
 - **Lịch sử nhân viên** (tăng lương, thăng chức)
-- **Chấm công thực tế** — 2 tháng hiện tại và trước, với hồ sơ punctuality (đúng giờ, hay đi muộn, nghỉ nhiều) theo từng nhân viên, điều chỉnh theo thứ trong tuần
-- **Bảng lương thực tế** — tính BHSS (8%), BHTN (1%), BHTNLD (0.5%), phí Công đoàn (2.5%), thuế TNCN lũy tiến 7 bậc, thưởng Tết (tháng 1/12), thưởng quý, thưởng hiệu suất
+- **Chấm công thực tế** — 2 tháng hiện tại và trước, với hồ sơ punctuality (đúng giờ, hay đi muộn, nghỉ nhiều) theo từng nhân viên
+- **Bảng lương thực tế** — tính BHXH (8%), BHTN (1%), BHTNLD (0.5%), phí Công đoàn (2.5%), thuế TNCN lũy tiến 7 bậc, thưởng Tết (tháng 1/12), thưởng quý, thưởng hiệu suất
 
 Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng thái ban đầu.
 
@@ -314,9 +319,9 @@ Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng
 |----------------|-------------------------------------------|
 | Frontend       | React 18, Vite, TypeScript                |
 | UI             | shadcn/ui, Tailwind CSS, Radix primitives |
-| Backend        | Express (Node.js)                         |
-| Database       | MongoDB 8+, Mongoose ODM                  |
-| Auth           | JWT (jsonwebtoken), bcrypt                |
+| Backend        | Spring Boot 4.1 (Java 25)                 |
+| Database       | PostgreSQL 16+, JPA/Hibernate             |
+| Auth           | JWT (jjwt 0.12.6), bcrypt, Spring Security|
 | Client State   | TanStack React Query                      |
 | Icons          | lucide-react                              |
 | Dates          | date-fns                                  |

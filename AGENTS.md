@@ -4,7 +4,7 @@
 
 An HR management web app where companies can manage employees, track attendance, handle leave requests, run payroll, and manage recruitment — all with role-based access control (admin, manager, employee).
 
-Two independent packages: `server/` (Express + MongoDB) and `client/` (React + Vite). No root workspace config.
+Two independent packages: `server/` (Spring Boot + PostgreSQL) and `client/` (React + Vite). No root workspace config.
 
 ---
 
@@ -13,10 +13,9 @@ Two independent packages: `server/` (Express + MongoDB) and `client/` (React + V
 ```bash
 # Server (port 3001)
 cd server
-npm install
-# edit server/.env to set JWT_SECRET
-npm run seed           # 1 admin, 6 managers, ~50 employees across 6 departments, realistic attendance & payroll
-npm run dev            # tsx (ESM), not NestJS CLI (no nest-cli.json)
+# edit server/.env to set JWT_SECRET (or use application.properties)
+mvn spring-boot:run -Dspring-boot.run.profiles=seed   # recreate all seed data
+mvn spring-boot:run                                    # normal startup
 
 # Client (port 5173)
 cd client
@@ -32,10 +31,10 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 ## System Architecture
 
 ```
-┌─────────────┐    HTTP/REST    ┌─────────────┐   Mongoose   ┌──────────┐
-│   Client     │◄──────────────►│   Server     │◄────────────►│  MongoDB  │
-│  (React 18)  │   JWT Bearer   │  (Express)   │              │  (NoSQL)  │
-│  Port 5173   │                │  Port 3001   │              │  Local    │
+┌─────────────┐    HTTP/REST    ┌─────────────┐   JPA/Hibernate ┌──────────┐
+│   Client     │◄──────────────►│   Server     │◄──────────────►│PostgreSQL│
+│  (React 18)  │   JWT Bearer   │(Spring Boot) │                │Relational│
+│  Port 5173   │                │  Port 3001   │                │  Local   │
 └─────────────┘                └─────────────┘              └──────────┘
        │                              │
    ┌───┴───┐                    ┌─────┴──────┐
@@ -44,7 +43,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/index.ts`): Express, global prefix `/api`, CORS from env `CORS_ORIGIN`. Config from `server/.env`. Path alias `@/*` → `src/*`.
+- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/.env`. Uses Maven + Java 25.
 - **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
@@ -164,22 +163,22 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ## Server Feature Modules
 
-All modules follow the Express convention: `routes/` → `services/` → `models/` + `schemas/`.
+All modules follow the Spring Boot convention: `controller/` → `service/` → `repository/` + `entity/`.
 
 | Module           | Entry file                        | Notes                              |
 |------------------|-----------------------------------|------------------------------------|
-| Auth             | `server/src/routes/auth.routes.ts` | JWT + bcrypt + middleware          |
-| Employees        | `server/src/services/employees.service.ts` | Business logic for employees |
-| Departments      | `server/src/services/departments.service.ts` | Department management |
-| Leaves           | `server/src/services/leaves.service.ts` | Leave requests with validation |
-| Attendance       | `server/src/services/attendance.service.ts` | Check-in/out with auto logic |
-| Payroll          | `server/src/services/payroll.service.ts` | Monthly batch processing |
-| Dashboard        | `server/src/services/dashboard.service.ts` | Role-based statistics |
-| EmployeeHistory  | `server/src/services/employee-history.service.ts` | Timeline of changes |
-| LeaveBalance     | `server/src/services/leave-balance.service.ts` | Auto-deduct on approval |
-| Notifications    | `server/src/services/notifications.service.ts` | In-app notifications (API-based, Socket.IO planned) |
-| Recruitment      | `server/src/services/recruitment.service.ts` | *Planned — empty stubs* |
-| PerformanceReview| `server/src/services/performance-review.service.ts` | *Planned — empty stubs* |
+| Auth             | `server/src/.../auth/` | JWT + bcrypt + Spring Security     |
+| Employees        | `server/src/.../employee/` | Business logic for employees |
+| Departments      | `server/src/.../department/` | Department management |
+| Leaves           | `server/src/.../leave/` | Leave requests with validation |
+| Attendance       | `server/src/.../attendance/` | Check-in/out with auto logic |
+| Payroll          | `server/src/.../payroll/` | Monthly batch processing |
+| Dashboard        | `server/src/.../dashboard/` | Role-based statistics |
+| EmployeeHistory  | `server/src/.../employeehistory/` | Timeline of changes |
+| LeaveBalance     | `server/src/.../leavebalance/` | Auto-deduct on approval |
+| Notifications    | `server/src/.../notification/` | In-app notifications (API-based, Socket.IO planned) |
+| Recruitment      | `server/src/.../recruitment/` | *Planned — empty stubs* |
+| PerformanceReview| `server/src/.../performance review/` | *Planned — empty stubs* |
 
 ---
 
@@ -297,7 +296,7 @@ Client shows toast + increments badge count
 ## Key Facts
 
 - **No tests, no linter, no CI, no typecheck script.** No pre-commit hooks.
-- Both packages use ES modules (`"type": "module"`). Server uses `NodeNext` module resolution with `.js` extensions in relative imports.
+- Both packages use ES modules (`"type": "module"`). Client uses Vite/TypeScript.
 - All API routes are protected by `authenticate` + `requireRoles()` middleware (except `/api/auth/login` and `/api/auth/register`).
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.

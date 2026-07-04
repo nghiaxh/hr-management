@@ -127,16 +127,16 @@ Tài liệu gồm 10 phần chính:
 Hệ thống là một ứng dụng web SPA với kiến trúc client-server phân tách rõ ràng, giao tiếp qua REST API với xác thực JWT Bearer token và WebSocket (Socket.IO) cho thông báo thời gian thực.
 
 ```
-┌──────────────┐    HTTP/REST    ┌──────────────┐    Mongoose    ┌───────────┐
-│   Client     │◄──────────────►│   Server     │◄──────────────►│  MongoDB  │
-│  (React 18)  │   JWT Bearer   │  (Express)   │                │  (NoSQL)  │
-│  Port 5173   │   + Socket.IO  │  Port 3001   │                │  Local    │
-└──────────────┘                └──────────────┘               └───────────┘
+┌──────────────┐    HTTP/REST    ┌──────────────┐   JPA/Hibernate ┌────────────┐
+│   Client     │◄──────────────►│   Server     │◄───────────────►│ PostgreSQL │
+│  (React 18)  │   JWT Bearer   │ (Spring Boot)│                 │ (Relational)│
+│  Port 5173   │   + Socket.IO  │  Port 3001   │                 │  Local     │
+└──────────────┘                └──────────────┘                └────────────┘
 ```
 
 - **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173 (dev). Sử dụng shadcn/ui, Tailwind CSS, TanStack Query, React Router, Recharts.
-- **Server (Express)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Mongoose, JWT, Socket.IO, express-validator, multer, helmet, express-rate-limit.
-- **Database (MongoDB)**: Lưu trữ dữ liệu phi quan hệ, chạy local (dev) hoặc MongoDB Atlas (production).
+- **Server (Spring Boot)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Spring Data JPA, Spring Security, JWT (jjwt), Socket.IO, Jakarta Validation.
+- **Database (PostgreSQL)**: Lưu trữ dữ liệu quan hệ, chạy local (dev) hoặc cloud (production).
 
 ### 2.2 Chức năng sản phẩm
 
@@ -398,8 +398,8 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 | Mã        | Yêu cầu                                               | Mô tả                                     | Mức ưu tiên |
 | --------- | ----------------------------------------------------- | ----------------------------------------- | :---------: |
-| NFR-DB-01 | MongoDB làm hệ thống quản trị CSDL                    | NoSQL, linh hoạt cho HR documents array   |    Must     |
-| NFR-DB-02 | Mongoose ODM                                          | Ánh xạ object-tài liệu, schema validation |    Must     |
+| NFR-DB-01 | PostgreSQL làm hệ thống quản trị CSDL                 | Quan hệ, ACID, phù hợp dữ liệu tài chính  |    Must     |
+| NFR-DB-02 | JPA/Hibernate ORM                                     | Ánh xạ object-quan hệ, schema auto-update |    Must     |
 | NFR-DB-03 | Unique index trên email (User)                        | Đảm bảo email không trùng lặp             |    Must     |
 | NFR-DB-04 | Unique compound index employeeId+month+year (Payroll) | Chống tạo trùng lặp bảng lương            |    Must     |
 | NFR-DB-05 | Unique compound index employeeId+date (Attendance)    | Một bản ghi chấm công/ngày                |    Must     |
@@ -426,7 +426,7 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | NFR-SEC-02 | JWT expiration                   | Token hết hạn sau 1 ngày (JWT_EXPIRES_IN=1d)  |    Must     |
 | NFR-SEC-03 | Rate limiting                    | Tối đa 60 request/phút/IP                     |    Must     |
 | NFR-SEC-04 | HTTP security headers            | Helmet middleware: X-Frame-Options, CSP, etc  |    Must     |
-| NFR-SEC-05 | Input validation                 | Zod validation + express-validator middleware |    Must     |
+| NFR-SEC-05 | Input validation                 | Bean Validation (Jakarta Validation) + Spring validation |    Must     |
 | NFR-SEC-06 | CORS                             | Chỉ cho phép origin được ủy quyền             |    Must     |
 | NFR-SEC-07 | File upload restriction          | Tối đa 5MB, JPEG/PNG/GIF/PDF/DOC/DOCX         |    Must     |
 | NFR-SEC-08 | Regex escape cho search input    | Ngăn chặn NoSQL injection                     |   Should    |
