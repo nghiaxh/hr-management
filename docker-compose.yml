@@ -1,12 +1,16 @@
 services:
-  mongodb:
-    image: mongo:7
-    container_name: hr--management-mongodb
+  postgres:
+    image: postgres:16
+    container_name: hr--management-postgres
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hr_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
-  mongodb_data:
+  postgres_data:
