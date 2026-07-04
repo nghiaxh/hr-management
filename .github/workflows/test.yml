@@ -44,7 +44,7 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/hr_management_test
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
-          JWT_SECRET: test-jwt-secret-for-ci
+          JWT_SECRET: d25XbIV7YtNsoq8G1iu34fglBUehkMTDaSJWy90EcLCpwxzF
           JWT_EXPIRATION: 86400000
 
   client-tests:
