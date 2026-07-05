@@ -26,7 +26,7 @@ public class Employee {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", unique = true)
     private User userId;
 
     @ManyToOne(fetch = FetchType.LAZY)

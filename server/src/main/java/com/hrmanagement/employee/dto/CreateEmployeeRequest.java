@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Data
 public class CreateEmployeeRequest {
     @JsonProperty("userId")
+    @NotNull(message = "User ID is required")
     private String userId;
 
     @JsonProperty("departmentId")

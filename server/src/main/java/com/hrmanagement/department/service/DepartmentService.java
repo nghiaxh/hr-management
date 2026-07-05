@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;

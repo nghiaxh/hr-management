@@ -86,9 +86,6 @@ public class DataSeeder implements CommandLineRunner {
 
         // Clear all tables in FK order
         notificationRepository.deleteAllInBatch();
-
-        // Create admin user
-        createUser("admin@hr.com", "admin123", "admin", "Admin");
         employeeHistoryRepository.deleteAllInBatch();
         leaveBalanceRepository.deleteAllInBatch();
         payrollRepository.deleteAllInBatch();
@@ -97,6 +94,9 @@ public class DataSeeder implements CommandLineRunner {
         employeeRepository.deleteAllInBatch();
         departmentRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
+
+        // Create admin user
+        createUser("admin@hr.com", "admin123", "admin", "Admin");
 
         // Department data
         String[][] DEPT_DATA = {
@@ -322,7 +322,7 @@ public class DataSeeder implements CommandLineRunner {
                     } else if (roll < halfDayThresholds[profileIdx]) {
                         status = "half-day";
                         if (rand.nextBoolean()) {
-                            checkInTime = LocalTime.of(8, rand.nextInt(90));
+                            checkInTime = LocalTime.of(8, rand.nextInt(60));
                             checkOutTime = LocalTime.of(12, rand.nextInt(60));
                         } else {
                             checkInTime = LocalTime.of(7, rand.nextInt(60));
@@ -334,7 +334,7 @@ public class DataSeeder implements CommandLineRunner {
                         checkOutTime = LocalTime.of(17, rand.nextInt(60));
                     } else {
                         status = "present";
-                        checkInTime = LocalTime.of(7, rand.nextInt(120));
+                        checkInTime = LocalTime.of(7, rand.nextInt(60));
                         checkOutTime = LocalTime.of(17, rand.nextInt(60));
                     }
 

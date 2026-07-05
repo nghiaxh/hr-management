@@ -1,5 +1,7 @@
 package com.hrmanagement.leave.service;
 
+import com.hrmanagement.auth.entity.User;
+import com.hrmanagement.auth.repository.UserRepository;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
@@ -25,25 +27,28 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class LeaveService {
-
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final LeaveBalanceService leaveBalanceService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     public LeaveService(LeaveRepository leaveRepository,
-                        EmployeeRepository employeeRepository,
-                        LeaveBalanceService leaveBalanceService,
-                        NotificationService notificationService) {
+            EmployeeRepository employeeRepository,
+            LeaveBalanceService leaveBalanceService,
+            NotificationService notificationService,
+            UserRepository userRepository) {
         this.leaveRepository = leaveRepository;
         this.employeeRepository = employeeRepository;
         this.leaveBalanceService = leaveBalanceService;
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     public PaginatedResponse<LeaveResponse> findAll(String status, String employeeId, String type,
-                                                     int page, int limit, String userRole, String userId) {
+            int page, int limit, String userRole, String userId) {
         PageRequest pageRequest = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Leave> leavePage;
 
@@ -65,6 +70,7 @@ public class LeaveService {
             }
             List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartmentId().getId())
                     .stream().map(Employee::getId).toList();
+
             if (status != null && !status.isBlank()) {
                 leavePage = leaveRepository.findByEmployeeIdInAndStatus(deptEmpIds, status, pageRequest);
             } else if (type != null && !type.isBlank()) {
@@ -107,11 +113,10 @@ public class LeaveService {
             }
             Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployeeId().getId());
             if (leaveEmp.isEmpty() || leaveEmp.get().getDepartmentId() == null ||
-                !leaveEmp.get().getDepartmentId().getId().equals(mgrEmp.get().getDepartmentId().getId())) {
+                    !leaveEmp.get().getDepartmentId().getId().equals(mgrEmp.get().getDepartmentId().getId())) {
                 throw new UnauthorizedException("Access denied");
             }
         }
-
         return toResponse(leave);
     }
 
@@ -142,6 +147,7 @@ public class LeaveService {
                 .reason(dto.getReason())
                 .status("pending")
                 .build();
+
         leaveRepository.save(leave);
         return toResponse(leave);
     }
@@ -158,11 +164,17 @@ public class LeaveService {
         Employee emp = employeeRepository.findById(leave.getEmployeeId().getId())
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 
+        // Fix: Set the approver correctly using the current user's ID
+        User approver = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Approving user not found"));
+
         leave.setStatus(dto.getStatus());
-        leave.setApprovedBy(null); // will set below via User reference
+        leave.setApprovedBy(approver);
+
         if (dto.getRejectionReason() != null) {
             leave.setRejectionReason(dto.getRejectionReason());
         }
+
         leaveRepository.save(leave);
 
         if ("approved".equals(dto.getStatus())) {
@@ -170,6 +182,7 @@ public class LeaveService {
             try {
                 leaveBalanceService.deduct(leave.getEmployeeId().getId(), leave.getType(), days);
             } catch (Exception e) {
+                // Rollback status if deduction fails
                 leave.setStatus("pending");
                 leaveRepository.save(leave);
                 throw new BadRequestException("Insufficient leave balance: " + e.getMessage());
@@ -181,8 +194,9 @@ public class LeaveService {
                 case "sick" -> "ốm";
                 default -> "cá nhân";
             };
-            notificationService.create(userOwnerId, "Đơn nghỉ đã duyệt",
-                    "Đơn nghỉ " + leaveTypeName + " (" + leave.getStartDate() + " - " + leave.getEndDate() + ") đã được duyệt.",
+            notificationService.create(userOwnerId, "Đơn nghỉ phép đã duyệt",
+                    "Đơn nghỉ phép " + leaveTypeName + " (" + leave.getStartDate() + " - " + leave.getEndDate()
+                            + ") đã được duyệt.",
                     "leave_approved", leave.getId(), "Leave");
         } else if ("rejected".equals(dto.getStatus())) {
             String userOwnerId = emp.getUserId() != null ? emp.getUserId().getId() : userId;
@@ -192,8 +206,8 @@ public class LeaveService {
                 default -> "cá nhân";
             };
             String reason = dto.getRejectionReason() != null ? " Lý do: " + dto.getRejectionReason() : "";
-            notificationService.create(userOwnerId, "Đơn nghỉ bị từ chối",
-                    "Đơn nghỉ " + leaveTypeName + " của bạn đã bị từ chối." + reason,
+            notificationService.create(userOwnerId, "Đơn nghỉ phép bị từ chối",
+                    "Đơn nghỉ phép " + leaveTypeName + " của bạn đã bị từ chối." + reason,
                     "leave_rejected", leave.getId(), "Leave");
         }
 
@@ -217,16 +231,14 @@ public class LeaveService {
                     "_id", emp.getId(),
                     "firstName", emp.getFirstName(),
                     "lastName", emp.getLastName(),
-                    "position", emp.getPosition()
-            ));
+                    "position", emp.getPosition()));
         }
 
         if (leave.getApprovedBy() != null) {
             resp.setApprovedBy(Map.of(
                     "_id", leave.getApprovedBy().getId(),
                     "email", leave.getApprovedBy().getEmail(),
-                    "name", leave.getApprovedBy().getName() != null ? leave.getApprovedBy().getName() : ""
-            ));
+                    "name", leave.getApprovedBy().getName() != null ? leave.getApprovedBy().getName() : ""));
         }
 
         return resp;

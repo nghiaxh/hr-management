@@ -11,9 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, String> {
-    Optional<Employee> findByUserId(String userId);
-    Page<Employee> findByDepartmentId(String departmentId, Pageable pageable);
-    
+    @Query("SELECT e FROM Employee e WHERE e.userId.id = :userId")
+    Optional<Employee> findByUserId(@Param("userId") String userId);
+
+    @Query("SELECT e FROM Employee e WHERE e.departmentId.id = :departmentId")
+    Page<Employee> findByDepartmentId(@Param("departmentId") String departmentId, Pageable pageable);
+
     @Query("SELECT e FROM Employee e WHERE " +
            "LOWER(e.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -26,6 +29,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, String> {
            "LOWER(e.position) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Employee> searchByDepartment(@Param("departmentId") String departmentId, @Param("search") String search, Pageable pageable);
 
-    List<Employee> findByDepartmentId(String departmentId);
-    long countByDepartmentId(String departmentId);
+    @Query("SELECT e FROM Employee e WHERE e.departmentId.id = :departmentId")
+    List<Employee> findByDepartmentId(@Param("departmentId") String departmentId);
+
+    @Query("SELECT COUNT(e) FROM Employee e WHERE e.departmentId.id = :departmentId")
+    long countByDepartmentId(@Param("departmentId") String departmentId);
 }
