@@ -44,12 +44,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-5 space-y-4">
-          <h3 className="text-sm font-medium">{t('settings.language')}</h3>
-          <p className="text-sm text-muted-foreground">{t('settings.language_desc') || 'Ngôn ngữ hiện tại: Tiếng Việt'}</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -49,13 +49,6 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Tối')).toBeInTheDocument();
   });
 
-  it('renders language section', () => {
-    render(<SettingsPage />, { wrapper: createWrapper() });
-
-    expect(screen.getByText('Ngôn ngữ')).toBeInTheDocument();
-    expect(screen.getByText('settings.language_desc')).toBeInTheDocument();
-  });
-
   it('toggles theme on click', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />, { wrapper: createWrapper() });
