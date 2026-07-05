@@ -4,15 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { TopHeader } from '@/components/layout/top-header';
 
 const mockUseTranslation = vi.fn();
-const mockUseTheme = vi.fn();
 const mockUseLocation = vi.fn();
 
 vi.mock('@/context/language-context', () => ({
   useTranslation: () => mockUseTranslation(),
-}));
-
-vi.mock('@/hooks/use-theme', () => ({
-  useTheme: () => mockUseTheme(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -23,7 +18,6 @@ vi.mock('react-router-dom', async () => {
 describe('TopHeader', () => {
   beforeEach(() => {
     mockUseTranslation.mockReturnValue({ t: (key: string) => key });
-    mockUseTheme.mockReturnValue({ theme: 'light', toggleTheme: vi.fn() });
   });
 
   it('renders breadcrumbs based on current path', () => {
@@ -36,18 +30,8 @@ describe('TopHeader', () => {
     expect(screen.getAllByText('nav.employees').length).toBeGreaterThan(0);
   });
 
-  it('renders theme toggle button', () => {
-    mockUseLocation.mockReturnValue({ pathname: '/dashboard' });
-    render(
-      <MemoryRouter>
-        <TopHeader onMenuToggle={vi.fn()} />
-      </MemoryRouter>
-    );
-    expect(screen.getByLabelText('theme_dark')).toBeInTheDocument();
-  });
-
   it('renders mobile menu button', () => {
-    mockUseLocation.mockReturnValue({ pathname: '/dashboard' });
+    mockUseLocation.mockReturnValue({ pathname: '/leaves' });
     render(
       <MemoryRouter>
         <TopHeader onMenuToggle={vi.fn()} />

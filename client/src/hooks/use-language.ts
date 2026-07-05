@@ -5,7 +5,6 @@ export type Lang = 'en' | 'vi';
 const translations: Record<Lang, Record<string, string>> = {
   en: {
     'app.name': 'HR Management',
-    'nav.dashboard': 'Dashboard',
     'nav.employees': 'Employees',
     'nav.departments': 'Departments',
     'nav.leaves': 'Leaves',
@@ -30,7 +29,6 @@ const translations: Record<Lang, Record<string, string>> = {
   },
   vi: {
     'app.name': 'Quản lý Nhân sự',
-    'nav.dashboard': 'Tổng quan',
     'nav.employees': 'Nhân viên',
     'nav.departments': 'Phòng ban',
     'nav.leaves': 'Nghỉ phép',

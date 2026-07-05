@@ -29,22 +29,6 @@ export const handlers = [
     return HttpResponse.json({ id: '1', email: 'admin@test.com', role: 'admin', name: 'Admin' });
   }),
 
-  // Dashboard
-  http.get(`${API_BASE}/dashboard`, () => {
-    return HttpResponse.json({
-      totalEmployees: 50,
-      totalDepartments: 6,
-      pendingLeaves: 5,
-      presentToday: 42,
-      monthlyPayroll: 250000,
-      departmentStats: [
-        { name: 'Engineering', count: 20 },
-        { name: 'Marketing', count: 10 },
-      ],
-      recentLeaves: [],
-    });
-  }),
-
   // Employees
   http.get(`${API_BASE}/employees`, () => {
     return HttpResponse.json({

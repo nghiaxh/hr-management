@@ -15,10 +15,10 @@ export function Toaster() {
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 100 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             className={cn(
               'pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg text-sm',
-              'bg-background/80 backdrop-blur-xl',
+              'bg-background',
               t.variant === 'destructive' && 'border-destructive/50 bg-destructive/10 text-destructive-foreground'
             )}
           >

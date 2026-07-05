@@ -20,8 +20,8 @@ const SelectContent = React.forwardRef<React.ElementRef<typeof SelectPrimitive.C
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
-        className={cn('relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border bg-popover/95 backdrop-blur-xl text-popover-foreground shadow-xl', position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1', className)}
+        transition={{ duration: 0.1 }}
+        className={cn('relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl', position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1', className)}
       >
         <SelectPrimitive.Viewport className={cn('p-1', position === 'popper' && 'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]')}>
           {children}

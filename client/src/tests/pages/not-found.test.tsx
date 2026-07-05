@@ -38,10 +38,10 @@ describe('NotFoundPage', () => {
     expect(screen.getByText('Không tìm thấy trang')).toBeInTheDocument();
   });
 
-  it('renders link to dashboard', () => {
+  it('renders link to leaves', () => {
     render(<NotFoundPage />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Về trang chủ')).toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/leaves');
   });
 });

@@ -13,7 +13,6 @@ import LoginPage from './pages/login';
 import NotFoundPage from './pages/not-found';
 import { Toaster } from './components/ui/toaster';
 
-const DashboardPage = lazy(() => import('./pages/dashboard'));
 const EmployeesListPage = lazy(() => import('./pages/employees/employees-list'));
 const EmployeeDetailPage = lazy(() => import('./pages/employees/employee-detail'));
 const ProfilePage = lazy(() => import('./pages/profile'));
@@ -45,7 +44,6 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><DashboardPage /></Suspended></ProtectedRoute>} />
             <Route path="/employees" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><EmployeesListPage /></Suspended></ProtectedRoute>} />
             <Route path="/employees/:id" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><EmployeeDetailPage /></Suspended></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><ProfilePage /></Suspended></ProtectedRoute>} />
@@ -61,7 +59,7 @@ function AppContent() {
             <Route path="/recruitment" element={<ProtectedRoute roles={['admin']}><Suspended><RecruitmentPage /></Suspended></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><SettingsPage /></Suspended></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><NotificationsListPage /></Suspended></ProtectedRoute>} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/leaves" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

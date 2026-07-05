@@ -6,8 +6,6 @@ import { AppLayout } from '@/components/layout/app-layout';
 
 const mockUseAuth = vi.fn();
 const mockUseTranslation = vi.fn();
-const mockUseTheme = vi.fn();
-
 vi.mock('@/context/auth-context', () => ({
   useAuth: () => mockUseAuth(),
 }));
@@ -16,20 +14,15 @@ vi.mock('@/context/language-context', () => ({
   useTranslation: () => mockUseTranslation(),
 }));
 
-vi.mock('@/hooks/use-theme', () => ({
-  useTheme: () => mockUseTheme(),
-}));
-
 function renderAppLayout() {
   mockUseTranslation.mockReturnValue({ t: (key: string) => key });
-  mockUseTheme.mockReturnValue({ theme: 'light', toggleTheme: vi.fn() });
   const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/dashboard']}>
+      <MemoryRouter initialEntries={['/leaves']}>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<div>Dashboard page</div>} />
+            <Route path="/leaves" element={<div>Leaves page</div>} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -47,13 +40,13 @@ describe('AppLayout', () => {
   it('redirects when not authenticated', () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     renderAppLayout();
-    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument();
+    expect(screen.queryByText('Leaves page')).not.toBeInTheDocument();
   });
 
   it('renders sidebar, top-header, and outlet when authenticated', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Admin', email: 'admin@test.com' }, loading: false, logout: vi.fn() });
     renderAppLayout();
-    expect(screen.getByText('Dashboard page')).toBeInTheDocument();
-    expect(screen.getAllByText('nav.dashboard').length).toBeGreaterThan(0);
+    expect(screen.getByText('Leaves page')).toBeInTheDocument();
+    expect(screen.getAllByText('nav.leaves').length).toBeGreaterThan(0);
   });
 });

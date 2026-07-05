@@ -7,8 +7,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 const mockUseAuth = vi.fn();
 const mockUseTranslation = vi.fn();
-const mockUseTheme = vi.fn();
-
 vi.mock('@/context/auth-context', () => ({
   useAuth: () => mockUseAuth(),
 }));
@@ -17,14 +15,9 @@ vi.mock('@/context/language-context', () => ({
   useTranslation: () => mockUseTranslation(),
 }));
 
-vi.mock('@/hooks/use-theme', () => ({
-  useTheme: () => mockUseTheme(),
-}));
-
 function renderSidebar(user: any) {
   mockUseAuth.mockReturnValue({ user, logout: vi.fn() });
   mockUseTranslation.mockReturnValue({ t: (key: string) => key });
-  mockUseTheme.mockReturnValue({ theme: 'light', toggleTheme: vi.fn() });
   const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
@@ -48,13 +41,13 @@ describe('Sidebar', () => {
     renderSidebar({ role: 'employee', name: 'Emp', email: 'emp@test.com' });
     expect(screen.queryByText('nav.payroll_management')).not.toBeInTheDocument();
     expect(screen.queryByText('nav.job_postings')).not.toBeInTheDocument();
-    expect(screen.getByText('nav.dashboard')).toBeInTheDocument();
+    expect(screen.getByText('nav.leaves')).toBeInTheDocument();
   });
 
   it('renders mobile overlay when mobileOpen is true', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Admin', email: 'admin@test.com' }, logout: vi.fn() });
     mockUseTranslation.mockReturnValue({ t: (key: string) => key });
-    mockUseTheme.mockReturnValue({ theme: 'light', toggleTheme: vi.fn() });
+
     const queryClient = new QueryClient();
     const { container } = render(
       <QueryClientProvider client={queryClient}>

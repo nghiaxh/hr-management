@@ -1,11 +1,9 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from '../../context/language-context';
-import { useTheme } from '../../hooks/use-theme';
 import { cn } from '../../lib/utils';
-import { Sun, Moon, Search, Menu, ChevronRight, Home } from 'lucide-react';
+import { Search, Menu, ChevronRight } from 'lucide-react';
 
 const breadcrumbMap: Record<string, string> = {
-  '/dashboard': 'nav.dashboard',
   '/employees': 'nav.employees',
   '/departments': 'nav.departments',
   '/leaves': 'nav.leaves',
@@ -45,7 +43,6 @@ interface TopHeaderProps {
 
 export function TopHeader({ onMenuToggle }: TopHeaderProps) {
   const { t } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   if (location.pathname === '/login') return null;
@@ -53,7 +50,7 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
   const breadcrumbs = getBreadcrumbs(location.pathname, t);
 
   return (
-    <header className="h-14 border-b border-border bg-background/95 backdrop-blur-xl flex items-center gap-3 px-3 md:px-6 shrink-0">
+    <header className="h-14 border-b border-border bg-background flex items-center gap-3 px-3 md:px-6 shrink-0">
       <button
         onClick={onMenuToggle}
         className="md:hidden p-2 -ml-1 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
@@ -63,9 +60,6 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
       </button>
 
       <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 text-sm text-muted-foreground flex-1 min-w-0">
-        <Link to="/dashboard" className="hover:text-foreground transition-colors shrink-0">
-          <Home className="h-3.5 w-3.5" />
-        </Link>
         {breadcrumbs.map((item, i) => (
           <span key={i} className="flex items-center gap-1 min-w-0">
             <ChevronRight className="h-3.5 w-3.5 shrink-0" />
@@ -91,17 +85,6 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
             className="bg-transparent outline-none border-0 p-0 text-foreground text-sm w-full placeholder:text-muted-foreground/60"
           />
         </div>
-
-        <button
-          onClick={toggleTheme}
-          className={cn(
-            'p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer',
-            theme === 'dark' ? 'text-amber-400' : 'text-muted-foreground hover:text-foreground'
-          )}
-          aria-label={theme === 'light' ? t('theme_dark') : t('theme_light')}
-        >
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-        </button>
       </div>
     </header>
   );

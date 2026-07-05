@@ -11,7 +11,7 @@ export function ProtectedRoute({ roles, children }: ProtectedRouteProps) {
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (!roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  if (!roles.includes(user.role)) return <Navigate to="/leaves" replace />;
 
   return <>{children}</>;
 }

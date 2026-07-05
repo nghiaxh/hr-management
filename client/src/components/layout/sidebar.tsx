@@ -2,20 +2,18 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
-import { useTheme } from '../../hooks/use-theme';
 import { useState } from 'react';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { TooltipRoot, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import { notificationsApi } from '../../api/notifications';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Users, Building2, CalendarCheck, ClipboardCheck,
-  Clock, BarChart3, Wallet, DollarSign, LogOut, Sun, Moon,
+  Users, Building2, CalendarCheck, ClipboardCheck,
+  Clock, BarChart3, Wallet, DollarSign, LogOut,
   User, X, Bell, ChevronLeft, GitGraph, Star, Briefcase, Settings,
 } from 'lucide-react';
 
 const menuItems = [
-  { path: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
   { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
   { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
   { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
@@ -72,7 +70,6 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
 
@@ -210,20 +207,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         </BottomNavItem>
       </div>
 
-      <div className={cn('border-t border-border pt-2 mt-2 flex', collapsed ? 'flex-col items-center gap-1' : 'items-center justify-between')}>
-        <button
-          onClick={toggleTheme}
-          className={cn(
-            'flex items-center rounded-md transition-colors text-sm cursor-pointer hover:bg-accent/50',
-            collapsed ? 'p-2 justify-center' : 'px-2 py-1.5 gap-2',
-            theme === 'dark' ? 'text-amber-400' : 'text-muted-foreground hover:text-foreground'
-          )}
-          aria-label={theme === 'light' ? t('theme_dark') : t('theme_light')}
-        >
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          {!collapsed && (theme === 'light' ? t('theme_dark') : t('theme_light'))}
-        </button>
-
+      <div className={cn('border-t border-border pt-2 mt-2 flex', collapsed ? 'flex-col items-center gap-1' : 'items-center justify-center')}>
         <button
           onClick={toggleCollapsed}
           className={cn(

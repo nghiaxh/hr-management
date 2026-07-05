@@ -31,7 +31,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/leaves');
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('login.invalid_credentials');
       setError(message);
@@ -41,26 +41,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-        />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background relative">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="w-full max-w-md mx-4 relative"
+        className="w-full max-w-md mx-4"
       >
-      <Card className="glass-card">
+      <Card>
         <CardHeader className="text-center pb-4">
           <p className="text-sm text-muted-foreground mt-1">{t('login.sign_in_to_account')}</p>
         </CardHeader>
@@ -73,18 +61,18 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">{t('login.email')}</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="bg-background/50" />
+              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">{t('login.password')}</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required className="bg-background/50 pr-10" />
+                <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required className="pr-10" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-            <Button type="submit" className="w-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('login.signing_in')}</> : t('login.sign_in')}
             </Button>
           </form>
@@ -96,7 +84,7 @@ export default function LoginPage() {
                   key={account.role}
                   type="button"
                   onClick={() => { setEmail(account.email); setPassword(account.password); }}
-                  className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors capitalize cursor-pointer"
+                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-muted hover:bg-accent transition-colors capitalize cursor-pointer"
                 >
                   {account.role}
                 </button>
