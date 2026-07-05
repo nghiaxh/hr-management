@@ -13,21 +13,58 @@ import {
   User, X, Bell, ChevronLeft, GitGraph, Star, Briefcase, Settings,
 } from 'lucide-react';
 
-const menuItems = [
-  { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
-  { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
-  { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
-  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'] },
-  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
-  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
-  { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
-  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'] },
-  { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
-  { path: '/performance-reviews', label: 'nav.performance_reviews', icon: Star, roles: ['admin', 'manager'] },
-  { path: '/recruitment', label: 'nav.job_postings', icon: Briefcase, roles: ['admin'] },
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles: string[];
+}
+
+interface MenuSection {
+  label: string;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
+  {
+    label: 'nav.section_management',
+    items: [
+      { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
+      { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
+      { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
+    ],
+  },
+  {
+    label: 'nav.section_time_off',
+    items: [
+      { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'] },
+      { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
+    ],
+  },
+  {
+    label: 'nav.section_attendance',
+    items: [
+      { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
+      { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
+    ],
+  },
+  {
+    label: 'nav.section_finance',
+    items: [
+      { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'] },
+      { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'nav.section_people',
+    items: [
+      { path: '/performance-reviews', label: 'nav.performance_reviews', icon: Star, roles: ['admin', 'manager'] },
+      { path: '/recruitment', label: 'nav.job_postings', icon: Briefcase, roles: ['admin', 'manager'] },
+    ],
+  },
 ];
 
-function NavItem({ item, collapsed, onNav }: { item: typeof menuItems[0]; collapsed: boolean; onNav: () => void }) {
+function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
   const { t } = useTranslation();
   const link = (
     <NavLink
@@ -62,6 +99,46 @@ function NavItem({ item, collapsed, onNav }: { item: typeof menuItems[0]; collap
   );
 }
 
+function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, children }: {
+  to?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  collapsed: boolean;
+  onClick?: () => void;
+  className?: string;
+  children?: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const content = (
+    <div
+      className={cn(
+        'flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm cursor-pointer',
+        collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
+        className
+      )}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter') onClick(); } : undefined}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {!collapsed && t(label)}
+      {children}
+    </div>
+  );
+
+  if (!collapsed) return to ? <NavLink to={to}>{content}</NavLink> : content;
+
+  return (
+    <TooltipRoot>
+      <TooltipTrigger asChild>
+        {to ? <NavLink to={to}>{content}</NavLink> : <span>{content}</span>}
+      </TooltipTrigger>
+      <TooltipContent side="right">{t(label)}</TooltipContent>
+    </TooltipRoot>
+  );
+}
+
 interface SidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
@@ -89,16 +166,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
   const closeMobile = () => setMobileOpen(false);
 
-  function BottomNavItem({ children, label, collapsed: isCollapsed }: { children: React.ReactNode; label: string; collapsed: boolean }) {
-    if (!isCollapsed) return <>{children}</>;
-    return (
-      <TooltipRoot>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side="right">{label}</TooltipContent>
-      </TooltipRoot>
-    );
-  }
-
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-end px-1">
@@ -110,7 +177,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       <TooltipRoot>
         <TooltipTrigger asChild>
           <NavLink to="/profile" onClick={closeMobile} className={cn(
-            'flex items-center gap-2.5 px-2 py-2 mb-3 rounded-lg text-sm hover:bg-accent/50 transition-all w-full text-left group',
+            'flex items-center gap-2.5 px-2 py-2 mb-1 rounded-lg text-sm hover:bg-accent/50 transition-all w-full text-left group',
             collapsed && 'justify-center'
           )}>
             <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0">
@@ -127,84 +194,61 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         {collapsed && <TooltipContent side="right">{user?.name || user?.email}</TooltipContent>}
       </TooltipRoot>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto">
-        {menuItems.filter(item => item.roles.includes(user?.role || '')).map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
-        ))}
+      <nav className="flex-1 overflow-y-auto space-y-1 scrollbar-thin">
+        {menuSections.map((section) => {
+          const visibleItems = section.items.filter(item => item.roles.includes(user?.role || ''));
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={section.label}>
+              {!collapsed && (
+                <p className="px-2 pt-2 pb-0.5 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                  {t(section.label)}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => (
+                  <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
-      <div className="border-t border-border pt-2 mt-2 space-y-0.5">
-        <BottomNavItem label={t('nav.notifications')} collapsed={collapsed}>
-          <NavLink to="/notifications" onClick={closeMobile} className={({ isActive }) =>
-            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
-              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
-              isActive
-                ? 'bg-accent font-medium text-foreground'
-                : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
-            )
-          }>
-            {({ isActive }) => (
-              <>
-                <div className="relative">
-                  <Bell className={cn('h-4 w-4', isActive && 'text-foreground')} />
-                  {(typeof unreadCount === 'number' && unreadCount > 0) && (
-                    <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </div>
-                {!collapsed && t('nav.notifications')}
-              </>
-            )}
-          </NavLink>
-        </BottomNavItem>
+      <div className="border-t border-border pt-2 mt-1 space-y-0.5">
+        <BottomLink
+          to="/notifications"
+          icon={Bell}
+          label="nav.notifications"
+          collapsed={collapsed}
+          onClick={closeMobile}
+          className={undefined}
+        >
+          {(typeof unreadCount === 'number' && unreadCount > 0) && (
+            <span className="ml-auto h-4 min-w-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </BottomLink>
 
-        <BottomNavItem label={t('user.profile')} collapsed={collapsed}>
-          <NavLink to="/profile" onClick={closeMobile} className={({ isActive }) =>
-            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
-              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
-              isActive
-                ? 'bg-accent font-medium text-foreground'
-                : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
-            )
-          }>
-            {({ isActive }) => (
-              <>
-                <User className={cn('h-4 w-4', isActive && 'text-foreground')} />
-                {!collapsed && t('user.profile')}
-              </>
-            )}
-          </NavLink>
-        </BottomNavItem>
+        <BottomLink
+          to="/settings"
+          icon={Settings}
+          label="settings"
+          collapsed={collapsed}
+          onClick={closeMobile}
+          className={undefined}
+        />
 
-        <BottomNavItem label={t('settings')} collapsed={collapsed}>
-          <NavLink to="/settings" onClick={closeMobile} className={({ isActive }) =>
-            cn('flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm',
-              collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
-              isActive
-                ? 'bg-accent font-medium text-foreground'
-                : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
-            )
-          }>
-            {({ isActive }) => (
-              <>
-                <Settings className={cn('h-4 w-4', isActive && 'text-foreground')} />
-                {!collapsed && t('settings')}
-              </>
-            )}
-          </NavLink>
-        </BottomNavItem>
-
-        <BottomNavItem label={t('nav.logout')} collapsed={collapsed}>
-          <button onClick={() => setLogoutOpen(true)} className={cn(
-            'flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm cursor-pointer',
-            collapsed ? 'justify-center gap-0' : 'gap-2.5 text-left',
-            'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
-          )} aria-label={t('nav.logout')}>
-            <LogOut className="h-4 w-4" />
-            {!collapsed && t('nav.logout')}
-          </button>
-        </BottomNavItem>
+        <span>
+          <BottomLink
+            icon={LogOut}
+            label="nav.logout"
+            collapsed={collapsed}
+            onClick={() => setLogoutOpen(true)}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          />
+        </span>
       </div>
 
       <div className={cn('border-t border-border pt-2 mt-2 flex', collapsed ? 'flex-col items-center gap-1' : 'items-center justify-center')}>
