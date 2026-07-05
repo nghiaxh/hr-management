@@ -8,7 +8,9 @@
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 830/ISO 29148 |
 | 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai     |
 
-> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai. Recruitment (JobPostings, Candidates), Performance Reviews, Socket.IO chưa triển khai (API và giao diện đang kế hoạch).
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment (JobPostings, Candidates), Performance Reviews, Socket.IO chưa triển khai (API và giao diện đang kế hoạch).
+>
+> > **Ghi chú công nghệ thực tế:** Hệ thống được triển khai với **Spring Boot 4.1 + MySQL 8** (JPA/Hibernate) thay vì Express + MongoDB như thiết kế ban đầu. Các tham chiếu đến Express/MongoDB trong tài liệu đã được cập nhật tương ứng.
 
 ---
 
@@ -110,7 +112,7 @@ Tài liệu gồm 10 phần chính:
 - **Phần 1 - Giới thiệu**: Cung cấp mục đích, phạm vi, định nghĩa và tài liệu tham khảo.
 - **Phần 2 - Mô tả tổng thể**: Mô tả góc nhìn sản phẩm, chức năng, đặc điểm người dùng, ràng buộc và giả định.
 - **Phần 3 - Yêu cầu cụ thể**: Chi tiết các yêu cầu giao diện ngoài, chức năng, hiệu năng, cơ sở dữ liệu, ràng buộc thiết kế và thuộc tính hệ thống.
-- **Phần 4 - Mô hình dữ liệu**: Cấu trúc chi tiết các collection MongoDB.
+- **Phần 4 - Mô hình dữ liệu**: Cấu trúc chi tiết các bảng MySQL.
 - **Phần 5 - Phân tích use case**: Biểu đồ use case tổng thể và chi tiết.
 - **Phần 6 - Ma trận phân quyền**: Chi tiết quyền truy cập API và giao diện.
 - **Phần 7 - Luồng nghiệp vụ chính**: Sequence diagram các quy trình chính.
@@ -128,7 +130,7 @@ Hệ thống là một ứng dụng web SPA với kiến trúc client-server ph�
 
 ```
 ┌──────────────┐    HTTP/REST    ┌──────────────┐   JPA/Hibernate ┌────────────┐
-│   Client     │◄──────────────►│   Server     │◄───────────────►│ PostgreSQL │
+│   Client     │◄──────────────►│   Server     │◄───────────────►│  MySQL 8   │
 │  (React 18)  │   JWT Bearer   │ (Spring Boot)│                 │ (Relational)│
 │  Port 5173   │   + Socket.IO  │  Port 3001   │                 │  Local     │
 └──────────────┘                └──────────────┘                └────────────┘
@@ -136,7 +138,7 @@ Hệ thống là một ứng dụng web SPA với kiến trúc client-server ph�
 
 - **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173 (dev). Sử dụng shadcn/ui, Tailwind CSS, TanStack Query, React Router, Recharts.
 - **Server (Spring Boot)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Spring Data JPA, Spring Security, JWT (jjwt), Socket.IO, Jakarta Validation.
-- **Database (PostgreSQL)**: Lưu trữ dữ liệu quan hệ, chạy local (dev) hoặc cloud (production).
+- **Database (MySQL 8)**: Lưu trữ dữ liệu quan hệ, chạy local (dev) hoặc cloud (production).
 
 ### 2.2 Chức năng sản phẩm
 
@@ -173,7 +175,7 @@ Hệ thống cung cấp các chức năng chính sau, được tổ chức thàn
 | CON-03 | File upload tối đa 5MB, chỉ JPEG/PNG/GIF/PDF/DOC/DOCX          | Kỹ thuật   |
 | CON-04 | API giới hạn 60 request/phút/IP                                | Hiệu năng  |
 | CON-05 | Chạy seed script trước lần đầu sử dụng                         | Triển khai |
-| CON-06 | Sử dụng Express (không NestJS CLI), ESM (`"type": "module"`)   | Kiến trúc  |
+| CON-06 | Sử dụng Spring Boot (Maven), Java 25, JPA/Hibernate             | Kiến trúc  |
 | CON-07 | Client dùng Vite, path alias `@/` → `./src/*`                  | Kiến trúc  |
 | CON-08 | Server dùng path alias `@/*` → `src/*`                         | Kiến trúc  |
 
@@ -194,7 +196,7 @@ Hệ thống cung cấp các chức năng chính sau, được tổ chức thàn
 2. Phòng Nhân sự cung cấp dữ liệu mẫu và quy trình nghiệp vụ
 3. Phòng Tài chính phê duyệt ngân sách
 4. Quyết định từ Ban Giám đốc về việc áp dụng hệ thống
-5. MongoDB phiên bản 7+ (cho transaction support)
+5. MySQL phiên bản 8+ (cho transaction support)
 
 ### 2.6 Phân bổ yêu cầu
 
@@ -398,7 +400,7 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 | Mã        | Yêu cầu                                               | Mô tả                                     | Mức ưu tiên |
 | --------- | ----------------------------------------------------- | ----------------------------------------- | :---------: |
-| NFR-DB-01 | PostgreSQL làm hệ thống quản trị CSDL                 | Quan hệ, ACID, phù hợp dữ liệu tài chính  |    Must     |
+| NFR-DB-01 | MySQL 8 làm hệ thống quản trị CSDL                     | Quan hệ, ACID, phù hợp dữ liệu tài chính  |    Must     |
 | NFR-DB-02 | JPA/Hibernate ORM                                     | Ánh xạ object-quan hệ, schema auto-update |    Must     |
 | NFR-DB-03 | Unique index trên email (User)                        | Đảm bảo email không trùng lặp             |    Must     |
 | NFR-DB-04 | Unique compound index employeeId+month+year (Payroll) | Chống tạo trùng lặp bảng lương            |    Must     |
@@ -409,12 +411,12 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 | Mã        | Ràng buộc                              | Mô tả                                                    | Mức ưu tiên |
 | --------- | -------------------------------------- | -------------------------------------------------------- | :---------: |
-| CON-DS-01 | Kiến trúc client-server phân tách      | React SPA giao tiếp với Express API qua REST             |    Must     |
+| CON-DS-01 | Kiến trúc client-server phân tách      | React SPA giao tiếp với Spring Boot API qua REST         |    Must     |
 | CON-DS-02 | Tách biệt User và Employee             | Auth credentials riêng biệt với HR profile data          |    Must     |
 | CON-DS-03 | JWT trong localStorage                 | Đơn giản cho SPA, httpOnly cookies an toàn hơn           |    Must     |
-| CON-DS-04 | ESM (ES Modules)                       | `"type": "module"` trong cả client và server             |    Must     |
-| CON-DS-05 | Server dùng NodeNext module resolution | Import với `.js` extension trong relative paths          |    Must     |
-| CON-DS-06 | Routes/Controllers/Services pattern    | Tách biệt rõ giữa routing, xử lý request, business logic |    Must     |
+| CON-DS-04 | ESM (ES Modules)                       | `"type": "module"` trong client (Vite/TypeScript)       |    Must     |
+| CON-DS-05 | Server dùng Maven + Java               | Build và dependency management qua pom.xml               |    Must     |
+| CON-DS-06 | Controller/Service/Repository pattern  | Tách biệt rõ giữa controller, service, repository layers  |    Must     |
 
 ### 3.6 Thuộc tính hệ thống phần mềm
 
@@ -425,11 +427,11 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | NFR-SEC-01 | Mã hóa mật khẩu                  | bcrypt với 10 salt rounds                     |    Must     |
 | NFR-SEC-02 | JWT expiration                   | Token hết hạn sau 1 ngày (JWT_EXPIRES_IN=1d)  |    Must     |
 | NFR-SEC-03 | Rate limiting                    | Tối đa 60 request/phút/IP                     |    Must     |
-| NFR-SEC-04 | HTTP security headers            | Helmet middleware: X-Frame-Options, CSP, etc  |    Must     |
+| NFR-SEC-04 | HTTP security headers            | Spring Security headers: X-Frame-Options, CSP, etc |    Must     |
 | NFR-SEC-05 | Input validation                 | Bean Validation (Jakarta Validation) + Spring validation |    Must     |
 | NFR-SEC-06 | CORS                             | Chỉ cho phép origin được ủy quyền             |    Must     |
 | NFR-SEC-07 | File upload restriction          | Tối đa 5MB, JPEG/PNG/GIF/PDF/DOC/DOCX         |    Must     |
-| NFR-SEC-08 | Regex escape cho search input    | Ngăn chặn NoSQL injection                     |   Should    |
+| NFR-SEC-08 | Regex escape cho search input    | Ngăn chặn SQL injection                       |   Should    |
 | NFR-SEC-09 | WebSocket auth via JWT handshake | Xác thực trước khi kết nối Socket.IO          |    Must     |
 
 #### 3.6.2 Độ tin cậy
@@ -437,8 +439,8 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | Mã         | Yêu cầu                  | Chỉ tiêu                                     | Mức ưu tiên |
 | ---------- | ------------------------ | -------------------------------------------- | :---------: |
 | NFR-REL-01 | Uptime                   | 99.9% trong giờ hành chính                   |   Should    |
-| NFR-REL-02 | Data consistency         | MongoDB transactions cho critical operations |   Should    |
-| NFR-REL-03 | Error handling           | Express error handler, client error boundary |    Must     |
+| NFR-REL-02 | Data consistency         | JPA transactions (@Transactional) cho critical operations |   Should    |
+| NFR-REL-03 | Error handling           | GlobalExceptionHandler (@ControllerAdvice), client error boundary |    Must     |
 | NFR-REL-04 | Socket.IO auto-reconnect | Tự động kết nối lại khi mất kết nối          |    Must     |
 
 #### 3.6.3 Khả dụng
@@ -467,206 +469,157 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 ## 4. Mô hình dữ liệu
 
-Hệ thống sử dụng MongoDB với 12 collections. Dưới đây là cấu trúc chi tiết.
+Hệ thống sử dụng MySQL 8 với 10 tables. Dưới đây là cấu trúc chi tiết (UUID primary keys, quan hệ khóa ngoại).
 
-### 4.1 User
+### 4.1 User (users table)
 
-```json
-{
-  "_id": "ObjectId",
-  "email": "string (unique, required)",
-  "passwordHash": "string (required)",
-  "role": "enum: admin|manager|employee (required)",
-  "name": "string (optional)",
-  "isActive": "boolean (default: true)",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
+| Column       | Type          | Constraints                |
+|--------------|---------------|---------------------------|
+| id           | UUID (BINARY)| PK                         |
+| email        | VARCHAR(255)  | UNIQUE, NOT NULL           |
+| password_hash| VARCHAR(255)  | NOT NULL                   |
+| role         | ENUM('admin','manager','employee') | NOT NULL |
+| name         | VARCHAR(255)  | NULLABLE                   |
+| is_active    | BOOLEAN       | DEFAULT TRUE               |
+| created_at   | DATETIME      | NOT NULL                   |
+| updated_at   | DATETIME      | NOT NULL                   |
 
 **Indexes:** `email` (unique)
 
-### 4.2 Employee
+### 4.2 Employee (employees table)
 
-```json
-{
-  "_id": "ObjectId",
-  "userId": "ObjectId → User (unique, required)",
-  "departmentId": "ObjectId → Department (required)",
-  "firstName": "string (required)",
-  "lastName": "string (required)",
-  "position": "string (required)",
-  "salary": "number (min 0, required)",
-  "hireDate": "Date (required)",
-  "phone": "string (optional)",
-  "contractType": "enum: permanent|contract|intern (optional)",
-  "contractExpiry": "Date (optional)",
-  "documents": [{ "name": "string", "url": "string", "type": "string", "uploadedAt": "Date" }]
-}
-```
+| Column         | Type          | Constraints                |
+|----------------|---------------|---------------------------|
+| id             | UUID (BINARY)| PK                         |
+| user_id        | UUID (BINARY)| UNIQUE, FK → users(id)     |
+| department_id  | UUID (BINARY)| FK → departments(id)       |
+| first_name     | VARCHAR(100)  | NOT NULL                   |
+| last_name      | VARCHAR(100)  | NOT NULL                   |
+| position       | VARCHAR(255)  | NOT NULL                   |
+| salary         | DECIMAL(12,0) | NOT NULL                   |
+| hire_date      | DATE          | NOT NULL                   |
+| phone          | VARCHAR(20)   | NULLABLE                   |
+| contract_type  | ENUM('permanent','contract','intern') | NULLABLE |
+| contract_expiry| DATE          | NULLABLE                   |
 
-**Indexes:** `departmentId`, `userId` (unique)
+**Indexes:** `department_id`, `user_id` (unique)
 
-### 4.3 Department
+> Employee documents stored in separate `employee_documents` table.
 
-```json
-{
-  "_id": "ObjectId",
-  "name": "string (unique, required)",
-  "description": "string (optional)",
-  "managerId": "ObjectId → User (optional)"
-}
-```
+### 4.3 Department (departments table)
+
+| Column       | Type          | Constraints                |
+|--------------|---------------|---------------------------|
+| id           | UUID (BINARY)| PK                         |
+| name         | VARCHAR(255)  | UNIQUE, NOT NULL           |
+| description  | TEXT          | NULLABLE                   |
+| manager_id   | UUID (BINARY)| FK → users(id), NULLABLE   |
 
 **Indexes:** `name` (unique)
 
-### 4.4 Leave
+### 4.4 Leave (leaves table)
 
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (required)",
-  "type": "enum: sick|annual|personal (required)",
-  "startDate": "Date (required)",
-  "endDate": "Date (required)",
-  "status": "enum: pending|approved|rejected (default: pending)",
-  "approvedBy": "ObjectId → User (optional)",
-  "reason": "string (optional)",
-  "rejectionReason": "string (optional)"
-}
-```
+| Column           | Type          | Constraints                |
+|------------------|---------------|---------------------------|
+| id               | UUID (BINARY)| PK                         |
+| employee_id      | UUID (BINARY)| FK → employees(id)         |
+| type             | ENUM('sick','annual','personal') | NOT NULL     |
+| start_date       | DATE          | NOT NULL                   |
+| end_date         | DATE          | NOT NULL                   |
+| status           | ENUM('pending','approved','rejected') | DEFAULT 'pending' |
+| approved_by      | UUID (BINARY)| FK → users(id), NULLABLE   |
+| reason           | TEXT          | NULLABLE                   |
+| rejection_reason | TEXT          | NULLABLE                   |
 
-**Indexes:** `employeeId + status`, `employeeId + startDate + endDate`
+**Indexes:** `employee_id + status`, `employee_id + start_date + end_date`
 
-### 4.5 Attendance
+### 4.5 Attendance (attendances table)
 
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (required)",
-  "date": "Date (required)",
-  "checkIn": "Date (optional)",
-  "checkOut": "Date (optional)",
-  "status": "enum: present|late|absent|half-day (required)",
-  "note": "string (optional)"
-}
-```
+| Column       | Type          | Constraints                |
+|--------------|---------------|---------------------------|
+| id           | UUID (BINARY)| PK                         |
+| employee_id  | UUID (BINARY)| FK → employees(id)         |
+| date         | DATE          | NOT NULL                   |
+| check_in     | DATETIME      | NULLABLE                   |
+| check_out    | DATETIME      | NULLABLE                   |
+| status       | ENUM('present','late','absent','half-day') | NOT NULL |
 
-**Indexes:** `employeeId + date` (unique)
+**Indexes:** `employee_id + date` (unique)
 
-### 4.6 Payroll
+### 4.6 Payroll (payrolls table)
 
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (required)",
-  "month": "number 1-12 (required)",
-  "year": "number (required)",
-  "basicSalary": "number (min 0, required)",
-  "bonus": "number (default: 0)",
-  "deductions": "number (default: 0)",
-  "netPay": "number (min 0, required)",
-  "status": "enum: draft|paid (default: draft)",
-  "paidAt": "Date (optional)"
-}
-```
+| Column        | Type          | Constraints                |
+|---------------|---------------|---------------------------|
+| id            | UUID (BINARY)| PK                         |
+| employee_id   | UUID (BINARY)| FK → employees(id)         |
+| month         | TINYINT(2)    | NOT NULL (1-12)            |
+| year          | SMALLINT      | NOT NULL                   |
+| basic_salary  | DECIMAL(12,0) | NOT NULL                   |
+| bonus         | DECIMAL(12,0) | DEFAULT 0                  |
+| deductions    | DECIMAL(12,0) | DEFAULT 0                  |
+| net_pay       | DECIMAL(12,0) | NOT NULL                   |
+| status        | ENUM('draft','paid') | DEFAULT 'draft'      |
+| paid_at       | DATETIME      | NULLABLE                   |
 
-**Indexes:** `employeeId + month + year` (unique)
+**Indexes:** `employee_id + month + year` (unique)
 
-### 4.7 LeaveBalance
+### 4.7 LeaveBalance (leave_balances table)
 
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (unique, required)",
-  "annualTotal": "number (default: 12)",
-  "annualUsed": "number (default: 0)",
-  "sickTotal": "number (default: 30)",
-  "sickUsed": "number (default: 0)",
-  "personalTotal": "number (default: 3)",
-  "personalUsed": "number (default: 0)"
-}
-```
+| Column          | Type          | Constraints                |
+|-----------------|---------------|---------------------------|
+| id              | UUID (BINARY)| PK                         |
+| employee_id     | UUID (BINARY)| UNIQUE, FK → employees(id) |
+| annual_total    | INT           | DEFAULT 12                 |
+| annual_used     | INT           | DEFAULT 0                  |
+| sick_total      | INT           | DEFAULT 30                 |
+| sick_used       | INT           | DEFAULT 0                  |
+| personal_total  | INT           | DEFAULT 3                  |
+| personal_used   | INT           | DEFAULT 0                  |
 
-**Indexes:** `employeeId` (unique)
+**Indexes:** `employee_id` (unique)
 
-### 4.8 EmployeeHistory
+### 4.8 EmployeeHistory (employee_histories table)
 
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (required)",
-  "type": "enum: raise|promotion|transfer|other (required)",
-  "previousValue": "string (optional)",
-  "newValue": "string (required)",
-  "effectiveDate": "Date (required)",
-  "note": "string (optional)"
-}
-```
+| Column          | Type          | Constraints                |
+|-----------------|---------------|---------------------------|
+| id              | UUID (BINARY)| PK                         |
+| employee_id     | UUID (BINARY)| FK → employees(id)         |
+| type            | ENUM('raise','promotion','transfer','other') | NOT NULL |
+| previous_value  | VARCHAR(255)  | NULLABLE                   |
+| new_value       | VARCHAR(255)  | NOT NULL                   |
+| effective_date  | DATE          | NOT NULL                   |
+| note            | TEXT          | NULLABLE                   |
 
-**Indexes:** `employeeId + effectiveDate`
+**Indexes:** `employee_id + effective_date`
 
-### 4.9 Notification
+### 4.9 Notification (notifications table)
 
-```json
-{
-  "_id": "ObjectId",
-  "userId": "ObjectId → User (required)",
-  "title": "string (required)",
-  "message": "string (optional)",
-  "type": "enum: leave_request|leave_approved|leave_rejected|payroll_ready|system (required)",
-  "relatedId": "ObjectId (optional)",
-  "relatedModel": "string (optional)",
-  "isRead": "boolean (default: false)",
-  "createdAt": "Date"
-}
-```
+| Column        | Type          | Constraints                |
+|---------------|---------------|---------------------------|
+| id            | UUID (BINARY)| PK                         |
+| user_id       | UUID (BINARY)| FK → users(id)             |
+| title         | VARCHAR(255)  | NOT NULL                   |
+| message       | TEXT          | NULLABLE                   |
+| type          | ENUM('leave_request','leave_approved','leave_rejected','payroll_ready','system') | NOT NULL |
+| related_id    | VARCHAR(36)   | NULLABLE                   |
+| related_model | VARCHAR(50)   | NULLABLE                   |
+| is_read       | BOOLEAN       | DEFAULT FALSE              |
+| created_at    | DATETIME      | NOT NULL                   |
 
-**Indexes:** `userId + isRead + createdAt`
+**Indexes:** `user_id + is_read + created_at`
 
-### 4.10 JobPosting
+### 4.10 EmployeeDocument (employee_documents table)
 
-```json
-{
-  "_id": "ObjectId",
-  "title": "string (required)",
-  "departmentId": "ObjectId → Department (required)",
-  "description": "string (optional)",
-  "requirements": "string (optional)",
-  "status": "enum: open|closed|draft (default: open)",
-  "openings": "number (default: 1)"
-}
-```
+| Column       | Type          | Constraints                |
+|--------------|---------------|---------------------------|
+| id           | UUID (BINARY)| PK                         |
+| employee_id  | UUID (BINARY)| FK → employees(id)         |
+| name         | VARCHAR(255)  | NOT NULL                   |
+| url          | TEXT          | NOT NULL                   |
+| type         | VARCHAR(50)   | NOT NULL                   |
+| uploaded_at  | DATETIME      | NOT NULL                   |
 
-### 4.11 Candidate
-
-```json
-{
-  "_id": "ObjectId",
-  "firstName": "string (required)",
-  "lastName": "string (required)",
-  "email": "string (required)",
-  "phone": "string (optional)",
-  "jobPostingId": "ObjectId → JobPosting (required)",
-  "status": "enum: applied|screening|interview|offered|hired|rejected (default: applied)",
-  "resumeUrl": "string (optional)",
-  "notes": "string (optional)",
-  "appliedDate": "Date"
-}
-```
-
-### 4.12 PerformanceReview
-
-```json
-{
-  "_id": "ObjectId",
-  "employeeId": "ObjectId → Employee (required)",
-  "reviewerId": "ObjectId → User (required)",
-  "period": "string (required, e.g. '2026-Q1')",
-  "rating": "number 1-5 (optional)",
-  "comments": "string (optional)",
-  "goals": "string (optional)",
-  "status": "enum: draft|submitted|acknowledged (default: draft)"
+> JobPosting, Candidate, PerformanceReview — chưa triển khai (kế hoạch).
 }
 ```
 

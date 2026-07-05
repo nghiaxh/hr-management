@@ -7,7 +7,9 @@
 | 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 1016       |
 
-> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai. Recruitment, Performance Reviews, Org Chart page, Socket.IO chưa triển khai (đang kế hoạch).
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment, Performance Reviews, Org Chart page, Socket.IO chưa triển khai (đang kế hoạch).
+>
+> > **Ghi chú kiến trúc thực tế:** Hệ thống được triển khai với **Spring Boot 4.1 + MySQL 8** (JPA/Hibernate) thay vì Express + MongoDB như thiết kế ban đầu. Các sơ đồ và mô tả dưới đây đã được cập nhật tương ứng.
 
 ---
 
@@ -84,7 +86,7 @@ Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho 
 
 ### 1.2 Phạm vi
 
-Tài liệu bao gồm thiết kế cho toàn bộ hệ thống HR Management với kiến trúc client-server (React + Express + MongoDB). Các module được thiết kế bao gồm: xác thực, nhân viên, phòng ban, nghỉ phép, chấm công, lương, dashboard, tuyển dụng, đánh giá hiệu suất, thông báo, lịch sử nhân viên.
+Tài liệu bao gồm thiết kế cho toàn bộ hệ thống HR Management với kiến trúc client-server (React + Spring Boot + MySQL). Các module được thiết kế bao gồm: xác thực, nhân viên, phòng ban, nghỉ phép, chấm công, lương, dashboard, tuyển dụng, đánh giá hiệu suất, thông báo, lịch sử nhân viên.
 
 Tài liệu KHÔNG bao gồm: thiết kế chi tiết giao diện người dùng (UI mockups), thiết kế test cases, kế hoạch dự án.
 
@@ -96,7 +98,7 @@ Tài liệu KHÔNG bao gồm: thiết kế chi tiết giao diện người dùng
 | Module         | Đơn vị tổ chức code (file/thư mục) trong hệ thống                |
 | Service        | Lớp xử lý nghiệp vụ, tách biệt khỏi route handler               |
 | Route Handler  | Hàm xử lý HTTP request, gọi service tương ứng                   |
-| Middleware     | Hàm xử lý trung gian trong pipeline Express                     |
+| Middleware     | Bộ lọc xử lý request (Filter) trong pipeline Spring Security     |
 | REST           | Representational State Transfer - kiến trúc API                 |
 | SPA            | Single Page Application                                         |
 | JWT            | JSON Web Token                                                  |
@@ -122,7 +124,7 @@ Tài liệu gồm 14 phần chính: Giới thiệu, Thiết kế kiến trúc t�
 
 ### 2.1 Kiến trúc hệ thống
 
-Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Spring Boot) qua REST API và WebSocket (Socket.IO). Server kết nối với PostgreSQL qua JPA/Hibernate.
+Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Spring Boot) qua REST API và WebSocket (Socket.IO). Server kết nối với MySQL 8 qua JPA/Hibernate.
 
 ```mermaid
 graph TB
@@ -133,45 +135,44 @@ graph TB
         CACHE[TanStack Query Cache]
     end
 
-    subgraph "Server (Express)"
-        subgraph "Tầng middleware"
-            AUTH[JWT Middleware]
-            ROLES[Role Middleware]
-            VALIDATE[Input Validation]
-            UPLOAD[File Upload]
-            RATE[Rate Limiting]
-            SECURITY[Helmet]
+    subgraph "Server (Spring Boot)"
+        subgraph "Tầng Filter / Config"
+            AUTH[JwtAuthenticationFilter]
+            SECURITY[SecurityConfig]
+            CORS[CorsConfig]
+            VALIDATE[@Valid Validation]
+            UPLOAD[File Upload Config]
         end
-        subgraph "Tầng Route Handlers"
-            AC[Auth Routes]
-            EC[Employee Routes]
-            DC[Dept Routes]
-            LC[Leave Routes]
-            ATC[Attendance Routes]
-            PC[Payroll Routes]
-            RC[Recruitment Routes]
-            PRC[Performance Review Routes]
-            NC[Notification Routes]
-            DBC[Dashboard Routes]
-            EHC[Employee History Routes]
-            LBC[Leave Balance Routes]
+        subgraph "Tầng Controller"
+            AC[AuthController]
+            EC[EmployeeController]
+            DC[DeptController]
+            LC[LeaveController]
+            ATC[AttendanceController]
+            PC[PayrollController]
+            RC[RecruitmentController]
+            PRC[PerformanceReviewController]
+            NC[NotificationController]
+            DBC[DashboardController]
+            EHC[EmployeeHistoryController]
+            LBC[LeaveBalanceController]
         end
         subgraph "Tầng Service"
-            AS[Auth Service]
-            ES[Employee Service]
-            DS[Dept Service]
-            LS[Leave Service]
-            ATS[Attendance Service]
-            PS[Payroll Service]
-            RS[Recruitment Service]
-            PRS[Performance Review Service]
-            NS[Notification Service]
-            DBS[Dashboard Service]
-            EHS[Employee History Service]
-            LBS[Leave Balance Service]
+            AS[AuthService]
+            ES[EmployeeService]
+            DS[DeptService]
+            LS[LeaveService]
+            ATS[AttendanceService]
+            PS[PayrollService]
+            RS[RecruitmentService]
+            PRS[PerformanceReviewService]
+            NS[NotificationService]
+            DBS[DashboardService]
+            EHS[EmployeeHistoryService]
+            LBS[LeaveBalanceService]
         end
         subgraph "Tầng Database"
-            MONGO[MongoDB]
+            MYSQL[(MySQL 8)]
         end
         subgraph "Real-time"
             GW[Notifications Gateway]
@@ -186,11 +187,11 @@ graph TB
     BROWSER --> UI
     UI --> API_Layer & SC
     API_Layer -->|HTTP/REST| AUTH
-    AUTH --> ROLES --> VALIDATE --> RATE --> SECURITY
-    SECURITY --> AC & EC & DC & LC & ATC & PC & RC & PRC & NC & DBC & EHC & LBC
+    AUTH --> SECURITY --> CORS
+    CORS --> AC & EC & DC & LC & ATC & PC & RC & PRC & NC & DBC & EHC & LBC
     AC --> AS; EC --> ES; DC --> DS; LC --> LS; ATC --> ATS
     PC --> PS; RC --> RS; PRC --> PRS; NC --> NS; DBC --> DBS; EHC --> EHS; LBC --> LBS
-    AS & ES & DS & LS & ATS & PS & RS & PRS & NS & DBS & EHS & LBS --> MONGO
+    AS & ES & DS & LS & ATS & PS & RS & PRS & NS & DBS & EHS & LBS --> MYSQL
     LS --> LBS & NS
     ES -->|Upload| FS
     SC -->|WebSocket| GW
@@ -225,8 +226,8 @@ graph TB
 
 | ID   | Quyết định                            | Lý do                                                           |
 |:----:|---------------------------------------|----------------------------------------------------------------|
-| AD-01| Express (không NestJS)                | Đơn giản hơn, linh hoạt, phù hợp quy mô vừa                    |
-| AD-02| MongoDB thay vì SQL                   | Schema linh hoạt cho HR documents array, dễ iterate            |
+| AD-01| Spring Boot (không Express)           | DI container mạnh, Spring Security tích hợp, JPA/Hibernate mature |
+| AD-02| MySQL 8 thay vì MongoDB               | Quan hệ chuẩn hóa cho HR data, phù hợp với JPA entity mapping, wide hosting support |
 | AD-03| Tách User và Employee                 | Cô lập thông tin xác thực khỏi HR profile                     |
 | AD-04| JWT trong localStorage                | Đơn giản cho SPA; httpOnly cookies an toàn hơn nhưng phức tạp |
 | AD-05| Socket.IO thay vì SSE/Polling         | Real-time hai chiều, auto-reconnect, room support              |
@@ -513,12 +514,12 @@ graph LR
     AUTH -->|Token lỗi| 401[401 Unauthorized]
     VAL -->|Hợp lệ| SRV[Service]
     VAL -->|Lỗi| 400[400 Bad Request]
-    SRV --> DB[(PostgreSQL)]
+    SRV --> DB[(MySQL 8)]
 ```
 
 | Filter/Middleware          | Thứ tự | Trách nhiệm                                          |
 |---------------------------|:------:|------------------------------------------------------|
-| RateLimitingFilter        | 1      | Giới hạn 60 request/phút/IP (Spring bucket4j / express-rate-limit) |
+| RateLimitingFilter        | 1      | Giới hạn 60 request/phút/IP |
 | Spring Security Filter    | 2      | Security headers, CORS, CSRF disable                 |
 | JwtAuthenticationFilter   | 3      | Xác thực JWT từ Authorization header                |
 | `requireRoles()`          | 4      | Kiểm tra user role với danh sách allowed roles       |
@@ -742,7 +743,7 @@ sequenceDiagram
     participant C as Client
     participant LG as Login Page
     participant S as Server
-    participant DB as MongoDB
+    participant DB as MySQL
     C->>LG: Nhập email + password
     LG->>S: POST /api/auth/login
     S->>DB: Tìm user theo email
@@ -822,7 +823,7 @@ graph TB
         LV[Leave Service - approve/reject]
     end
     LV -->|create notification| NS
-    NS -->|save to DB| DB[(MongoDB)]
+    NS -->|save to DB| DB[(MySQL)]
     NS -->|emit event| GW
     GW -->|sendNotification| ROOM
     ROOM -->|notification event| SC
@@ -938,7 +939,7 @@ sequenceDiagram
     participant S as LeavesService
     participant LB as LeaveBalanceService
     participant N as NotificationsService
-    participant DB as MongoDB
+    participant DB as MySQL
 
     E->>C: POST /leaves {type, startDate, endDate, reason}
     C->>S: create(dto, userId)
@@ -980,7 +981,7 @@ sequenceDiagram
     participant C as PayrollController
     participant S as PayrollService
     participant ES as EmployeesService
-    participant DB as MongoDB
+    participant DB as MySQL
 
     A->>C: POST /payroll/process {employeeIds, month, year}
     C->>S: process(dto)
@@ -1016,7 +1017,7 @@ sequenceDiagram
     participant C as AttendanceController
     participant S as AttendanceService
     participant ES as EmployeesService
-    participant DB as MongoDB
+    participant DB as MySQL
 
     E->>C: POST /attendance/check-in
     C->>S: checkIn(userId)
@@ -1053,7 +1054,7 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Developer Machine"
-        PGSQL["PostgreSQL 16<br/>Port 5432"]
+        MYSQL["MySQL 8<br/>Port 3306"]
         subgraph "Processes"
             SRV["Spring Boot Server<br/>Port 3001<br/>mvn spring-boot:run"]
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
@@ -1065,7 +1066,7 @@ graph TB
     end
     BROWSER[Web Browser:5173] --> CLT
     CLT -->|/api/*| SRV
-    SRV --> PGSQL
+    SRV --> MYSQL
     ENV --> SRV
     CLT_ENV --> CLT
 ```
@@ -1075,7 +1076,7 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Production Server"
-        DB[(PostgreSQL<br/>Port 5432)]
+        DB[(MySQL 8<br/>Port 3306)]
         SERVER[Spring Boot Server<br/>Port 3001<br/>java -jar app.jar]
         NGINX[Static File Server + Reverse Proxy]
     end
@@ -1089,9 +1090,9 @@ graph TB
 
 | Môi trường  | Client               | Server              | Database           | Mục đích        |
 |-------------|----------------------|---------------------|--------------------|------------------|
-| Development | Vite Dev (port 5173) | tsx watch (port 3001)| MongoDB local     | Lập trình        |
-| Staging     | Build static         | Node (port 3001)    | MongoDB Atlas     | Testing + UAT    |
-| Production  | Build static + CDN   | Node (PM2, port 3001)| MongoDB Atlas    | Production       |
+| Development | Vite Dev (port 5173) | Maven spring-boot:run (port 3001)| MySQL 8 Docker  | Lập trình        |
+| Staging     | Build static         | java -jar (port 3001)            | MySQL 8          | Testing + UAT    |
+| Production  | Build static + CDN   | java -jar (port 3001)            | MySQL 8          | Production       |
 
 ---
 
@@ -1146,7 +1147,7 @@ flowchart TD
     VAL -->|OK| SRV[Service]
     SRV -->|Business Error| EXC[Throw exception]
     SRV -->|OK| OK_RESP[200/201]
-    EXC --> ERR[Express Error Handler]
+    EXC --> ERR[GlobalExceptionHandler]
     ERR -->|400| B400[{message, statusCode: 400}]
     ERR -->|401| B401[{message, statusCode: 401}]
     ERR -->|403| B403[{message, statusCode: 403}]
@@ -1215,9 +1216,9 @@ graph TB
 
 | ID      | Ràng buộc                                    | Mô tả                                                        |
 |---------|----------------------------------------------|--------------------------------------------------------------|
-| TC-01   | Express không NestJS CLI                     | Không có `nest-cli.json`, dùng tsx để chạy dev               |
+| TC-01   | Spring Boot không Express CLI                     | Dùng Maven `spring-boot:run` thay vì tsx để chạy dev               |
 | TC-02   | ESM (`"type": "module"`)                     | Cả client và server đều dùng ES Modules                      |
-| TC-03   | NodeNext module resolution                   | Import với `.js` extension trong server relative paths       |
+| TC-03   | Maven build                                    | `pom.xml` quản lý dependencies và build lifecycle            |
 | TC-04   | Không sử dụng linter/typecheck script        | Dự án không có ESLint, Prettier, typecheck script            |
 | TC-05   | `server/.env` không tracked trong git        | File env đã tồn tại với dev defaults                          |
 

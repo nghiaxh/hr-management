@@ -1,28 +1,27 @@
 # Hệ thống Quản lý Nhân sự
 
-Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, PostgreSQL, React và shadcn/ui.
+Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, MySQL 8, React và shadcn/ui.
 
 ## Yêu cầu
 
 ### Hệ thống
 - Java 25+
-- PostgreSQL 16+ đang chạy (mặc định `localhost:5432`)
+- MySQL 8+ đang chạy (mặc định `localhost:3306`)
 - Maven (đi kèm `mvnw` trong dự án)
 
 ## Bắt đầu nhanh
 
-### 1. Tạo database
+### 1. Tạo database (nếu không dùng Docker)
 
 ```bash
-createdb hr_management
-# Hoặc dùng psql: CREATE DATABASE hr_management;
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hr_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
 ### 2. Server (Backend)
 
 ```bash
 cd server
-mvn spring-boot:run -Dspring-boot.run.profiles=seed    # Tạo dữ liệu mẫu (seed xong tự thoát)
+mvn spring-boot:run -D"spring-boot.run.profiles=seed"   # Tạo dữ liệu mẫu (seed xong tự thoát)
 mvn spring-boot:run                                     # API tại http://localhost:3001
 ```
 
@@ -36,13 +35,13 @@ npm run dev     # UI tại http://localhost:5173
 
 ## Biến môi trường
 
-### Server (`server/.env`)
+### Server (`server/src/main/resources/application.properties`)
 
-| Biến             | Mặc định                                       | Mô tả                      |
-|------------------|------------------------------------------------|----------------------------|
-| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/hr_management` | Chuỗi kết nối PostgreSQL |
-| `spring.datasource.username` | `postgres`                             | Tên đăng nhập DB           |
-| `spring.datasource.password` | `postgres`                             | Mật khẩu DB                |
+| Biến             | Mặc định                                             | Mô tả                |
+|------------------|------------------------------------------------------|----------------------|
+| `spring.datasource.url` | `jdbc:mysql://localhost:3306/hr_management?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci` | Chuỗi kết nối MySQL |
+| `spring.datasource.username` | `root`                                      | Tên đăng nhập DB     |
+| `spring.datasource.password` | `root`                                      | Mật khẩu DB          |
 | `jwt.secret`     | *(bắt buộc)*                                   | Khóa bí mật JWT (tối thiểu 32 ký tự) |
 | `jwt.expiration` | `86400000`                                    | Thời hạn token (ms)        |
 | `server.port`    | `3001`                                         | Cổng API                   |
@@ -106,7 +105,7 @@ hr-management/
 
 ### Quy trình phát triển
 
-1. **Khởi động PostgreSQL** — chạy local (cổng mặc định 5432), tạo database `hr_management`
+1. **Khởi động MySQL** — chạy Docker (`docker compose up -d` tại thư mục gốc) hoặc local (cổng mặc định 3306), tạo database `hr_management`
 2. **Cấu hình `server/.env`** — tạo file từ mẫu trong `application.properties`, đặt `jwt.secret`
 3. **Chạy seed** (`mvn spring-boot:run -Dspring-boot.run.profiles=seed` trong `server/`) — tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên). An toàn khi chạy lại (xóa và tạo mới)
 4. **Khởi động server** (`mvn spring-boot:run` trong `server/`) — Spring Boot API tại port 3001
@@ -114,13 +113,10 @@ hr-management/
 
 ### Ghi chú bảo mật
 
-- Tất cả API route đều được bảo vệ bởi `JwtAuthenticationFilter` + `requireRoles()` (ngoại trừ `/api/auth/login` và `/api/auth/register`)
+- Tất cả API route đều được bảo vệ bởi `JwtAuthenticationFilter` + Spring Security (ngoại trừ `/api/auth/login` và `/api/auth/register`)
 - Đăng ký luôn tạo tài khoản với vai trò `employee` (vai trò admin/manager chỉ được đặt qua seed)
 - Mật khẩu yêu cầu: tối thiểu 8 ký tự, ít nhất 1 chữ hoa, 1 chữ thường, 1 số
-- Giới hạn tốc độ: 60 yêu cầu mỗi phút (qua `express-rate-limit`)
-- Header bảo mật được đặt qua Spring Security + helmet
 - Upload file giới hạn 5MB, chỉ chấp nhận ảnh/PDF/DOC
-- Đầu vào tìm kiếm được regex-escape
 
 ### Dữ liệu mẫu
 
@@ -320,7 +316,7 @@ Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng
 | Frontend       | React 18, Vite, TypeScript                |
 | UI             | shadcn/ui, Tailwind CSS, Radix primitives |
 | Backend        | Spring Boot 4.1 (Java 25)                 |
-| Database       | PostgreSQL 16+, JPA/Hibernate             |
+| Database       | MySQL 8+, JPA/Hibernate                   |
 | Auth           | JWT (jjwt 0.12.6), bcrypt, Spring Security|
 | Client State   | TanStack React Query                      |
 | Icons          | lucide-react                              |

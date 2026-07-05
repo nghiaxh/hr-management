@@ -45,7 +45,7 @@
 
 ### 1.2 Mô tả dự án
 
-Xây dựng hệ thống quản lý nhân sự toàn diện dạng web SPA (Single Page Application) với kiến trúc React + Express + MongoDB.
+Xây dựng hệ thống quản lý nhân sự toàn diện dạng web SPA (Single Page Application) với kiến trúc React + Spring Boot + MySQL 8.
 
 ### 1.3 Stakeholders chính
 
@@ -139,7 +139,7 @@ graph TB
 | Product Owner       | HR Head    | Yêu cầu, prioritization, accept/reject           |
 | Tech Lead           | IT Lead    | Kiến trúc, code review, technical decisions      |
 | Frontend Developer  | FE Dev x2  | React components, API integration, UI             |
-| Backend Developer   | BE Dev x2  | Express services, APIs, database                   |
+| Backend Developer   | BE Dev x2  | Spring Boot services, APIs, database               |
 | Fullstack Developer | FS Dev     | Hỗ trợ cả FE và BE                                |
 | UI/UX Designer      | Designer   | Mockup, prototype, design system                  |
 | QA Lead             | QA Lead    | Test plan, test cases, test execution             |
@@ -253,7 +253,7 @@ gantt
 
 | Task                     | SP | Assignee | Mô tả                          |
 |--------------------------|:--:|:--------:|--------------------------------|
-| Thiết lập dự án FE + BE  | 3  | FS       | React + Express + MongoDB setup |
+| Thiết lập dự án FE + BE  | 3  | FS       | React + Spring Boot + MySQL setup |
 | UI Design System         | 5  | Des      | shadcn/ui components           |
 | User schema + Auth API   | 5  | BE 3     | Register, Login, JWT           |
 | Login page               | 3  | FE 1     | Form + validation              |
@@ -611,7 +611,7 @@ Nếu production gặp sự cố:
 | Khoản mục               | Chi phí (VNĐ) |
 |-------------------------|:-------------:|
 | Server (6 tháng)        | -             |
-| MongoDB Atlas           | -             |
+| MySQL 8 (Docker/local)  | -             |
 | Domain                  | -             |
 | Công cụ (Jira, Slack)   | -             |
 | **Tổng chi phí khác**   | **Chưa xác định** |

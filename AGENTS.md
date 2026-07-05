@@ -4,7 +4,7 @@
 
 An HR management web app where companies can manage employees, track attendance, handle leave requests, run payroll, and manage recruitment — all with role-based access control (admin, manager, employee).
 
-Two independent packages: `server/` (Spring Boot + PostgreSQL) and `client/` (React + Vite). No root workspace config.
+Two independent packages: `server/` (Spring Boot + MySQL) and `client/` (React + Vite). No root workspace config.
 
 ---
 
@@ -13,9 +13,9 @@ Two independent packages: `server/` (Spring Boot + PostgreSQL) and `client/` (Re
 ```bash
 # Server (port 3001)
 cd server
-# edit server/.env to set JWT_SECRET (or use application.properties)
-mvn spring-boot:run -Dspring-boot.run.profiles=seed   # recreate all seed data
-mvn spring-boot:run                                    # normal startup
+# edit server/src/main/resources/application.properties for DB/JWT settings
+mvn spring-boot:run -D"spring-boot.run.profiles=seed"   # recreate all seed data
+mvn spring-boot:run                                      # normal startup
 
 # Client (port 5173)
 cd client
@@ -32,7 +32,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 
 ```
 ┌─────────────┐    HTTP/REST    ┌─────────────┐   JPA/Hibernate ┌──────────┐
-│   Client     │◄──────────────►│   Server     │◄──────────────►│PostgreSQL│
+│   Client     │◄──────────────►│   Server     │◄──────────────►│  MySQL 8 │
 │  (React 18)  │   JWT Bearer   │(Spring Boot) │                │Relational│
 │  Port 5173   │                │  Port 3001   │                │  Local   │
 └─────────────┘                └─────────────┘              └──────────┘
@@ -43,7 +43,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/.env`. Uses Maven + Java 25.
+- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/src/main/resources/application.properties`. Uses Maven + Java 25.
 - **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
@@ -51,11 +51,12 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 1. User enters email + password on the login page
 2. Server validates credentials via bcrypt, returns a **JWT token**
 3. Client stores the token in `localStorage` and attaches it as `Authorization: Bearer <token>` on every request
-4. Server's `authenticate` middleware (`server/src/middleware/auth.ts`) verifies the JWT
-5. `requireRoles()` middleware (`server/src/middleware/roles.ts`) checks role-based access
+4. Server's `JwtAuthenticationFilter` (`server/src/.../auth/filter/JwtAuthenticationFilter.java`) extracts and verifies the JWT from the `Authorization` header
+5. `SecurityConfig` permits `/api/auth/login` and `/api/auth/register`; all other routes require authentication
+6. Role-based access is enforced at the **service layer** — `admin` sees all, `manager` scoped to their department, `employee` sees own data only
 
 Auth details:
-- JWT (jsonwebtoken), `authenticate` + `requireRoles` middleware. Tokens expire in `JWT_EXPIRES_IN` (default `1d`). `JWT_SECRET` is **required** at startup.
+- JWT (jjwt 0.12.6), `JwtAuthenticationFilter` + Spring Security. Token expiry set via `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup.
 - Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
 
 ---
@@ -69,23 +70,23 @@ User clicks "Submit Leave"
 Client POST /api/leaves  { type, startDate, endDate, reason }
        │
        ▼
-authenticate middleware — extracts & verifies JWT from header
+JwtAuthenticationFilter — extracts & verifies JWT from Authorization header
        │
        ▼
-requireRoles('employee') middleware — checks user role
+SecurityConfig — permits endpoint (authenticated), assigns SecurityContext
        │
        ▼
-leaves.routes.ts handler — calls service
+LeaveController — calls LeaveService
        │
        ▼
-LeavesService.create(dto, userId)
+LeaveService.create(dto, userId)
   ├── Finds Employee profile by userId
   ├── Validates: endDate >= startDate, max 30 days
   ├── Checks for overlapping approved leaves
-  └── Creates leave document with status "pending"
+  └── Creates leave record with status "pending"
        │
        ▼
-Response 201: { _id, type, startDate, endDate, status: "pending", ... }
+Response 201: { id, type, startDate, endDate, status: "pending", ... }
        │
        ▼
 When admin/manager approves via PATCH /api/leaves/:id/status
@@ -99,13 +100,13 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ### User (authentication)
 ```
-{ _id, email, passwordHash, role: "admin"|"manager"|"employee", isActive, name? }
+{ id (UUID), email, passwordHash, role: "admin"|"manager"|"employee", isActive, name? }
 ```
 - Separated from Employee profile for security (auth vs HR data)
 
 ### Employee (HR profile)
 ```
-{ _id, userId→User, departmentId→Department, firstName, lastName,
+{ id (UUID), userId→User, departmentId→Department, firstName, lastName,
   position, salary, contractType, hireDate, phone, documents[] }
 ```
 - Every User may have zero or one Employee record
@@ -113,26 +114,26 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ### Department
 ```
-{ _id, name, description, managerId→User }
+{ id (UUID), name, description, managerId→User }
 ```
 
 ### Leave
 ```
-{ _id, employeeId→Employee, type: "annual"|"sick"|"personal",
+{ id (UUID), employeeId→Employee, type: "annual"|"sick"|"personal",
   startDate, endDate, status: "pending"|"approved"|"rejected",
   approvedBy→User?, rejectionReason? }
 ```
 
 ### Attendance
 ```
-{ _id, employeeId→Employee, date, checkIn, checkOut,
+{ id (UUID), employeeId→Employee, date, checkIn, checkOut,
   status: "present"|"late"|"half-day"|"absent" }
 ```
 - Auto-calculated: check-in after 9AM → `late`; worked < 4h → `half-day`
 
 ### Payroll
 ```
-{ _id, employeeId→Employee, month, year, basicSalary, bonus,
+{ id (UUID), employeeId→Employee, month, year, basicSalary, bonus,
   deductions, netPay, status: "draft"|"paid", paidAt? }
 ```
 - Deductions: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), PIT (7 brackets lũy tiến)
@@ -140,21 +141,21 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ### EmployeeHistory
 ```
-{ _id, employeeId→Employee, type: "raise"|"promotion"|"transfer",
+{ id (UUID), employeeId→Employee, type: "raise"|"promotion"|"transfer",
   previousValue?, newValue, effectiveDate, note? }
 ```
 - Timeline of salary changes, promotions, department transfers
 
 ### LeaveBalance
 ```
-{ _id, employeeId→Employee, annualTotal, annualUsed,
+{ id (UUID), employeeId→Employee, annualTotal, annualUsed,
   sickTotal, sickUsed, personalTotal, personalUsed }
 ```
 - Auto-created when first queried; deducted on leave approval
 
 ### Notification
 ```
-{ _id, userId→User, title, message, type, relatedId?,
+{ id (UUID), userId→User, title, message, type, relatedId?,
   relatedModel?, isRead: false, createdAt }
 ```
 - Triggered by leave approval/rejection; delivered via Socket.IO in real-time (planned)
@@ -191,7 +192,7 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 | **employee** | Self only | View own profile/leaves/attendance/payroll, create leave requests, check in/out |
 
 Enforcement happens at two layers:
-- **Server**: `authenticate` + `requireRoles()` middleware on every route (except `/api/auth/login` and `/api/auth/register`)
+- **Server**: `authenticate` + `requireRoles()` method in service layer on every route (except `/api/auth/login` and `/api/auth/register`)
 - **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links
 
 ---
@@ -283,8 +284,8 @@ Client shows toast + increments badge count
 
 | Choice | Reason |
 |--------|--------|
-| **Express** over NestJS | Simpler, more flexible architecture with explicit route handling |
-| **MongoDB** over SQL | Flexible schema for HR documents array, easy to iterate |
+| **Spring Boot** over Express | Opinionated DI, Spring Security, mature JPA/Hibernate integration |
+| **MySQL 8** over PostgreSQL | Standard choice, zero PG-specific features needed, wide hosting support |
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
 | **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |
 | **Socket.IO** for notifications *(planned)* | Real-time push without polling; auto-reconnect built-in (API polling for now) |
@@ -297,7 +298,7 @@ Client shows toast + increments badge count
 
 - **No tests, no linter, no CI, no typecheck script.** No pre-commit hooks.
 - Both packages use ES modules (`"type": "module"`). Client uses Vite/TypeScript.
-- All API routes are protected by `authenticate` + `requireRoles()` middleware (except `/api/auth/login` and `/api/auth/register`).
+- All API routes are protected by `authenticate` + `requireRoles()` method in service layer (except `/api/auth/login` and `/api/auth/register`).
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
 - **Security**: Rate limiting (60 req/min via `express-rate-limit`), helmet headers, file uploads limited to 5MB (JPEG/PNG/GIF/PDF/DOC/DOCX), passwords require min 8 chars with uppercase+lowercase+digit, WebSocket auth via JWT handshake, search inputs regex-escaped.
