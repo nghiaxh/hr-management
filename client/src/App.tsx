@@ -56,7 +56,7 @@ function AppContent() {
             <Route path="/payroll/manage" element={<ProtectedRoute roles={['admin']}><Suspended><PayrollManagementPage /></Suspended></ProtectedRoute>} />
             <Route path="/org-chart" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><OrgChartPage /></Suspended></ProtectedRoute>} />
             <Route path="/performance-reviews" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><PerformanceReviewsPage /></Suspended></ProtectedRoute>} />
-            <Route path="/recruitment" element={<ProtectedRoute roles={['admin']}><Suspended><RecruitmentPage /></Suspended></ProtectedRoute>} />
+            <Route path="/recruitment" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><RecruitmentPage /></Suspended></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><SettingsPage /></Suspended></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><NotificationsListPage /></Suspended></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/leaves" replace />} />
