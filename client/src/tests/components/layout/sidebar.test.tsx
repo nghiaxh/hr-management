@@ -44,6 +44,20 @@ describe('Sidebar', () => {
     expect(screen.getByText('nav.leaves')).toBeInTheDocument();
   });
 
+  it('renders recruitment link for manager role', () => {
+    renderSidebar({ role: 'manager', name: 'Mgr', email: 'mgr@test.com' });
+    expect(screen.getByText('nav.job_postings')).toBeInTheDocument();
+  });
+
+  it('renders section labels for expanded sidebar', () => {
+    renderSidebar({ role: 'admin', name: 'Admin', email: 'admin@test.com' });
+    expect(screen.getByText('nav.section_management')).toBeInTheDocument();
+    expect(screen.getByText('nav.section_time_off')).toBeInTheDocument();
+    expect(screen.getByText('nav.section_attendance')).toBeInTheDocument();
+    expect(screen.getByText('nav.section_finance')).toBeInTheDocument();
+    expect(screen.getByText('nav.section_people')).toBeInTheDocument();
+  });
+
   it('renders mobile overlay when mobileOpen is true', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Admin', email: 'admin@test.com' }, logout: vi.fn() });
     mockUseTranslation.mockReturnValue({ t: (key: string) => key });
@@ -59,5 +73,10 @@ describe('Sidebar', () => {
       </QueryClientProvider>
     );
     expect(container.querySelector('.fixed.inset-0.z-30')).toBeInTheDocument();
+  });
+
+  it('does not show profile link in bottom nav', () => {
+    renderSidebar({ role: 'admin', name: 'Admin', email: 'admin@test.com' });
+    expect(screen.queryByText('user.profile')).not.toBeInTheDocument();
   });
 });
