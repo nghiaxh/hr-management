@@ -42,10 +42,14 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
       onClick={onNav}
       className={({ isActive }) =>
         cn(
-          'flex items-center px-2 py-1.5 rounded-md text-sm transition-colors',
-          collapsed ? 'justify-center' : 'gap-2',
+          'flex items-center text-sm transition-colors rounded-md',
+          collapsed
+            ? 'justify-center mx-auto w-9 h-9 p-0'
+            : 'gap-2 px-2 py-1.5',
           isActive
-            ? 'bg-primary/10 text-primary font-medium'
+            ? collapsed
+              ? 'bg-primary/15 text-primary'
+              : 'bg-primary/10 text-primary font-medium'
             : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
         )
       }
@@ -64,7 +68,7 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
   return (
     <TooltipRoot>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{t(item.label)}</TooltipContent>
+      <TooltipContent side="right" className="text-xs">{t(item.label)}</TooltipContent>
     </TooltipRoot>
   );
 }
@@ -82,8 +86,11 @@ function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, chil
   const content = (
     <div
       className={cn(
-        'flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm cursor-pointer',
-        collapsed ? 'justify-center' : 'gap-2',
+        'flex items-center w-full rounded-md transition-colors text-sm cursor-pointer',
+        collapsed
+          ? 'justify-center mx-auto w-9 h-9 p-0'
+          : 'gap-2 px-2 py-1.5',
+        'hover:bg-accent/50',
         className
       )}
       onClick={onClick}
@@ -97,14 +104,19 @@ function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, chil
     </div>
   );
 
-  if (!collapsed) return to ? <NavLink to={to}>{content}</NavLink> : content;
+  if (!collapsed) {
+    const wrapped = to ? <NavLink to={to}>{content}</NavLink> : content;
+    return wrapped;
+  }
+
+  const wrapped = to
+    ? <NavLink to={to} className="relative">{content}</NavLink>
+    : <span className="relative">{content}</span>;
 
   return (
     <TooltipRoot>
-      <TooltipTrigger asChild>
-        {to ? <NavLink to={to}>{content}</NavLink> : <span>{content}</span>}
-      </TooltipTrigger>
-      <TooltipContent side="right">{t(label)}</TooltipContent>
+      <TooltipTrigger asChild>{wrapped}</TooltipTrigger>
+      <TooltipContent side="right" className="text-xs">{t(label)}</TooltipContent>
     </TooltipRoot>
   );
 }
@@ -140,8 +152,15 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
   const sidebar = (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-end px-1">
-        <button onClick={closeMobile} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer" aria-label="Close sidebar">
+      <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
+        <button
+          onClick={toggleCollapsed}
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-md hover:bg-accent/50 transition-colors cursor-pointer text-muted-foreground"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <ChevronLeft className={cn('h-3.5 w-3.5 transition-transform', collapsed && 'rotate-180')} />
+        </button>
+        <button onClick={closeMobile} className="md:hidden p-1 rounded-md hover:bg-accent cursor-pointer" aria-label="Close sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -149,10 +168,13 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       <TooltipRoot>
         <TooltipTrigger asChild>
           <NavLink to="/profile" onClick={closeMobile} className={cn(
-            'flex items-center gap-2 px-2 py-2 rounded-lg text-sm hover:bg-accent/50 transition-all w-full group',
+            'flex items-center gap-2 px-2 py-2 rounded-lg text-sm hover:bg-accent/50 transition-all w-full group mt-2',
             collapsed && 'justify-center'
           )}>
-            <div className="h-7 w-7 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0">
+            <div className={cn(
+              'rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold shrink-0',
+              collapsed ? 'h-8 w-8 text-sm' : 'h-7 w-7 text-xs'
+            )}>
               {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
             </div>
             {!collapsed && (
@@ -160,16 +182,16 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             )}
           </NavLink>
         </TooltipTrigger>
-        {collapsed && <TooltipContent side="right">{user?.name || user?.email}</TooltipContent>}
+        {collapsed && <TooltipContent side="right" className="text-xs">{user?.name || user?.email}</TooltipContent>}
       </TooltipRoot>
 
-      <nav className="flex-1 overflow-y-auto space-y-0.5 scrollbar-thin mt-1 mb-1">
+      <nav className="flex-1 overflow-y-auto space-y-1 scrollbar-thin mt-3 mb-2">
         {visibleItems.map((item) => (
           <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
         ))}
       </nav>
 
-      <div className="space-y-0.5 pt-1 border-t border-border">
+      <div className={cn('space-y-1', collapsed ? 'pt-2' : 'pt-1 border-t border-border')}>
         <BottomLink
           to="/notifications"
           icon={Bell}
@@ -178,9 +200,13 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           onClick={closeMobile}
         >
           {(typeof unreadCount === 'number' && unreadCount > 0) && (
-            <span className="ml-auto h-4 min-w-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
+            collapsed
+              ? <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive ring-1 ring-background" />
+              : (
+                <span className="ml-auto h-4 min-w-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )
           )}
         </BottomLink>
 
@@ -200,17 +226,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         />
       </div>
-
-      <button
-        onClick={toggleCollapsed}
-        className={cn(
-          'rounded-md transition-colors cursor-pointer hover:bg-accent/50 mt-1 flex items-center justify-center w-full',
-          collapsed ? 'p-2' : 'px-2 py-1.5'
-        )}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        <ChevronLeft className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', collapsed && 'rotate-180')} />
-      </button>
 
       <ConfirmDialog
         open={logoutOpen}
