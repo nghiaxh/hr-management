@@ -1,16 +1,15 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: hr--management-postgres
+  mysql:
+    image: mysql:8
+    container_name: hr-management-mysql
     ports:
-      - "5432:5432"
+      - "3306:3306"
     environment:
-      POSTGRES_DB: hr_management
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MYSQL_DATABASE: hr_management
+      MYSQL_ROOT_PASSWORD: root
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mysql_data:
