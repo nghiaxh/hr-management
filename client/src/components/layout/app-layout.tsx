@@ -33,7 +33,7 @@ export function AppLayout() {
         <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
         <div className="flex flex-1 flex-col min-w-0">
           <TopHeader onMenuToggle={() => setMobileOpen(prev => !prev)} />
-          <main id="main-content" className="flex-1 p-3 md:p-8 min-w-0 overflow-auto">
+          <main id="main-content" className="flex-1 p-3 md:p-6 min-w-0 overflow-auto">
             <div className="mx-auto max-w-7xl">
               <Outlet />
             </div>
