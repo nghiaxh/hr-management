@@ -295,7 +295,7 @@ Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng
 | /employees                    | admin, manager     | Danh sách nhân viên          |
 | /employees/:id                | tất cả            | Chi tiết nhân viên           |
 | /departments                  | admin, manager     | Phòng ban                    |
-| /org-chart                    | admin, manager     | Sơ đồ tổ chức *(dự kiến)*   |
+| /org-chart                    | admin, manager     | Sơ đồ tổ chức                |
 | /leaves                       | tất cả            | Đơn của tôi                  |
 | /leaves/approvals             | admin, manager     | Phê duyệt đơn                |
 | /attendance                   | tất cả            | Chấm công                    |
@@ -308,6 +308,15 @@ Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng
 | /recruitment/candidates       | admin, manager     | Ứng viên *(dự kiến)*         |
 | /performance-reviews          | tất cả            | Đánh giá của tôi *(dự kiến)* |
 | /performance-reviews/manage   | admin, manager     | Quản lý đánh giá *(dự kiến)* |
+
+## Kiểm thử
+
+| Package | Framework                         | Số lượng | Chạy              |
+|---------|-----------------------------------|----------|-------------------|
+| Server  | JUnit 5 + Mockito + `@ActiveProfiles("test")` | 85 tests (16 class) | `mvn test`       |
+| Client  | Vitest + Testing Library + MSW    | —        | `npm test`        |
+
+CI/CD tự động qua GitHub Actions (`.github/workflows/test.yml`) — chạy server tests (MySQL 8 container), client tests, và client build khi push.
 
 ## Công nghệ sử dụng
 
