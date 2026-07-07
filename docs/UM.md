@@ -9,7 +9,7 @@
 | 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai |
 
 > **Tuân theo:** ISO/IEC 26514 (Systems and software engineering — Requirements for designers and developers of user documentation) và Microsoft User Assistance Model.
-> **Trạng thái triển khai:** Các chức năng Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, Notifications, Profile đã có giao diện. Org Chart, Recruitment (Job Postings, Candidates), Performance Reviews chưa triển khai giao diện (đang kế hoạch). Socket.IO chưa triển khai.
+> **Trạng thái triển khai:** Các chức năng Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, Notifications, Profile đã có giao diện. Recruitment (Job Postings, Candidates), Performance Reviews chưa triển khai giao diện (đang kế hoạch). Socket.IO chưa triển khai.
 
 ---
 
