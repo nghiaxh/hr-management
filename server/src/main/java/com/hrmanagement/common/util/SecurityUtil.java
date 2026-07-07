@@ -8,6 +8,16 @@ import java.util.Arrays;
 
 public class SecurityUtil {
 
+    private static final ThreadLocal<String[]> testRoles = new ThreadLocal<>();
+
+    public static void setTestRoles(String... roles) {
+        testRoles.set(roles);
+    }
+
+    public static void clearTestRoles() {
+        testRoles.remove();
+    }
+
     public static String getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -32,6 +42,14 @@ public class SecurityUtil {
     }
 
     public static void requireRoles(String... roles) {
+        String[] tr = testRoles.get();
+        if (tr != null) {
+            String userRole = tr.length > 0 ? tr[0] : null;
+            if (userRole == null || Arrays.stream(roles).noneMatch(r -> r.equals(userRole))) {
+                throw new UnauthorizedException("Insufficient permissions");
+            }
+            return;
+        }
         String userRole = getCurrentUserRole();
         if (userRole == null || Arrays.stream(roles).noneMatch(r -> r.equals(userRole))) {
             throw new UnauthorizedException("Insufficient permissions");
