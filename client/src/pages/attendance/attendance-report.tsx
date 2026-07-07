@@ -122,7 +122,7 @@ export default function AttendanceReportPage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('attendance.load_failed') : undefined}
         emptyMessage={t('attendance.no_records')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
     </div>
   );

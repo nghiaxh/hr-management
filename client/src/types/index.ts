@@ -1,6 +1,5 @@
 export interface User {
   id: string;
-  _id?: string;
   email: string;
   role: 'admin' | 'manager' | 'employee';
   name?: string;
@@ -12,7 +11,7 @@ export interface AuthResponse {
 }
 
 export interface Employee {
-  _id: string;
+  id: string;
   userId: User | string;
   departmentId: Department | string;
   firstName: string;
@@ -23,13 +22,12 @@ export interface Employee {
   phone?: string;
   contractType?: string;
   contractExpiry?: string;
-  documents?: { _id: string; name: string; url: string; type: string; uploadedAt: string }[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Department {
-  _id: string;
+  id: string;
   name: string;
   description?: string;
   managerId?: User | string;
@@ -38,7 +36,7 @@ export interface Department {
 }
 
 export interface Leave {
-  _id: string;
+  id: string;
   employeeId: Employee | string;
   type: 'sick' | 'annual' | 'personal';
   startDate: string;
@@ -51,7 +49,7 @@ export interface Leave {
 }
 
 export interface Attendance {
-  _id: string;
+  id: string;
   employeeId: Employee | string;
   date: string;
   checkIn?: string;
@@ -61,30 +59,25 @@ export interface Attendance {
 }
 
 export interface Payroll {
-  _id: string;
+  id: string;
   employeeId: Employee | string;
   month: number;
   year: number;
   basicSalary: number;
   bonus: number;
-  deductions: number;
+  socialInsurance: number;
+  healthInsurance: number;
+  unemploymentInsurance: number;
+  unionDues: number;
+  pit: number;
+  totalDeductions: number;
   netPay: number;
   status: 'draft' | 'paid';
   paidAt?: string;
 }
 
-export interface EmployeeHistory {
-  _id: string;
-  employeeId: string;
-  type: 'raise' | 'promotion' | 'transfer' | 'other';
-  previousValue?: string;
-  newValue: string;
-  effectiveDate: string;
-  note?: string;
-}
-
 export interface LeaveBalance {
-  _id: string;
+  id: string;
   employeeId: string;
   annualTotal: number;
   annualUsed: number;
@@ -95,7 +88,7 @@ export interface LeaveBalance {
 }
 
 export interface Notification {
-  _id: string;
+  id: string;
   userId: string;
   title: string;
   message?: string;
@@ -105,7 +98,79 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number };
+}
+
+export interface PaginatedQueryParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface AttendanceQueryParams extends PaginatedQueryParams {
+  from?: string;
+  to?: string;
+  employeeId?: string;
+  status?: string;
+}
+
+export interface DepartmentQueryParams extends PaginatedQueryParams {
+  search?: string;
+}
+
+export interface EmployeeQueryParams extends PaginatedQueryParams {
+  search?: string;
+  departmentId?: string;
+}
+
+export interface LeaveQueryParams extends PaginatedQueryParams {
+  status?: string;
+  employeeId?: string;
+  type?: string;
+}
+
+export interface PayrollQueryParams extends PaginatedQueryParams {
+  month?: number;
+  year?: number;
+  employeeId?: string;
+  status?: string;
+}
+
+export interface CreateEmployeeRequest {
+  userId: string;
+  departmentId: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  salary: number;
+  hireDate: string;
+  phone?: string;
+  contractType?: string;
+  contractExpiry?: string;
+}
+
+export interface CreateDepartmentRequest {
+  name: string;
+  description?: string;
+  managerId?: string;
+}
+
+export interface CreateLeaveRequest {
+  type: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+}
+
+export interface UpdateLeaveStatusRequest {
+  status: string;
+  rejectionReason?: string;
+}
+
+export interface ProcessPayrollRequest {
+  employeeIds: string[];
+  month: number;
+  year: number;
 }

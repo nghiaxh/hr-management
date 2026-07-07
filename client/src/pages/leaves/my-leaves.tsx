@@ -59,17 +59,14 @@ type LeaveForm = z.infer<typeof leaveSchema>;
 
   const { data: employee } = useQuery({
     queryKey: ['my-employee'],
-    queryFn: async () => {
-      const emp = await employeesApi.getAll();
-      return emp.data?.find((e: any) => e.userId?._id === user?.id || e.userId === user?.id);
-    },
+    queryFn: () => employeesApi.getMe(),
     enabled: !!user?.id,
   });
 
   const { data: balance } = useQuery({
-    queryKey: ['leave-balance', employee?._id],
-    queryFn: () => leaveBalanceApi.getByEmployee(employee!._id),
-    enabled: !!employee?._id,
+    queryKey: ['leave-balance', employee?.id],
+    queryFn: () => leaveBalanceApi.getByEmployee(employee!.id),
+    enabled: !!employee?.id,
   });
 
   const createMutation = useMutation({
@@ -149,7 +146,7 @@ type LeaveForm = z.infer<typeof leaveSchema>;
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('leaves.load_failed') : undefined}
         emptyMessage={t('leaves.no_results')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>

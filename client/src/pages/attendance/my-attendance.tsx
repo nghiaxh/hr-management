@@ -68,7 +68,7 @@ export default function MyAttendancePage() {
         !todayRecord?.checkIn ? (
           <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
         ) : !todayRecord.checkOut ? (
-          <Button onClick={() => checkOutMutation.mutate(todayRecord._id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
+          <Button onClick={() => checkOutMutation.mutate(todayRecord.id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
         ) : null
       } />
 
@@ -86,7 +86,7 @@ export default function MyAttendancePage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('attendance.load_failed') : undefined}
         emptyMessage={t('attendance.no_records')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
     </div>
   );

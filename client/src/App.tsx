@@ -6,9 +6,7 @@ import { LanguageProvider } from './context/language-context';
 import { AppLayout } from './components/layout/app-layout';
 import { ProtectedRoute } from './components/layout/protected-route';
 import { ErrorBoundary } from './components/shared/error-boundary';
-import { RouteLoadingIndicator } from './components/shared/route-loading';
 import { PageLoader } from './components/shared/page-loader';
-import { KeyboardShortcuts } from './components/shared/keyboard-shortcuts';
 import LoginPage from './pages/login';
 import NotFoundPage from './pages/not-found';
 import { Toaster } from './components/ui/toaster';
@@ -25,8 +23,6 @@ const MyPayrollPage = lazy(() => import('./pages/payroll/my-payroll'));
 const PayrollManagementPage = lazy(() => import('./pages/payroll/payroll-management'));
 const NotificationsListPage = lazy(() => import('./pages/notifications-list'));
 const OrgChartPage = lazy(() => import('./pages/org-chart'));
-const PerformanceReviewsPage = lazy(() => import('./pages/performance-reviews'));
-const RecruitmentPage = lazy(() => import('./pages/recruitment'));
 const SettingsPage = lazy(() => import('./pages/settings'));
 
 const queryClient = new QueryClient();
@@ -38,8 +34,6 @@ function Suspended({ children }: { children: React.ReactNode }) {
 function AppContent() {
   return (
     <>
-      <RouteLoadingIndicator />
-      <KeyboardShortcuts />
       <ErrorBoundary>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -55,8 +49,6 @@ function AppContent() {
             <Route path="/payroll" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><MyPayrollPage /></Suspended></ProtectedRoute>} />
             <Route path="/payroll/manage" element={<ProtectedRoute roles={['admin']}><Suspended><PayrollManagementPage /></Suspended></ProtectedRoute>} />
             <Route path="/org-chart" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><OrgChartPage /></Suspended></ProtectedRoute>} />
-            <Route path="/performance-reviews" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><PerformanceReviewsPage /></Suspended></ProtectedRoute>} />
-            <Route path="/recruitment" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><RecruitmentPage /></Suspended></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><SettingsPage /></Suspended></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><NotificationsListPage /></Suspended></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/leaves" replace />} />

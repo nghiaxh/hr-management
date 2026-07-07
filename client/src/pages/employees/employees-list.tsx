@@ -142,7 +142,7 @@ export default function EmployeesListPage() {
       id: 'name',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.name')} />,
       cell: ({ row, getValue }) => (
-        <Link to={`/employees/${row.original._id}`} className="text-primary hover:underline">
+        <Link to={`/employees/${row.original.id}`} className="text-primary hover:underline">
           {getValue()}
         </Link>
       ),
@@ -184,7 +184,7 @@ export default function EmployeesListPage() {
         pageCount={totalPages}
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         totalLabel={`${meta?.total ?? 0} ${t('employees.total')}`}
         toolbar={
           <>
@@ -239,7 +239,7 @@ export default function EmployeesListPage() {
                 <Label>{t('employees.department')}</Label>
                 <select {...createForm.register('departmentId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
                   <option value="">{t('employees.select')}</option>
-                  {departments?.data?.map((d: any) => <option key={d._id} value={d._id}>{d.name}</option>)}
+                  {departments?.data?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
                 {createForm.formState.errors.departmentId && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.departmentId.message}</p>}
               </div>
@@ -297,7 +297,7 @@ export default function EmployeesListPage() {
         confirmLabel={t('employees.delete')}
         cancelLabel={t('dialog.cancel')}
         variant="destructive"
-        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget._id); }}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); }}
         loading={deleteMutation.isPending}
       />
     </div>

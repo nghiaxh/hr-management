@@ -47,7 +47,7 @@ export default function OrgChartPage() {
         <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border hidden md:block" />
 
         {deptList.map((dept: any, idx: number) => (
-          <div key={dept._id} className={cn('flex', idx % 2 === 0 ? 'md:justify-start' : 'md:justify-end')}>
+          <div key={dept.id} className={cn('flex', idx % 2 === 0 ? 'md:justify-start' : 'md:justify-end')}>
             <Card className="relative w-full md:w-[45%] hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">

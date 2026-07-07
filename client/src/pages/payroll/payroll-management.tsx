@@ -65,16 +65,20 @@ export default function PayrollManagementPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.period')} />,
     }),
     columnHelper.accessor('basicSalary', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.gross')} className="justify-end" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.basic_salary')} className="justify-end" />,
       cell: ({ getValue }) => <div className="text-right text-muted-foreground">{formatCurrency(getValue())}</div>,
     }),
-    columnHelper.accessor('bonus', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.bonus')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">+{formatCurrency(getValue())}</div>,
-    }),
-    columnHelper.accessor('deductions', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.deductions')} className="justify-end" />,
+    columnHelper.accessor('socialInsurance', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.social_insurance')} className="justify-end" />,
       cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+    }),
+    columnHelper.accessor('pit', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.pit')} className="justify-end" />,
+      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+    }),
+    columnHelper.accessor('totalDeductions', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.total_deductions')} className="justify-end" />,
+      cell: ({ getValue }) => <div className="text-right text-destructive font-medium">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('netPay', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.net_pay')} className="justify-end" />,
@@ -90,7 +94,7 @@ export default function PayrollManagementPage() {
       cell: ({ row }) => (
         <div className="text-center">
           {row.original.status === 'draft' && (
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setPayTarget(row.original._id); }} className="text-xs">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setPayTarget(row.original.id); }} className="text-xs">
               <CheckCircle className="h-3.5 w-3.5 mr-1" />{t('payroll.mark_paid')}
             </Button>
           )}
@@ -148,7 +152,7 @@ export default function PayrollManagementPage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('payroll.load_failed') : undefined}
         emptyMessage={t('payroll.no_records_management')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -170,8 +174,8 @@ export default function PayrollManagementPage() {
               <Label>{t('payroll.employees')}</Label>
               <div className="max-h-44 overflow-y-auto rounded-lg border p-2 space-y-1 bg-background/50">
                 {employees?.data?.map((emp: any) => (
-                  <label key={emp._id} className="flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer">
-                    <input type="checkbox" name="employeeIds" value={emp._id} className="rounded" />
+                  <label key={emp.id} className="flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer">
+                    <input type="checkbox" name="employeeIds" value={emp.id} className="rounded" />
                     <span>{emp.firstName} {emp.lastName}</span>
                   </label>
                 ))}

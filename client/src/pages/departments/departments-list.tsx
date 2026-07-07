@@ -52,7 +52,7 @@ export default function DepartmentsListPage() {
       editForm.reset({
         name: editingDept.name || '',
         description: editingDept.description || '',
-        managerId: editingDept.managerId?._id || editingDept.managerId || '',
+        managerId: editingDept.managerId?.id || editingDept.managerId || '',
       });
     }
   }, [editingDept]);
@@ -106,7 +106,7 @@ export default function DepartmentsListPage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('departments.load_failed') : undefined}
         emptyMessage={t('departments.no_results')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         toolbar={
           <>
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -126,7 +126,7 @@ export default function DepartmentsListPage() {
               <Label>{t('departments.manager')}</Label>
               <select {...createForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
                 <option value="">{t('employees.none')}</option>
-                {managers.map((m: any) => <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
+                {managers.map((m: any) => <option key={m.id} value={m.id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
               </select>
             </div>
             <Button type="submit" className="w-full" disabled={createMutation.isPending}>
@@ -140,14 +140,14 @@ export default function DepartmentsListPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t('departments.edit')}</DialogTitle></DialogHeader>
           <DialogDescription className="sr-only">{t('departments.edit_sr')}</DialogDescription>
-          <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate({ id: editingDept._id, data }))} className="space-y-4">
+          <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate({ id: editingDept.id, data }))} className="space-y-4">
             <div><Label>{t('departments.name')}</Label><Input {...editForm.register('name')} /></div>
             <div><Label>{t('departments.description')}</Label><Input {...editForm.register('description')} /></div>
             <div>
               <Label>{t('departments.manager')}</Label>
               <select {...editForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
                 <option value="">{t('employees.none')}</option>
-                {managers.map((m: any) => <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
+                {managers.map((m: any) => <option key={m.id} value={m.id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
               </select>
             </div>
             <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
@@ -165,7 +165,7 @@ export default function DepartmentsListPage() {
         confirmLabel={t('departments.delete')}
         cancelLabel={t('dialog.cancel')}
         variant="destructive"
-        onConfirm={() => { if (deletingDept) deleteMutation.mutate(deletingDept._id); }}
+        onConfirm={() => { if (deletingDept) deleteMutation.mutate(deletingDept.id); }}
         loading={deleteMutation.isPending}
       />
     </div>

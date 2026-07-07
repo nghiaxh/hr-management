@@ -64,8 +64,8 @@ export default function NotificationsListPage() {
         <div className="space-y-1">
           {notifications.map((n: any) => (
             <div
-              key={n._id}
-              onClick={() => !n.isRead && markReadMutation.mutate(n._id)}
+              key={n.id}
+              onClick={() => !n.isRead && markReadMutation.mutate(n.id)}
               className={cn(
                 'group flex items-start gap-3 p-3 rounded-xl border transition-all duration-150 cursor-pointer',
                 n.isRead

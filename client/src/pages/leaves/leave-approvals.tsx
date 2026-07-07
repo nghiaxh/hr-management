@@ -74,8 +74,8 @@ export default function LeaveApprovalsPage() {
       cell: ({ row }) => (
         <div className="flex gap-1">
           {row.original.status === 'pending' && <>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original._id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original._id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original.id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original.id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
           </>}
         </div>
       ),
@@ -91,7 +91,7 @@ export default function LeaveApprovalsPage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('leaves.load_failed') : undefined}
         emptyMessage={t('leaves.no_pending')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
 
       <ConfirmDialog

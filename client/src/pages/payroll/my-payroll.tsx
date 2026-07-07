@@ -28,16 +28,20 @@ export default function MyPayrollPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.period')} />,
     }),
     columnHelper.accessor('basicSalary', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.gross')} className="justify-end" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.basic_salary')} className="justify-end" />,
       cell: ({ getValue }) => <div className="text-right text-muted-foreground">{formatCurrency(getValue())}</div>,
     }),
-    columnHelper.accessor('bonus', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.bonus')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">+{formatCurrency(getValue())}</div>,
-    }),
-    columnHelper.accessor('deductions', {
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.deductions')} className="justify-end" />,
+    columnHelper.accessor('socialInsurance', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.social_insurance')} className="justify-end" />,
       cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+    }),
+    columnHelper.accessor('pit', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.pit')} className="justify-end" />,
+      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+    }),
+    columnHelper.accessor('totalDeductions', {
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.total_deductions')} className="justify-end" />,
+      cell: ({ getValue }) => <div className="text-right text-destructive font-medium">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('netPay', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.net_pay')} className="justify-end" />,
@@ -96,7 +100,7 @@ export default function MyPayrollPage() {
         isLoading={isLoading}
         error={isError ? (queryError as any)?.response?.data?.message || t('payroll.load_failed') : undefined}
         emptyMessage={t('payroll.no_records')}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
       />
     </div>
   );
