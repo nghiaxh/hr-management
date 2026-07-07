@@ -7,7 +7,7 @@
 | 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 1016       |
 
-> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment, Performance Reviews, Org Chart page, Socket.IO chưa triển khai (đang kế hoạch).
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment, Performance Reviews, Socket.IO chưa triển khai (đang kế hoạch).
 >
 > > **Ghi chú kiến trúc thực tế:** Hệ thống được triển khai với **Spring Boot 4.1 + MySQL 8** (JPA/Hibernate) thay vì Express + MongoDB như thiết kế ban đầu. Các sơ đồ và mô tả dưới đây đã được cập nhật tương ứng.
 
