@@ -3,11 +3,15 @@ package com.hrmanagement.payroll.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProcessPayrollRequest {
     @NotEmpty(message = "Employee IDs are required")
     private List<String> employeeIds;
