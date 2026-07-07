@@ -296,12 +296,14 @@ Client shows toast + increments badge count
 
 ## Key Facts
 
-- **No tests, no linter, no CI, no typecheck script.** No pre-commit hooks.
+- **Server tests**: 85 unit tests (16 test classes) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
+- **Client tests**: Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
+- **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs server tests (MySQL 8 container), client tests, and client build on push.
 - Both packages use ES modules (`"type": "module"`). Client uses Vite/TypeScript.
-- All API routes are protected by `authenticate` + `requireRoles()` method in service layer (except `/api/auth/login` and `/api/auth/register`).
+- All API routes are protected by `JwtAuthenticationFilter` + Spring Security (except `/api/auth/login` and `/api/auth/register`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
-- **Security**: Rate limiting (60 req/min via `express-rate-limit`), helmet headers, file uploads limited to 5MB (JPEG/PNG/GIF/PDF/DOC/DOCX), passwords require min 8 chars with uppercase+lowercase+digit, WebSocket auth via JWT handshake, search inputs regex-escaped.
+- **Security**: JWT (jjwt 0.12.6) via `JwtAuthenticationFilter`, BCrypt password encoding, CSRF disabled (stateless API), CORS configured via `cors.origin` property. Passwords require min 8 chars with uppercase+lowercase+digit.
 
 ---
 
