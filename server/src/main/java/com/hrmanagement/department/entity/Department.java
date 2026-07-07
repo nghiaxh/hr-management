@@ -27,7 +27,7 @@ public class Department {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
-    private User managerId;
+    private User manager;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

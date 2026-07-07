@@ -2,6 +2,7 @@ package com.hrmanagement.payroll.service;
 
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
 import com.hrmanagement.payroll.dto.PayrollResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,10 +46,10 @@ public class PayrollService {
             payrollPage = payrollRepository.findByEmployeeId(emp.get().getId(), pageRequest);
         } else if ("manager".equals(userRole)) {
             Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartmentId() == null) {
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartmentId().getId())
+            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
                     .stream().map(Employee::getId).toList();
             payrollPage = payrollRepository.findByEmployeeIdIn(deptEmpIds, pageRequest);
         } else {
@@ -66,8 +68,60 @@ public class PayrollService {
         return PaginatedResponse.of(responses, page, limit, payrollPage.getTotalElements());
     }
 
+    private static final BigDecimal PERSONAL_DEDUCTION = new BigDecimal("15500000");
+    private static final BigDecimal BHXH_RATE = new BigDecimal("0.08");
+    private static final BigDecimal BHYT_RATE = new BigDecimal("0.015");
+    private static final BigDecimal BHTN_RATE = new BigDecimal("0.01");
+    private static final BigDecimal CONG_DOAN_RATE = new BigDecimal("0.01");
+
+    private static final BigDecimal[] PIT_BRACKET_LIMITS = {
+        new BigDecimal("5000000"), new BigDecimal("10000000"),
+        new BigDecimal("18000000"), new BigDecimal("32000000"),
+        BigDecimal.valueOf(Long.MAX_VALUE)
+    };
+    private static final BigDecimal[] PIT_BRACKET_RATES = {
+        new BigDecimal("0.05"), new BigDecimal("0.10"),
+        new BigDecimal("0.20"), new BigDecimal("0.30"),
+        new BigDecimal("0.35")
+    };
+
+    static BigDecimal calculatePIT(BigDecimal taxableIncome) {
+        if (taxableIncome.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
+        BigDecimal remaining = taxableIncome;
+        BigDecimal prev = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
+        for (int i = 0; i < PIT_BRACKET_LIMITS.length; i++) {
+            BigDecimal bracket = PIT_BRACKET_LIMITS[i].subtract(prev);
+            if (remaining.compareTo(bracket) <= 0) {
+                total = total.add(remaining.multiply(PIT_BRACKET_RATES[i]));
+                break;
+            }
+            total = total.add(bracket.multiply(PIT_BRACKET_RATES[i]));
+            remaining = remaining.subtract(bracket);
+            prev = PIT_BRACKET_LIMITS[i];
+        }
+        return total.setScale(0, RoundingMode.DOWN);
+    }
+
+    record Deductions(BigDecimal socialInsurance, BigDecimal healthInsurance,
+                      BigDecimal unemploymentInsurance, BigDecimal unionDues,
+                      BigDecimal pit, BigDecimal totalDeductions) {}
+
+    Deductions calculateDeductions(BigDecimal salary) {
+        BigDecimal si = salary.multiply(BHXH_RATE).setScale(0, RoundingMode.DOWN);
+        BigDecimal hi = salary.multiply(BHYT_RATE).setScale(0, RoundingMode.DOWN);
+        BigDecimal ui = salary.multiply(BHTN_RATE).setScale(0, RoundingMode.DOWN);
+        BigDecimal cd = salary.multiply(CONG_DOAN_RATE).setScale(0, RoundingMode.DOWN);
+        BigDecimal totalInsurance = si.add(hi).add(ui).add(cd);
+        BigDecimal taxableIncome = salary.subtract(PERSONAL_DEDUCTION).subtract(totalInsurance);
+        BigDecimal pit = calculatePIT(taxableIncome);
+        BigDecimal totalDeductions = totalInsurance.add(pit);
+        return new Deductions(si, hi, ui, cd, pit, totalDeductions);
+    }
+
     @Transactional
     public List<PayrollResponse> process(ProcessPayrollRequest dto) {
+        SecurityUtil.requireRoles("admin");
         List<PayrollResponse> results = new ArrayList<>();
         for (String empId : dto.getEmployeeIds()) {
             Employee emp = employeeRepository.findById(empId)
@@ -76,18 +130,23 @@ public class PayrollService {
             Optional<Payroll> existing = payrollRepository.findByEmployeeIdAndMonthAndYear(empId, dto.getMonth(), dto.getYear());
             if (existing.isPresent()) continue;
 
-            double bonus = dto.getBonuses() != null ? dto.getBonuses().getOrDefault(empId, 0.0) : 0;
-            double deductions = dto.getDeductions() != null ? dto.getDeductions().getOrDefault(empId, 0.0) : 0;
-            double netPay = emp.getSalary().doubleValue() + bonus - deductions;
+            BigDecimal salary = emp.getSalary();
+            Deductions d = calculateDeductions(salary);
+            BigDecimal netPay = salary.subtract(d.totalDeductions);
 
             Payroll payroll = Payroll.builder()
-                    .employeeId(emp)
+                    .employee(emp)
                     .month(dto.getMonth())
                     .year(dto.getYear())
-                    .basicSalary(emp.getSalary())
-                    .bonus(BigDecimal.valueOf(bonus))
-                    .deductions(BigDecimal.valueOf(deductions))
-                    .netPay(BigDecimal.valueOf(Math.max(0, netPay)))
+                    .basicSalary(salary)
+                    .bonus(BigDecimal.ZERO)
+                    .socialInsurance(d.socialInsurance)
+                    .healthInsurance(d.healthInsurance)
+                    .unemploymentInsurance(d.unemploymentInsurance)
+                    .unionDues(d.unionDues)
+                    .pit(d.pit)
+                    .totalDeductions(d.totalDeductions)
+                    .netPay(netPay)
                     .status("draft")
                     .build();
             payrollRepository.save(payroll);
@@ -98,6 +157,7 @@ public class PayrollService {
 
     @Transactional
     public PayrollResponse pay(String id) {
+        SecurityUtil.requireRoles("admin");
         Payroll payroll = payrollRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payroll not found"));
         payroll.setStatus("paid");
@@ -113,16 +173,21 @@ public class PayrollService {
         resp.setYear(p.getYear());
         resp.setBasicSalary(p.getBasicSalary());
         resp.setBonus(p.getBonus());
-        resp.setDeductions(p.getDeductions());
+        resp.setSocialInsurance(p.getSocialInsurance());
+        resp.setHealthInsurance(p.getHealthInsurance());
+        resp.setUnemploymentInsurance(p.getUnemploymentInsurance());
+        resp.setUnionDues(p.getUnionDues());
+        resp.setPit(p.getPit());
+        resp.setTotalDeductions(p.getTotalDeductions());
         resp.setNetPay(p.getNetPay());
         resp.setStatus(p.getStatus());
         resp.setPaidAt(p.getPaidAt());
         resp.setCreatedAt(p.getCreatedAt());
 
-        if (p.getEmployeeId() != null) {
-            Employee emp = p.getEmployeeId();
+        if (p.getEmployee() != null) {
+            Employee emp = p.getEmployee();
             resp.setEmployeeId(java.util.Map.of(
-                    "_id", emp.getId(),
+                    "id", emp.getId(),
                     "firstName", emp.getFirstName(),
                     "lastName", emp.getLastName(),
                     "position", emp.getPosition(),

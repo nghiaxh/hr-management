@@ -16,7 +16,7 @@ public class AuthResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UserInfo {
-        @JsonProperty("_id")
+        @JsonProperty("id")
         private String id;
         private String email;
         private String role;

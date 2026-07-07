@@ -45,7 +45,6 @@ public class AuthService {
                 .email(dto.getEmail())
                 .passwordHash(passwordEncoder.encode(dto.getPassword()))
                 .role("employee")
-                .isActive(true)
                 .build();
         userRepository.save(user);
 
@@ -55,10 +54,6 @@ public class AuthService {
     public AuthResponse login(LoginRequest dto) {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
-
-        if (!Boolean.TRUE.equals(user.getIsActive())) {
-            throw new UnauthorizedException("Invalid credentials");
-        }
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("Invalid credentials");
@@ -71,7 +66,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return Map.of(
-                "_id", user.getId(),
+                "id", user.getId(),
                 "email", user.getEmail(),
                 "role", user.getRole(),
                 "name", user.getName() != null ? user.getName() : ""
@@ -87,7 +82,7 @@ public class AuthService {
         userRepository.save(user);
 
         return Map.of(
-                "_id", user.getId(),
+                "id", user.getId(),
                 "email", user.getEmail(),
                 "role", user.getRole(),
                 "name", user.getName() != null ? user.getName() : ""

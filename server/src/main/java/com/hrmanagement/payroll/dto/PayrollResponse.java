@@ -12,14 +12,19 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PayrollResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private Object employeeId;
     private Integer month;
     private Integer year;
     private BigDecimal basicSalary;
     private BigDecimal bonus;
-    private BigDecimal deductions;
+    private BigDecimal socialInsurance;
+    private BigDecimal healthInsurance;
+    private BigDecimal unemploymentInsurance;
+    private BigDecimal unionDues;
+    private BigDecimal pit;
+    private BigDecimal totalDeductions;
     private BigDecimal netPay;
     private String status;
     private Instant paidAt;

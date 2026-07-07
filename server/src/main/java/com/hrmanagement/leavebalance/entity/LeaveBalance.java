@@ -22,7 +22,7 @@ public class LeaveBalance {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false, unique = true)
-    private Employee employeeId;
+    private Employee employee;
 
     @Column(name = "annual_total")
     @Builder.Default

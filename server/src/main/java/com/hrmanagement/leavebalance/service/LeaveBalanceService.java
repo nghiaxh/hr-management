@@ -29,7 +29,7 @@ public class LeaveBalanceService {
                     Employee emp = employeeRepository.findById(employeeId)
                             .orElseThrow(() -> new NotFoundException("Employee not found"));
                     LeaveBalance newBalance = LeaveBalance.builder()
-                            .employeeId(emp)
+                            .employee(emp)
                             .build();
                     return leaveBalanceRepository.save(newBalance);
                 });
@@ -68,7 +68,7 @@ public class LeaveBalanceService {
 
     private LeaveBalanceResponse toResponse(LeaveBalance b) {
         return new LeaveBalanceResponse(
-                b.getId(), b.getEmployeeId().getId(),
+                b.getId(), b.getEmployee().getId(),
                 b.getAnnualTotal(), b.getAnnualUsed(),
                 b.getSickTotal(), b.getSickUsed(),
                 b.getPersonalTotal(), b.getPersonalUsed()

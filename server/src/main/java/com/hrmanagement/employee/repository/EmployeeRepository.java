@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, String> {
-    @Query("SELECT e FROM Employee e WHERE e.userId.id = :userId")
+    @Query("SELECT e FROM Employee e WHERE e.user.id = :userId")
     Optional<Employee> findByUserId(@Param("userId") String userId);
 
-    @Query("SELECT e FROM Employee e WHERE e.departmentId.id = :departmentId")
+    @Query("SELECT e FROM Employee e WHERE e.department.id = :departmentId")
     Page<Employee> findByDepartmentId(@Param("departmentId") String departmentId, Pageable pageable);
 
     @Query("SELECT e FROM Employee e WHERE " +
@@ -23,15 +23,15 @@ public interface EmployeeRepository extends JpaRepository<Employee, String> {
            "LOWER(e.position) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Employee> search(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT e FROM Employee e WHERE e.departmentId.id = :departmentId AND " +
+    @Query("SELECT e FROM Employee e WHERE e.department.id = :departmentId AND " +
            "(LOWER(e.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.position) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Employee> searchByDepartment(@Param("departmentId") String departmentId, @Param("search") String search, Pageable pageable);
 
-    @Query("SELECT e FROM Employee e WHERE e.departmentId.id = :departmentId")
+    @Query("SELECT e FROM Employee e WHERE e.department.id = :departmentId")
     List<Employee> findByDepartmentId(@Param("departmentId") String departmentId);
 
-    @Query("SELECT COUNT(e) FROM Employee e WHERE e.departmentId.id = :departmentId")
+    @Query("SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
     long countByDepartmentId(@Param("departmentId") String departmentId);
 }

@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private Object employeeId;
     private String type;

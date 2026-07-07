@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveBalanceResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private String employeeId;
     private Integer annualTotal;

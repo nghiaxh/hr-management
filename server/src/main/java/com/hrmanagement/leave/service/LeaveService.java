@@ -6,6 +6,7 @@ import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
+import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
 import com.hrmanagement.leave.dto.CreateLeaveRequest;
@@ -65,10 +66,10 @@ public class LeaveService {
             }
         } else if ("manager".equals(userRole)) {
             Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartmentId() == null) {
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartmentId().getId())
+            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
                     .stream().map(Employee::getId).toList();
 
             if (status != null && !status.isBlank()) {
@@ -103,17 +104,17 @@ public class LeaveService {
 
         if ("employee".equals(userRole)) {
             Optional<Employee> emp = employeeRepository.findByUserId(userId);
-            if (emp.isEmpty() || !emp.get().getId().equals(leave.getEmployeeId().getId())) {
+            if (emp.isEmpty() || !emp.get().getId().equals(leave.getEmployee().getId())) {
                 throw new UnauthorizedException("Access denied");
             }
         } else if ("manager".equals(userRole)) {
             Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartmentId() == null) {
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
                 throw new UnauthorizedException("Access denied");
             }
-            Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployeeId().getId());
-            if (leaveEmp.isEmpty() || leaveEmp.get().getDepartmentId() == null ||
-                    !leaveEmp.get().getDepartmentId().getId().equals(mgrEmp.get().getDepartmentId().getId())) {
+            Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployee().getId());
+            if (leaveEmp.isEmpty() || leaveEmp.get().getDepartment() == null ||
+                    !leaveEmp.get().getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
                 throw new UnauthorizedException("Access denied");
             }
         }
@@ -140,7 +141,7 @@ public class LeaveService {
         }
 
         Leave leave = Leave.builder()
-                .employeeId(emp)
+                .employee(emp)
                 .type(dto.getType())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
@@ -154,6 +155,7 @@ public class LeaveService {
 
     @Transactional
     public LeaveResponse updateStatus(String id, UpdateLeaveStatusRequest dto, String userId) {
+        SecurityUtil.requireRoles("admin", "manager");
         Leave leave = leaveRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Leave not found"));
 
@@ -161,7 +163,7 @@ public class LeaveService {
             throw new BadRequestException("Can only update pending leaves");
         }
 
-        Employee emp = employeeRepository.findById(leave.getEmployeeId().getId())
+        Employee emp = employeeRepository.findById(leave.getEmployee().getId())
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 
         // Fix: Set the approver correctly using the current user's ID
@@ -180,7 +182,7 @@ public class LeaveService {
         if ("approved".equals(dto.getStatus())) {
             long days = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1;
             try {
-                leaveBalanceService.deduct(leave.getEmployeeId().getId(), leave.getType(), days);
+                leaveBalanceService.deduct(leave.getEmployee().getId(), leave.getType(), days);
             } catch (Exception e) {
                 // Rollback status if deduction fails
                 leave.setStatus("pending");
@@ -188,7 +190,7 @@ public class LeaveService {
                 throw new BadRequestException("Insufficient leave balance: " + e.getMessage());
             }
 
-            String userOwnerId = emp.getUserId() != null ? emp.getUserId().getId() : userId;
+            String userOwnerId = emp.getUser() != null ? emp.getUser().getId() : userId;
             String leaveTypeName = switch (leave.getType()) {
                 case "annual" -> "phép năm";
                 case "sick" -> "ốm";
@@ -199,7 +201,7 @@ public class LeaveService {
                             + ") đã được duyệt.",
                     "leave_approved", leave.getId(), "Leave");
         } else if ("rejected".equals(dto.getStatus())) {
-            String userOwnerId = emp.getUserId() != null ? emp.getUserId().getId() : userId;
+            String userOwnerId = emp.getUser() != null ? emp.getUser().getId() : userId;
             String leaveTypeName = switch (leave.getType()) {
                 case "annual" -> "phép năm";
                 case "sick" -> "ốm";
@@ -225,10 +227,10 @@ public class LeaveService {
         resp.setRejectionReason(leave.getRejectionReason());
         resp.setCreatedAt(leave.getCreatedAt());
 
-        if (leave.getEmployeeId() != null) {
-            Employee emp = leave.getEmployeeId();
+        if (leave.getEmployee() != null) {
+            Employee emp = leave.getEmployee();
             resp.setEmployeeId(Map.of(
-                    "_id", emp.getId(),
+                    "id", emp.getId(),
                     "firstName", emp.getFirstName(),
                     "lastName", emp.getLastName(),
                     "position", emp.getPosition()));
@@ -236,7 +238,7 @@ public class LeaveService {
 
         if (leave.getApprovedBy() != null) {
             resp.setApprovedBy(Map.of(
-                    "_id", leave.getApprovedBy().getId(),
+                    "id", leave.getApprovedBy().getId(),
                     "email", leave.getApprovedBy().getEmail(),
                     "name", leave.getApprovedBy().getName() != null ? leave.getApprovedBy().getName() : ""));
         }

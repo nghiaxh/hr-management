@@ -1,7 +1,10 @@
 package com.hrmanagement.common.util;
 
+import com.hrmanagement.common.exception.UnauthorizedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.Arrays;
 
 public class SecurityUtil {
 
@@ -17,14 +20,6 @@ public class SecurityUtil {
         return null;
     }
 
-    public static String getCurrentUserEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getDetails() instanceof String) {
-            return (String) auth.getDetails();
-        }
-        return null;
-    }
-
     public static String getCurrentUserRole() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {
@@ -34,5 +29,12 @@ public class SecurityUtil {
                     .orElse(null);
         }
         return null;
+    }
+
+    public static void requireRoles(String... roles) {
+        String userRole = getCurrentUserRole();
+        if (userRole == null || Arrays.stream(roles).noneMatch(r -> r.equals(userRole))) {
+            throw new UnauthorizedException("Insufficient permissions");
+        }
     }
 }

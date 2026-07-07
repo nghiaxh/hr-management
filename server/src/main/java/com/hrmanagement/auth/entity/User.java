@@ -30,10 +30,6 @@ public class User {
 
     private String name;
 
-    @Column(name = "is_active")
-    @Builder.Default
-    private Boolean isActive = true;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

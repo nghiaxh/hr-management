@@ -11,7 +11,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DepartmentResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private String name;
     private String description;

@@ -43,8 +43,8 @@ public class AttendanceService {
             }
         } else if ("manager".equals(userRole)) {
             Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartmentId() == null) return List.of();
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartmentId().getId())
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) return List.of();
+            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
                     .stream().map(Employee::getId).toList();
             if (employeeId != null && !employeeId.isBlank()) {
                 if (!deptEmpIds.contains(employeeId)) return List.of();
@@ -54,7 +54,7 @@ public class AttendanceService {
                     records = attendanceRepository.findByEmployeeId(employeeId);
                 }
             } else if (from != null && to != null) {
-                records = attendanceRepository.findByEmployeeIdsAndDateRange(deptEmpIds, from, to);
+                records = attendanceRepository.findByEmployeeIdInAndDateBetween(deptEmpIds, from, to);
             } else {
                 records = attendanceRepository.findByEmployeeIdInAndDateBetween(deptEmpIds, LocalDate.now().minusMonths(2), LocalDate.now());
             }
@@ -95,7 +95,7 @@ public class AttendanceService {
         String status = now.toLocalTime().isAfter(LocalTime.of(9, 0)) ? "late" : "present";
 
         Attendance record = Attendance.builder()
-                .employeeId(emp)
+                .employee(emp)
                 .date(today)
                 .checkIn(now)
                 .status(status)
@@ -110,7 +110,7 @@ public class AttendanceService {
                 .orElseThrow(() -> new NotFoundException("Employee profile not found"));
 
         Attendance record = attendanceRepository.findById(id)
-                .filter(r -> r.getEmployeeId().getId().equals(emp.getId()))
+                .filter(r -> r.getEmployee().getId().equals(emp.getId()))
                 .orElseThrow(() -> new NotFoundException("Attendance record not found"));
 
         if (record.getCheckOut() != null) {
@@ -137,10 +137,10 @@ public class AttendanceService {
         resp.setStatus(a.getStatus());
         resp.setNote(a.getNote());
 
-        if (a.getEmployeeId() != null) {
-            Employee emp = a.getEmployeeId();
+        if (a.getEmployee() != null) {
+            Employee emp = a.getEmployee();
             resp.setEmployeeId(java.util.Map.of(
-                    "_id", emp.getId(),
+                    "id", emp.getId(),
                     "firstName", emp.getFirstName(),
                     "lastName", emp.getLastName(),
                     "position", emp.getPosition()

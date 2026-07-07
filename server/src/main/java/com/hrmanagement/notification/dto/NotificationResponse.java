@@ -11,7 +11,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private String userId;
     private String title;

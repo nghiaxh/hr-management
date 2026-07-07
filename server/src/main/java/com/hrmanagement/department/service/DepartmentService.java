@@ -4,6 +4,7 @@ import com.hrmanagement.auth.entity.User;
 import com.hrmanagement.auth.repository.UserRepository;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.department.dto.CreateDepartmentRequest;
 import com.hrmanagement.department.dto.DepartmentResponse;
 import com.hrmanagement.department.entity.Department;
@@ -41,8 +42,8 @@ public class DepartmentService {
         Page<Department> deptPage;
         if ("manager".equals(userRole)) {
             Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartmentId() != null) {
-                String deptId = mgrEmp.get().getDepartmentId().getId();
+            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
+                String deptId = mgrEmp.get().getDepartment().getId();
                 Optional<Department> found = departmentRepository.findById(deptId);
                 if (found.isPresent()) {
                     deptPage = new org.springframework.data.domain.PageImpl<>(
@@ -71,6 +72,7 @@ public class DepartmentService {
 
     @Transactional
     public DepartmentResponse create(CreateDepartmentRequest dto) {
+        SecurityUtil.requireRoles("admin");
         Department dept = Department.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
@@ -79,7 +81,7 @@ public class DepartmentService {
         if (dto.getManagerId() != null) {
             User manager = userRepository.findById(dto.getManagerId())
                     .orElseThrow(() -> new NotFoundException("Manager user not found"));
-            dept.setManagerId(manager);
+            dept.setManager(manager);
         }
 
         departmentRepository.save(dept);
@@ -88,6 +90,7 @@ public class DepartmentService {
 
     @Transactional
     public DepartmentResponse update(String id, CreateDepartmentRequest dto) {
+        SecurityUtil.requireRoles("admin");
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Department not found"));
 
@@ -96,7 +99,7 @@ public class DepartmentService {
         if (dto.getManagerId() != null) {
             User manager = userRepository.findById(dto.getManagerId())
                     .orElseThrow(() -> new NotFoundException("Manager user not found"));
-            dept.setManagerId(manager);
+            dept.setManager(manager);
         }
 
         departmentRepository.save(dept);
@@ -105,6 +108,7 @@ public class DepartmentService {
 
     @Transactional
     public void remove(String id) {
+        SecurityUtil.requireRoles("admin");
         if (!departmentRepository.existsById(id)) {
             throw new NotFoundException("Department not found");
         }
@@ -119,12 +123,12 @@ public class DepartmentService {
         resp.setCreatedAt(dept.getCreatedAt());
         resp.setUpdatedAt(dept.getUpdatedAt());
 
-        if (dept.getManagerId() != null) {
+        if (dept.getManager() != null) {
             resp.setManagerId(Map.of(
-                "_id", dept.getManagerId().getId(),
-                "email", dept.getManagerId().getEmail(),
-                "role", dept.getManagerId().getRole(),
-                "name", dept.getManagerId().getName() != null ? dept.getManagerId().getName() : ""
+                "id", dept.getManager().getId(),
+                "email", dept.getManager().getEmail(),
+                "role", dept.getManager().getRole(),
+                "name", dept.getManager().getName() != null ? dept.getManager().getName() : ""
             ));
         }
         return resp;

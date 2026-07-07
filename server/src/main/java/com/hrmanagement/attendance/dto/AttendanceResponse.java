@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AttendanceResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private Object employeeId;
     private LocalDate date;

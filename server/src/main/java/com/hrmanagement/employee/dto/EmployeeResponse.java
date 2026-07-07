@@ -8,13 +8,12 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeResponse {
-    @JsonProperty("_id")
+    @JsonProperty("id")
     private String id;
     private Object userId;
     private Object departmentId;
@@ -26,21 +25,8 @@ public class EmployeeResponse {
     private String phone;
     private String contractType;
     private LocalDate contractExpiry;
-    private List<DocumentDto> documents;
     @JsonProperty("createdAt")
     private Instant createdAt;
     @JsonProperty("updatedAt")
     private Instant updatedAt;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DocumentDto {
-        @JsonProperty("_id")
-        private String id;
-        private String name;
-        private String url;
-        private String type;
-        private Instant uploadedAt;
-    }
 }

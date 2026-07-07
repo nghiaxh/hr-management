@@ -10,8 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @Entity
 @Table(name = "employees")
@@ -27,11 +26,11 @@ public class Employee {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
-    private User userId;
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
-    private Department departmentId;
+    private Department department;
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
@@ -55,10 +54,6 @@ public class Employee {
 
     @Column(name = "contract_expiry")
     private LocalDate contractExpiry;
-
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<EmployeeDocument> documents = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

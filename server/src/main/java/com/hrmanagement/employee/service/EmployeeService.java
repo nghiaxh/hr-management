@@ -3,16 +3,13 @@ package com.hrmanagement.employee.service;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.department.entity.Department;
 import com.hrmanagement.department.repository.DepartmentRepository;
 import com.hrmanagement.employee.dto.CreateEmployeeRequest;
 import com.hrmanagement.employee.dto.EmployeeResponse;
 import com.hrmanagement.employee.entity.Employee;
-import com.hrmanagement.employee.entity.EmployeeDocument;
 import com.hrmanagement.employee.repository.EmployeeRepository;
-import com.hrmanagement.employeehistory.dto.CreateEmployeeHistoryRequest;
-import com.hrmanagement.employeehistory.dto.EmployeeHistoryResponse;
-import com.hrmanagement.employeehistory.service.EmployeeHistoryService;
 import com.hrmanagement.auth.entity.User;
 import com.hrmanagement.auth.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,16 +30,13 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
-    private final EmployeeHistoryService employeeHistoryService;
 
     public EmployeeService(EmployeeRepository employeeRepository,
             DepartmentRepository departmentRepository,
-            UserRepository userRepository,
-            EmployeeHistoryService employeeHistoryService) {
+            UserRepository userRepository) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
-        this.employeeHistoryService = employeeHistoryService;
     }
 
     public PaginatedResponse<EmployeeResponse> findAll(String search, String departmentId, int page, int limit,
@@ -54,8 +47,8 @@ public class EmployeeService {
 
         if ("manager".equals(userRole)) {
             var mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartmentId() != null) {
-                effectiveDeptId = mgrEmp.get().getDepartmentId().getId();
+            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
+                effectiveDeptId = mgrEmp.get().getDepartment().getId();
             }
         }
 
@@ -78,7 +71,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 
         if ("employee".equals(userRole)) {
-            if (emp.getUserId() == null || !emp.getUserId().getId().equals(userId)) {
+            if (emp.getUser() == null || !emp.getUser().getId().equals(userId)) {
                 throw new NotFoundException("Employee not found");
             }
         }
@@ -87,6 +80,7 @@ public class EmployeeService {
 
     @Transactional
     public EmployeeResponse create(CreateEmployeeRequest dto) {
+        SecurityUtil.requireRoles("admin");
         if (dto.getUserId() == null || dto.getUserId().isBlank()) {
             throw new BadRequestException("User ID is required");
         }
@@ -104,11 +98,11 @@ public class EmployeeService {
 
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        emp.setUserId(user);
+        emp.setUser(user);
 
         Department dept = departmentRepository.findById(dto.getDepartmentId())
                 .orElseThrow(() -> new NotFoundException("Department not found"));
-        emp.setDepartmentId(dept);
+        emp.setDepartment(dept);
 
         employeeRepository.save(emp);
         return toResponse(emp);
@@ -116,6 +110,7 @@ public class EmployeeService {
 
     @Transactional
     public EmployeeResponse update(String id, CreateEmployeeRequest dto) {
+        SecurityUtil.requireRoles("admin");
         Employee emp = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 
@@ -139,7 +134,7 @@ public class EmployeeService {
         if (dto.getDepartmentId() != null) {
             Department dept = departmentRepository.findById(dto.getDepartmentId())
                     .orElseThrow(() -> new NotFoundException("Department not found"));
-            emp.setDepartmentId(dept);
+            emp.setDepartment(dept);
         }
 
         employeeRepository.save(emp);
@@ -148,6 +143,7 @@ public class EmployeeService {
 
     @Transactional
     public void remove(String id) {
+        SecurityUtil.requireRoles("admin");
         if (!employeeRepository.existsById(id)) {
             throw new NotFoundException("Employee not found");
         }
@@ -156,6 +152,7 @@ public class EmployeeService {
 
     @Transactional
     public Map<String, Object> bulkDelete(List<String> ids) {
+        SecurityUtil.requireRoles("admin");
         if (ids == null || ids.isEmpty() || ids.size() > 100) {
             throw new BadRequestException("Invalid or too many IDs (max 100)");
         }
@@ -167,8 +164,8 @@ public class EmployeeService {
         String effectiveDeptId = null;
         if ("manager".equals(userRole)) {
             var mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartmentId() != null) {
-                effectiveDeptId = mgrEmp.get().getDepartmentId().getId();
+            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
+                effectiveDeptId = mgrEmp.get().getDepartment().getId();
             }
         }
 
@@ -184,8 +181,8 @@ public class EmployeeService {
         PrintWriter writer = response.getWriter();
         writer.println("firstName,lastName,position,department,salary,email,phone,contractType,hireDate");
         for (Employee e : employees) {
-            String deptName = e.getDepartmentId() != null ? e.getDepartmentId().getName() : "";
-            String email = e.getUserId() != null ? e.getUserId().getEmail() : "";
+            String deptName = e.getDepartment() != null ? e.getDepartment().getName() : "";
+            String email = e.getUser() != null ? e.getUser().getEmail() : "";
             String hireDate = e.getHireDate() != null ? e.getHireDate().toString() : "";
             writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",%s,\"%s\",\"%s\",\"%s\",\"%s\"%n",
                     e.getFirstName(), e.getLastName(), e.getPosition(),
@@ -197,43 +194,14 @@ public class EmployeeService {
         writer.flush();
     }
 
-    @Transactional
-    public EmployeeResponse addDocument(String id, MultipartFile file) throws IOException {
-        Employee emp = employeeRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Employee not found"));
-
-        EmployeeDocument doc = EmployeeDocument.builder()
-                .employee(emp)
-                .name(file.getOriginalFilename())
-                .url("/uploads/" + file.getOriginalFilename())
-                .type(file.getContentType())
-                .build();
-
-        emp.getDocuments().add(doc);
-        employeeRepository.save(emp);
-        return toResponse(emp);
-    }
-
-    @Transactional
-    public EmployeeResponse removeDocument(String id, String docId) {
-        Employee emp = employeeRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Employee not found"));
-
-        emp.getDocuments().removeIf(d -> d.getId().equals(docId));
-        employeeRepository.save(emp);
-        return toResponse(emp);
-    }
-
     public Employee findByUserId(String userId) {
         return employeeRepository.findByUserId(userId).orElse(null);
     }
 
-    public List<EmployeeHistoryResponse> getHistory(String employeeId) {
-        return employeeHistoryService.findByEmployee(employeeId);
-    }
-
-    public EmployeeHistoryResponse addHistory(String employeeId, CreateEmployeeHistoryRequest dto) {
-        return employeeHistoryService.create(employeeId, dto);
+    public EmployeeResponse getMyEmployee(String userId) {
+        return employeeRepository.findByUserId(userId)
+                .map(this::toResponse)
+                .orElse(null);
     }
 
     private EmployeeResponse toResponse(Employee emp) {
@@ -250,26 +218,18 @@ public class EmployeeService {
         resp.setCreatedAt(emp.getCreatedAt());
         resp.setUpdatedAt(emp.getUpdatedAt());
 
-        if (emp.getUserId() != null) {
+        if (emp.getUser() != null) {
             resp.setUserId(Map.of(
-                    "_id", emp.getUserId().getId(),
-                    "email", emp.getUserId().getEmail(),
-                    "role", emp.getUserId().getRole(),
-                    "name", emp.getUserId().getName() != null ? emp.getUserId().getName() : ""));
+                    "id", emp.getUser().getId(),
+                    "email", emp.getUser().getEmail(),
+                    "role", emp.getUser().getRole(),
+                    "name", emp.getUser().getName() != null ? emp.getUser().getName() : ""));
         }
 
-        if (emp.getDepartmentId() != null) {
+        if (emp.getDepartment() != null) {
             resp.setDepartmentId(Map.of(
-                    "_id", emp.getDepartmentId().getId(),
-                    "name", emp.getDepartmentId().getName()));
-        }
-
-        if (emp.getDocuments() != null) {
-            var docs = emp.getDocuments().stream().map(d -> new EmployeeResponse.DocumentDto(d.getId(), d.getName(),
-                    d.getUrl(), d.getType(), d.getUploadedAt())).toList();
-            resp.setDocuments(docs);
-        } else {
-            resp.setDocuments(List.of());
+                    "id", emp.getDepartment().getId(),
+                    "name", emp.getDepartment().getName()));
         }
 
         return resp;

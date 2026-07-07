@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 public class ProcessPayrollRequest {
@@ -18,7 +17,4 @@ public class ProcessPayrollRequest {
 
     @Min(2020)
     private Integer year;
-
-    private Map<String, Double> bonuses;
-    private Map<String, Double> deductions;
 }

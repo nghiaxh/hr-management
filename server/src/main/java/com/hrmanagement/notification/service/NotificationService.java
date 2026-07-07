@@ -36,7 +36,7 @@ public class NotificationService {
     public NotificationResponse markRead(String id, String userId) {
         Notification notif = notificationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Notification not found"));
-        if (!notif.getUserId().getId().equals(userId)) {
+        if (!notif.getUser().getId().equals(userId)) {
             throw new NotFoundException("Notification not found");
         }
         notif.setIsRead(true);
@@ -59,7 +59,7 @@ public class NotificationService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         Notification notif = Notification.builder()
-                .userId(user)
+                .user(user)
                 .title(title)
                 .message(message)
                 .type(type)
@@ -72,7 +72,7 @@ public class NotificationService {
     private NotificationResponse toResponse(Notification n) {
         NotificationResponse resp = new NotificationResponse();
         resp.setId(n.getId());
-        resp.setUserId(n.getUserId().getId());
+        resp.setUserId(n.getUser().getId());
         resp.setTitle(n.getTitle());
         resp.setMessage(n.getMessage());
         resp.setType(n.getType());

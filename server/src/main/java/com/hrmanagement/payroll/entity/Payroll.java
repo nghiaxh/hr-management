@@ -25,7 +25,7 @@ public class Payroll {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employeeId;
+    private Employee employee;
 
     @Column(nullable = false)
     private Integer month;
@@ -40,9 +40,29 @@ public class Payroll {
     @Builder.Default
     private BigDecimal bonus = BigDecimal.ZERO;
 
+    @Column(name = "social_insurance", nullable = false)
+    @Builder.Default
+    private BigDecimal socialInsurance = BigDecimal.ZERO;
+
+    @Column(name = "health_insurance", nullable = false)
+    @Builder.Default
+    private BigDecimal healthInsurance = BigDecimal.ZERO;
+
+    @Column(name = "unemployment_insurance", nullable = false)
+    @Builder.Default
+    private BigDecimal unemploymentInsurance = BigDecimal.ZERO;
+
+    @Column(name = "union_dues", nullable = false)
+    @Builder.Default
+    private BigDecimal unionDues = BigDecimal.ZERO;
+
     @Column(nullable = false)
     @Builder.Default
-    private BigDecimal deductions = BigDecimal.ZERO;
+    private BigDecimal pit = BigDecimal.ZERO;
+
+    @Column(name = "total_deductions", nullable = false)
+    @Builder.Default
+    private BigDecimal totalDeductions = BigDecimal.ZERO;
 
     @Column(name = "net_pay", nullable = false)
     private BigDecimal netPay;
