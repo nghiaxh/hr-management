@@ -7,6 +7,21 @@ on:
     branches: [main, master, develop]
 
 jobs:
+  server-build:
+    name: Server Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+      - run: mvn compile -DskipTests
+
   server-tests:
     name: Server Tests
     runs-on: ubuntu-latest
@@ -40,6 +55,7 @@ jobs:
 
       - run: mvn test
         env:
+          SPRING_PROFILES_ACTIVE: test
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/hr_management_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
@@ -87,5 +103,3 @@ jobs:
       - run: npm ci
 
       - run: npm run build
-
-
