@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Users, Building2, CalendarCheck, ClipboardCheck,
   Clock, BarChart3, Wallet, DollarSign, LogOut,
-  X, Bell, ChevronLeft, GitGraph, Star, Briefcase, Settings,
+  X, Bell, ChevronLeft, GitGraph, Settings,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -18,20 +18,20 @@ interface MenuItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: string[];
+  end?: boolean;
 }
 
 const menuItems: MenuItem[] = [
   { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
   { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
   { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
-  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'] },
+  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'], end: true },
   { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
-  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
+  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'], end: true },
   { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
-  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'] },
+  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], end: true },
   { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
-  { path: '/performance-reviews', label: 'nav.performance_reviews', icon: Star, roles: ['admin', 'manager'] },
-  { path: '/recruitment', label: 'nav.job_postings', icon: Briefcase, roles: ['admin', 'manager'] },
+
 ];
 
 function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
@@ -39,6 +39,7 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
   const link = (
     <NavLink
       to={item.path}
+      end={item.end}
       onClick={onNav}
       className={({ isActive }) =>
         cn(
