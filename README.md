@@ -21,7 +21,7 @@ mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hr_management CHARACTER SET u
 
 ```bash
 cd server
-mvn spring-boot:run -D"spring-boot.run.profiles=seed"   # Tạo dữ liệu mẫu (seed xong tự thoát)
+mvn spring-boot:run -D "spring-boot.run.profiles=seed"   # Tạo dữ liệu mẫu (seed xong tự thoát)
 mvn spring-boot:run                                     # API tại http://localhost:3001
 ```
 
@@ -107,7 +107,7 @@ hr-management/
 
 1. **Khởi động MySQL** — chạy Docker (`docker compose up -d` tại thư mục gốc) hoặc local (cổng mặc định 3306), tạo database `hr_management`
 2. **Cấu hình `server/.env`** — tạo file từ mẫu trong `application.properties`, đặt `jwt.secret`
-3. **Chạy seed** (`mvn spring-boot:run -Dspring-boot.run.profiles=seed` trong `server/`) — tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên). An toàn khi chạy lại (xóa và tạo mới)
+3. **Chạy seed** (`mvn spring-boot:run -D spring-boot.run.profiles=seed` trong `server/`) — tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên). An toàn khi chạy lại (xóa và tạo mới)
 4. **Khởi động server** (`mvn spring-boot:run` trong `server/`) — Spring Boot API tại port 3001
 5. **Khởi động client** (`npm run dev` trong `client/`) — Vite dev server với HMR
 
