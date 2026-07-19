@@ -15,7 +15,7 @@ export function DataTablePagination<TData>({
 }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-base-content/60">
         {totalLabel}
       </p>
       <div className="flex items-center gap-1">
@@ -25,7 +25,7 @@ export function DataTablePagination<TData>({
         <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
           <ChevronLeft className="h-3.5 w-3.5" />
         </Button>
-        <span className="text-sm text-muted-foreground px-2">
+        <span className="text-sm text-base-content/60 px-2">
           {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
         </span>
         <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
@@ -37,7 +37,7 @@ export function DataTablePagination<TData>({
         <select
           value={table.getState().pagination.pageSize}
           onChange={(e) => table.setPageSize(Number(e.target.value))}
-          className="ml-2 h-8 w-16 rounded border bg-background px-1 text-xs"
+          className="select select-bordered select-sm ml-2 h-8 w-16 text-xs"
         >
           {pageSizeOptions.map((size) => (
             <option key={size} value={size}>{size}</option>

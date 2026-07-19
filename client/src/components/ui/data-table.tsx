@@ -91,7 +91,7 @@ export function DataTable<TData>({
   });
 
   return (
-    <div className={cn('bg-card rounded-lg border', className)}>
+    <div className={cn('bg-base-200 rounded-box border border-base-300', className)}>
       {toolbar && <div className="flex items-center gap-2 p-4 pb-0">{toolbar}</div>}
       <Table>
         <TableHeader>
@@ -111,20 +111,20 @@ export function DataTable<TData>({
               <TableRow key={`skeleton-${i}`}>
                 {columns.map((_, j) => (
                   <TableCell key={`sc-${i}-${j}`}>
-                    <div className="h-4 animate-pulse rounded bg-muted/60" />
+                    <div className="skeleton h-4 w-full" />
                   </TableCell>
                 ))}
               </TableRow>
             ))
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="text-center text-destructive py-8">
+              <TableCell colSpan={columns.length} className="text-center text-error py-8">
                 {error}
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={columns.length} className="text-center text-base-content/60 py-8">
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -147,7 +147,7 @@ export function DataTable<TData>({
         </TableBody>
       </Table>
       {!noPagination && (controlledPagination || (!isManualPagination && data.length > 0)) && (
-        <div className="border-t">
+        <div className="border-t border-base-300">
           <DataTablePagination table={table} totalLabel={totalLabel} />
         </div>
       )}

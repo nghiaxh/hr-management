@@ -28,13 +28,15 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <DialogDescription>{description}</DialogDescription>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <DialogDescription className="text-sm text-base-content/60">{description}</DialogDescription>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button variant="outline" onPress={() => onOpenChange(false)} disabled={loading}>
             {cancelLabel}
           </Button>
-          <Button variant={variant} onClick={onConfirm} disabled={loading}>
+          <Button variant={variant === 'destructive' ? 'destructive' : 'default'} onPress={onConfirm} disabled={loading}>
             {confirmLabel}
           </Button>
         </div>

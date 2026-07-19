@@ -1,41 +1,62 @@
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
-  {
-    variants: {
-      variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-input bg-background/50 hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent/50 hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
-      },
-      size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-11 rounded-lg px-8',
-        icon: 'h-10 w-10',
-      },
-    },
-    defaultVariants: { variant: 'default', size: 'default' },
-  },
-);
+type VariantMap = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'primary';
+type SizeMap = 'default' | 'sm' | 'lg' | 'icon';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+const variantToClass: Record<VariantMap, string> = {
+  default: 'btn btn-primary',
+  primary: 'btn btn-primary',
+  destructive: 'btn btn-error',
+  outline: 'btn btn-outline',
+  secondary: 'btn btn-secondary',
+  ghost: 'btn btn-ghost',
+  link: 'btn btn-link',
+};
+
+const sizeToClass: Record<SizeMap, string> = {
+  default: 'btn-md',
+  sm: 'btn-sm',
+  lg: 'btn-lg',
+  icon: 'btn-square btn-sm',
+};
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: VariantMap;
+  size?: SizeMap;
   asChild?: boolean;
+  isPending?: boolean;
+  onPress?: () => void;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+  ({ className, variant = 'default', size = 'default', type, children, isPending, disabled, onClick, onPress, ...props }, ref) => {
+    const classes = cn(
+      variantToClass[variant],
+      sizeToClass[size],
+      isPending && 'loading',
+      className,
+    );
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (onPress) onPress();
+      if (onClick) onClick(e);
+    };
+
+    return (
+      <button
+        ref={ref}
+        type={type || 'button'}
+        className={classes}
+        disabled={disabled || isPending}
+        onClick={handleClick}
+        {...props}
+      >
+        {isPending ? <span className="loading loading-spinner loading-sm" /> : children}
+      </button>
+    );
   },
 );
 Button.displayName = 'Button';
 
-export { Button, buttonVariants };
+export { Button };
