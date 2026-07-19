@@ -1,7 +1,12 @@
 <!doctype html>
-<html lang="en" class="">
+<html lang="en" data-theme="light">
   <head>
-    <script>document.documentElement.classList.toggle('dark', localStorage.getItem('theme') === 'dark');</script>
+    <script>
+      (function() {
+        var t = localStorage.getItem('daisyui-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
