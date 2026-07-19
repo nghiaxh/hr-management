@@ -1,6 +1,6 @@
 # Hệ thống Quản lý Nhân sự
 
-Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, MySQL 8, React và shadcn/ui.
+Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, MySQL 8, React và DaisyUI.
 
 ## Yêu cầu
 
@@ -93,7 +93,7 @@ hr-management/
     ├── src/
     │   ├── api/               # Axios client + modules
     │   ├── components/
-    │   │   ├── ui/            # shadcn primitives
+    │   │   ├── ui/            # DaisyUI wrapper components
     │   │   ├── layout/        # Sidebar, AppLayout
     │   │   └── shared/        # StatusBadge, PageHeader
     │   ├── context/           # AuthContext, LanguageContext
@@ -323,7 +323,7 @@ CI/CD tự động qua GitHub Actions (`.github/workflows/test.yml`) — chạy 
 | Lớp            | Công nghệ                                |
 |----------------|-------------------------------------------|
 | Frontend       | React 18, Vite, TypeScript                |
-| UI             | shadcn/ui, Tailwind CSS, Radix primitives |
+| UI             | DaisyUI, Tailwind CSS |
 | Backend        | Spring Boot 4.1 (Java 25)                 |
 | Database       | MySQL 8+, JPA/Hibernate                   |
 | Auth           | JWT (jjwt 0.12.6), bcrypt, Spring Security|

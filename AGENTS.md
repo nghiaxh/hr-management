@@ -44,7 +44,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 ```
 
 - **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/src/main/resources/application.properties`. Uses Maven + Java 25.
-- **Client** (`client/src/main.tsx`): Vite dev server, shadcn/ui + Tailwind + Radix. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
+- **Client** (`client/src/main.tsx`): Vite dev server, DaisyUI + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
 
@@ -289,7 +289,7 @@ Client shows toast + increments badge count
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
 | **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |
 | **Socket.IO** for notifications *(planned)* | Real-time push without polling; auto-reconnect built-in (API polling for now) |
-| **shadcn/ui** | Copy-paste components, full control over styling, Tailwind integration |
+| **DaisyUI** | Tailwind CSS plugin, utility-first components, built-in theme support (light/dark) |
 | **TanStack Query** | Automatic caching, refetching, optimistic updates for API data |
 
 ---

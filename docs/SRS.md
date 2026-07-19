@@ -136,7 +136,7 @@ Hệ thống là một ứng dụng web SPA với kiến trúc client-server ph�
 └──────────────┘                └──────────────┘                └────────────┘
 ```
 
-- **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173 (dev). Sử dụng shadcn/ui, Tailwind CSS, TanStack Query, React Router, Recharts.
+- **Client (React 18)**: Giao diện người dùng, chạy trên trình duyệt, port 5173 (dev). Sử dụng DaisyUI, Tailwind CSS, TanStack Query, React Router, Recharts.
 - **Server (Spring Boot)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Spring Data JPA, Spring Security, JWT (jjwt), Socket.IO, Jakarta Validation.
 - **Database (MySQL 8)**: Lưu trữ dữ liệu quan hệ, chạy local (dev) hoặc cloud (production).
 

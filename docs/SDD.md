@@ -232,7 +232,7 @@ graph TB
 | AD-04| JWT trong localStorage                | Đơn giản cho SPA; httpOnly cookies an toàn hơn nhưng phức tạp |
 | AD-05| Socket.IO thay vì SSE/Polling         | Real-time hai chiều, auto-reconnect, room support              |
 | AD-06| TanStack Query thay vì Redux          | Tự động cache, refetch, không cần boilerplate cho API calls   |
-| AD-07| shadcn/ui thay vì Material UI         | Copy-paste components, full control styling, Tailwind tích hợp |
+| AD-07| DaisyUI thay vì shadcn/ui         | Tailwind CSS plugin, utility-first components, built-in theme support |
 | AD-08| Zod validation (server + client)       | Chia sẻ cùng schema validation giữa FE và BE                  |
 
 ---
@@ -262,7 +262,7 @@ graph TB
         RL[RouteLoading] & KS[KeyboardShortcuts] & UT[UnsavedChanges]
     end
 
-    subgraph "UI Components (shadcn)"
+    subgraph "UI Components (DaisyUI)"
         BTN[Button] & BDG[Badge] & CRD[Card] & DLG[Dialog]
         INP[Input] & LBL[Label] & SLT[Select] & TBL[Table]
         TST[Toaster] & CMD[ConfirmDialog] & DT[DataTable]
@@ -421,7 +421,7 @@ classDiagram
 | Tính năng UX             | Mô tả                                                 |
 |--------------------------|-------------------------------------------------------|
 | Responsive               | Mobile-first, sidebar ẩn trên mobile, hamburger menu |
-| Dark mode                | CSS variables, toggle trong Settings                  |
+| Dark mode                | DaisyUI theme switching (data-theme attribute), toggle trong Settings |
 | Đa ngôn ngữ              | LanguageProvider + translation objects (~830 keys)    |
 | Skeleton loading         | Trên mọi danh sách và chi tiết                        |
 | Empty state              | Khi không có dữ liệu                                  |
