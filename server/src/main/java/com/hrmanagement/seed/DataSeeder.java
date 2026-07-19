@@ -79,7 +79,6 @@ public class DataSeeder implements CommandLineRunner {
         jdbcTemplate.execute("TRUNCATE TABLE attendances");
         jdbcTemplate.execute("TRUNCATE TABLE notifications");
         jdbcTemplate.execute("TRUNCATE TABLE payrolls");
-        jdbcTemplate.execute("TRUNCATE TABLE employee_histories");
         jdbcTemplate.execute("TRUNCATE TABLE employees");
         jdbcTemplate.execute("TRUNCATE TABLE departments");
         jdbcTemplate.execute("TRUNCATE TABLE users");
