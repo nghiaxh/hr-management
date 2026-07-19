@@ -11,6 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/ca
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Select } from '../../components/ui/select';
 import { useTranslation } from '../../context/language-context';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
@@ -79,15 +80,15 @@ export default function EmployeeDetailPage() {
   });
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
-  if (empError || !emp) return <div className="text-center py-8 text-destructive">{empError ? t('employees.load_failed') : t('employees.not_found')}</div>;
+  if (empError || !emp) return <div className="text-center py-8 text-error">{empError ? t('employees.load_failed') : t('employees.not_found')}</div>;
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
-      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+    <div className="flex items-center gap-3 py-2.5 border-b border-base-300/40 last:border-0">
+      <div className="h-8 w-8 rounded-lg bg-base-300 flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-base-content/60" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-xs text-base-content/60">{label}</p>
         <p className="text-sm font-medium truncate">{value}</p>
       </div>
     </div>
@@ -95,10 +96,10 @@ export default function EmployeeDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <button onClick={() => navigate('/employees')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 cursor-pointer">
-        <ArrowLeft className="h-4 w-4" />
+      <Button variant="ghost" size="sm" onPress={() => navigate('/employees')} className="mb-6">
+        <ArrowLeft className="h-4 w-4 mr-1.5" />
         {t('employees.title')}
-      </button>
+      </Button>
 
       <div className="flex items-center gap-4 mb-6">
         <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xl font-bold shrink-0 shadow-md">
@@ -106,7 +107,7 @@ export default function EmployeeDetailPage() {
         </div>
         <div className="flex-1">
           <h1 className="text-xl font-bold">{emp.firstName} {emp.lastName}</h1>
-          <p className="text-sm text-muted-foreground">{emp.position}</p>
+          <p className="text-sm text-base-content/60">{emp.position}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
           <Pencil className="h-3.5 w-3.5 mr-1.5" />
@@ -118,7 +119,7 @@ export default function EmployeeDetailPage() {
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-base flex items-center gap-2">
-              <UserRound className="h-4 w-4 text-muted-foreground" />
+              <UserRound className="h-4 w-4 text-base-content/60" />
               {t('employees.name')}
             </CardTitle>
           </CardHeader>
@@ -134,7 +135,7 @@ export default function EmployeeDetailPage() {
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <Briefcase className="h-4 w-4 text-base-content/60" />
               {t('employees.contract')}
             </CardTitle>
           </CardHeader>
@@ -154,34 +155,34 @@ export default function EmployeeDetailPage() {
               <div>
                 <Label>{t('employees.first_name')}</Label>
                 <Input {...editForm.register('firstName')} />
-                {editForm.formState.errors.firstName && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.firstName.message}</p>}
+                {editForm.formState.errors.firstName && <p className="text-xs text-error mt-1">{editForm.formState.errors.firstName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.last_name')}</Label>
                 <Input {...editForm.register('lastName')} />
-                {editForm.formState.errors.lastName && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.lastName.message}</p>}
+                {editForm.formState.errors.lastName && <p className="text-xs text-error mt-1">{editForm.formState.errors.lastName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.position')}</Label>
                 <Input {...editForm.register('position')} />
-                {editForm.formState.errors.position && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.position.message}</p>}
+                {editForm.formState.errors.position && <p className="text-xs text-error mt-1">{editForm.formState.errors.position.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.salary')}</Label>
                 <Input type="number" {...editForm.register('salary')} />
-                {editForm.formState.errors.salary && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.salary.message}</p>}
+                {editForm.formState.errors.salary && <p className="text-xs text-error mt-1">{editForm.formState.errors.salary.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.department')}</Label>
-                <select {...editForm.register('departmentId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <Select {...editForm.register('departmentId')}>
                   {departments?.data?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-                {editForm.formState.errors.departmentId && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.departmentId.message}</p>}
+                </Select>
+                {editForm.formState.errors.departmentId && <p className="text-xs text-error mt-1">{editForm.formState.errors.departmentId.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.hire_date')}</Label>
                 <Input type="date" {...editForm.register('hireDate')} />
-                {editForm.formState.errors.hireDate && <p className="text-xs text-destructive mt-1">{editForm.formState.errors.hireDate.message}</p>}
+                {editForm.formState.errors.hireDate && <p className="text-xs text-error mt-1">{editForm.formState.errors.hireDate.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.phone')}</Label>
@@ -189,12 +190,12 @@ export default function EmployeeDetailPage() {
               </div>
               <div>
                 <Label>{t('employees.contract_type_label')}</Label>
-                <select {...editForm.register('contractType')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <Select {...editForm.register('contractType')}>
                   <option value="">{t('employees.none')}</option>
                   <option value="permanent">{t('employees.contract_permanent')}</option>
                   <option value="contract">{t('employees.contract_contract')}</option>
                   <option value="intern">{t('employees.contract_intern')}</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <Label>{t('employees.contract_expiry_label')}</Label>

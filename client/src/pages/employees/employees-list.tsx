@@ -15,6 +15,7 @@ import { DataTableColumnHeader } from '../../components/ui/data-table-column-hea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Label } from '../../components/ui/label';
+import { Select } from '../../components/ui/select';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { SkeletonList } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
@@ -22,6 +23,7 @@ import { useToast } from '../../hooks/use-toast';
 import { useDebounce } from '../../hooks/use-debounce';
 import { Plus, Search, Trash2, Download, Loader2 } from 'lucide-react';
 import { Employee } from '../../types';
+import { TooltipRoot, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 
 const columnHelper = createColumnHelper<Employee>();
 
@@ -162,9 +164,14 @@ export default function EmployeesListPage() {
       id: 'actions',
       header: t('departments.actions'),
       cell: ({ row }) => (
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }} aria-label={t('employees.delete')}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <TooltipRoot>
+          <TooltipTrigger>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-base-content/60 hover:text-error" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }} aria-label={t('employees.delete')}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('employees.delete')}</TooltipContent>
+        </TooltipRoot>
       ),
     }),
   ];
@@ -188,12 +195,12 @@ export default function EmployeesListPage() {
         totalLabel={`${meta?.total ?? 0} ${t('employees.total')}`}
         toolbar={
           <>
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search className="h-4 w-4 text-base-content/60 shrink-0" />
             <Input placeholder={t('employees.search')} value={search} onChange={e => { setSearch(e.target.value); setPagination((prev) => ({ ...prev, pageIndex: 0 })); }} className="w-full md:max-w-sm" />
             <div className="ml-auto flex items-center gap-2">
               {selectedIds.length > 0 && (
                 <>
-                  <span className="text-sm text-muted-foreground">{selectedIds.length} {t('employees.selected')}</span>
+                  <span className="text-sm text-base-content/60">{selectedIds.length} {t('employees.selected')}</span>
                   <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                     {t('employees.delete_bulk')}
@@ -218,35 +225,35 @@ export default function EmployeesListPage() {
               <div>
                 <Label>{t('employees.first_name')}</Label>
                 <Input {...createForm.register('firstName')} />
-                {createForm.formState.errors.firstName && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.firstName.message}</p>}
+                {createForm.formState.errors.firstName && <p className="text-xs text-error mt-1">{createForm.formState.errors.firstName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.last_name')}</Label>
                 <Input {...createForm.register('lastName')} />
-                {createForm.formState.errors.lastName && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.lastName.message}</p>}
+                {createForm.formState.errors.lastName && <p className="text-xs text-error mt-1">{createForm.formState.errors.lastName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.position')}</Label>
                 <Input {...createForm.register('position')} />
-                {createForm.formState.errors.position && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.position.message}</p>}
+                {createForm.formState.errors.position && <p className="text-xs text-error mt-1">{createForm.formState.errors.position.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.salary')}</Label>
                 <Input type="number" {...createForm.register('salary')} />
-                {createForm.formState.errors.salary && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.salary.message}</p>}
+                {createForm.formState.errors.salary && <p className="text-xs text-error mt-1">{createForm.formState.errors.salary.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.department')}</Label>
-                <select {...createForm.register('departmentId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <Select {...createForm.register('departmentId')}>
                   <option value="">{t('employees.select')}</option>
                   {departments?.data?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-                {createForm.formState.errors.departmentId && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.departmentId.message}</p>}
+                </Select>
+                {createForm.formState.errors.departmentId && <p className="text-xs text-error mt-1">{createForm.formState.errors.departmentId.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.hire_date')}</Label>
                 <Input type="date" {...createForm.register('hireDate')} />
-                {createForm.formState.errors.hireDate && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.hireDate.message}</p>}
+                {createForm.formState.errors.hireDate && <p className="text-xs text-error mt-1">{createForm.formState.errors.hireDate.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.phone')}</Label>
@@ -254,12 +261,12 @@ export default function EmployeesListPage() {
               </div>
               <div>
                 <Label>{t('employees.contract_type_label')}</Label>
-                <select {...createForm.register('contractType')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+                <Select {...createForm.register('contractType')}>
                   <option value="">{t('employees.none')}</option>
                   <option value="permanent">{t('employees.contract_permanent')}</option>
                   <option value="contract">{t('employees.contract_contract')}</option>
                   <option value="intern">{t('employees.contract_intern')}</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <Label>{t('employees.contract_expiry_label')}</Label>
@@ -268,7 +275,7 @@ export default function EmployeesListPage() {
               <div>
                 <Label>{t('employees.user_id')}</Label>
                 <Input {...createForm.register('userId')} placeholder={t('employees.user_id_placeholder')} />
-                {createForm.formState.errors.userId && <p className="text-xs text-destructive mt-1">{createForm.formState.errors.userId.message}</p>}
+                {createForm.formState.errors.userId && <p className="text-xs text-error mt-1">{createForm.formState.errors.userId.message}</p>}
               </div>
             </div>
             <Button type="submit" className="w-full mt-4" disabled={createMutation.isPending}>

@@ -31,7 +31,7 @@ export default function NotificationsListPage() {
   });
 
   if (isError) {
-    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || t('notifications.load_failed')}</p></div>;
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-error">{(queryError as any)?.response?.data?.message || t('notifications.load_failed')}</p></div>;
   }
 
   if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
@@ -53,12 +53,12 @@ export default function NotificationsListPage() {
       />
 
       {notifications.length === 0 ? (
-        <div className="flex flex-col items-center py-16 text-muted-foreground">
-          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+        <div className="flex flex-col items-center py-16 text-base-content/60">
+          <div className="h-12 w-12 rounded-full bg-base-300 flex items-center justify-center mb-3">
             <Bell className="h-6 w-6" />
           </div>
           <p className="text-sm font-medium">{t('notifications.no_notifications')}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t('notifications.up_to_date')}</p>
+          <p className="text-xs text-base-content/60 mt-1">{t('notifications.up_to_date')}</p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -69,28 +69,28 @@ export default function NotificationsListPage() {
               className={cn(
                 'group flex items-start gap-3 p-3 rounded-xl border transition-all duration-150 cursor-pointer',
                 n.isRead
-                  ? 'bg-card/50 border-transparent hover:bg-accent/30'
-                  : 'bg-accent/50 border-border/80 hover:bg-accent'
+                  ? 'bg-base-200/50 border-transparent hover:bg-base-300/30'
+                  : 'bg-base-300/50 border-base-300/80 hover:bg-base-300'
               )}
             >
               <div className={cn(
                 'mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-colors',
-                n.isRead ? 'bg-muted text-muted-foreground' : 'bg-muted-foreground/15 text-foreground'
+                n.isRead ? 'bg-base-300 text-base-content/60' : 'bg-base-content/15 text-base-content'
               )}>
                 {n.isRead ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className={cn('text-sm', n.isRead ? 'text-foreground/70' : 'text-foreground font-medium')}>
+                  <p className={cn('text-sm', n.isRead ? 'text-base-content/70' : 'text-base-content font-medium')}>
                     {n.title}
                   </p>
                   <div className="flex items-center gap-2 shrink-0">
-                    {!n.isRead && <span className="h-2 w-2 rounded-full bg-muted-foreground/50" />}
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatDate(n.createdAt)}</span>
+                    {!n.isRead && <span className="h-2 w-2 rounded-full bg-base-content/50" />}
+                    <span className="text-[11px] text-base-content/60 whitespace-nowrap">{formatDate(n.createdAt)}</span>
                   </div>
                 </div>
                 {n.message && (
-                  <p className={cn('text-xs mt-0.5', n.isRead ? 'text-muted-foreground/60' : 'text-muted-foreground')}>
+                  <p className={cn('text-xs mt-0.5', n.isRead ? 'text-base-content/60' : 'text-base-content/60')}>
                     {n.message}
                   </p>
                 )}

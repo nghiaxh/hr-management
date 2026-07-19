@@ -79,11 +79,11 @@ export default function ProfilePage() {
   return (
     <div className="max-w-md mx-auto pt-8">
       <div className="flex flex-col items-center mb-8">
-        <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold mb-4">
+        <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-primary-content text-3xl font-bold mb-4">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         <h1 className="text-2xl font-bold">{user?.name || user?.email}</h1>
-        <p className="text-sm text-muted-foreground capitalize">{user?.role}</p>
+        <p className="text-sm text-base-content/60 capitalize">{user?.role}</p>
       </div>
 
       <Card>
@@ -96,15 +96,15 @@ export default function ProfilePage() {
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">{t('user.name')}</span>
+              <span className="text-base-content/60">{t('user.name')}</span>
               <span className="font-medium">{user?.name || '-'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">{t('user.email')}</span>
+              <span className="text-base-content/60">{t('user.email')}</span>
               <span className="font-medium">{user?.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('user.role')}</span>
+              <span className="text-base-content/60">{t('user.role')}</span>
               <span className="font-medium capitalize">{user?.role}</span>
             </div>
           </div>
@@ -130,12 +130,12 @@ export default function ProfilePage() {
             <div>
               <Label>{t('user.name')}</Label>
               <Input {...profileForm.register('name')} />
-              {profileForm.formState.errors.name && <p className="text-xs text-destructive mt-1">{profileForm.formState.errors.name.message}</p>}
+              {profileForm.formState.errors.name && <p className="text-xs text-error mt-1">{profileForm.formState.errors.name.message}</p>}
             </div>
             <div>
               <Label>{t('user.email')}</Label>
               <Input {...profileForm.register('email')} />
-              {profileForm.formState.errors.email && <p className="text-xs text-destructive mt-1">{profileForm.formState.errors.email.message}</p>}
+              {profileForm.formState.errors.email && <p className="text-xs text-error mt-1">{profileForm.formState.errors.email.message}</p>}
             </div>
             <div>
               <Label>{t('user.role')}</Label>
@@ -157,31 +157,31 @@ export default function ProfilePage() {
               <Label>{t('profile.current_password')}</Label>
               <div className="relative">
                 <Input type={showCurrent ? 'text' : 'password'} {...passwordForm.register('currentPassword')} />
-                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showCurrent ? 'Hide password' : 'Show password'}>
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowCurrent(!showCurrent)} tabIndex={-1} aria-label={showCurrent ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
                   {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
-              {passwordForm.formState.errors.currentPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
+              {passwordForm.formState.errors.currentPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
             </div>
             <div>
               <Label>{t('profile.new_password')}</Label>
               <div className="relative">
                 <Input type={showNew ? 'text' : 'password'} {...passwordForm.register('newPassword')} />
-                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showNew ? 'Hide password' : 'Show password'}>
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowNew(!showNew)} tabIndex={-1} aria-label={showNew ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
                   {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
-              {passwordForm.formState.errors.newPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
+              {passwordForm.formState.errors.newPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
             </div>
             <div>
               <Label>{t('profile.confirm_password')}</Label>
               <div className="relative">
                 <Input type={showConfirm ? 'text' : 'password'} {...passwordForm.register('confirmPassword')} />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer" tabIndex={-1} aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowConfirm(!showConfirm)} tabIndex={-1} aria-label={showConfirm ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
                   {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
-              {passwordForm.formState.errors.confirmPassword && <p className="text-xs text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
+              {passwordForm.formState.errors.confirmPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={passwordLoading}>
               {passwordLoading ? t('user.saving') : t('profile.change_password')}

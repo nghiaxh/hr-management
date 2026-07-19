@@ -59,21 +59,21 @@ export default function OrgChartPage() {
                       <div>
                         <p className="font-semibold text-sm">{dept.name}</p>
                         {dept.managerName && (
-                          <p className="text-xs text-muted-foreground">{dept.managerName}</p>
+                          <p className="text-xs text-base-content/60">{dept.managerName}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                    <div className="flex items-center gap-1.5 text-xs text-base-content/60 pt-1">
                       <Users className="h-3 w-3" />
                       <span>{dept.employeeCount || 0} nhân viên</span>
                     </div>
                   </div>
                   <Link
                     to={`/departments`}
-                    className="p-1.5 rounded-md hover:bg-accent/50 transition-colors"
+                    className="p-1.5 rounded-md hover:bg-base-300/50 transition-colors"
                     aria-label={t('departments.view') || 'Xem'}
                   >
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <ChevronRight className="h-4 w-4 text-base-content/60" />
                   </Link>
                 </div>
               </CardContent>

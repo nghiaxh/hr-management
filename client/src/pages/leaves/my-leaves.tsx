@@ -14,6 +14,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { Select } from '../../components/ui/select';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { SkeletonCard } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
@@ -128,9 +129,9 @@ type LeaveForm = z.infer<typeof leaveSchema>;
             return (
               <Card key={item.label}>
                 <CardContent className="pt-4">
-                  <p className="text-sm text-muted-foreground">{item.label}</p>
-                  <p className="text-2xl font-bold mt-1">{remaining} <span className="text-sm font-normal text-muted-foreground">/ {item.total} {t('leaves.days')}</span></p>
-                  <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                  <p className="text-sm text-base-content/60">{item.label}</p>
+                  <p className="text-2xl font-bold mt-1">{remaining} <span className="text-sm font-normal text-base-content/60">/ {item.total} {t('leaves.days')}</span></p>
+                  <div className="mt-2 h-2 bg-base-300 rounded-full overflow-hidden">
                     <div className="h-full bg-muted-foreground/30 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
                 </CardContent>
@@ -156,22 +157,22 @@ type LeaveForm = z.infer<typeof leaveSchema>;
           <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
             <div>
               <Label>{t('leaves.type')}</Label>
-              <select {...register('type')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <Select {...register('type')}>
                 <option value="annual">{t('leaves.annual')}</option>
                 <option value="sick">{t('leaves.sick')}</option>
                 <option value="personal">{t('leaves.personal')}</option>
-              </select>
-              {errors.type && <p className="text-xs text-destructive mt-1">{errors.type.message}</p>}
+              </Select>
+              {errors.type && <p className="text-xs text-error mt-1">{errors.type.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.start_date')}</Label>
               <Input type="date" {...register('startDate')} />
-              {errors.startDate && <p className="text-xs text-destructive mt-1">{errors.startDate.message}</p>}
+              {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.end_date')}</Label>
               <Input type="date" {...register('endDate')} />
-              {errors.endDate && <p className="text-xs text-destructive mt-1">{errors.endDate.message}</p>}
+              {errors.endDate && <p className="text-xs text-error mt-1">{errors.endDate.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.reason')}</Label>

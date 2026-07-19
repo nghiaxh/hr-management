@@ -66,15 +66,15 @@ export default function PayrollManagementPage() {
     }),
     columnHelper.accessor('basicSalary', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.basic_salary')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('socialInsurance', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.social_insurance')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('pit', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.pit')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('totalDeductions', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.total_deductions')} className="justify-end" />,
@@ -118,29 +118,29 @@ export default function PayrollManagementPage() {
         <Card className="overflow-hidden">
           <div className="h-1 bg-success" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.total_paid')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.total_paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalNet)}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-primary/60" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.status')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.status')}</p>
             <p className="text-xl md:text-2xl font-bold">{records.length}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-warning" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.waiting')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.waiting')}</p>
             <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalDraft)}</p>
-            <p className="text-xs text-muted-foreground">{draftCount} {t('payroll.employees')?.toLowerCase()}</p>
+            <p className="text-xs text-base-content/60">{draftCount} {t('payroll.employees')?.toLowerCase()}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-primary" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.paid')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{paidCount}</p>
           </CardContent>
         </Card>
@@ -172,15 +172,15 @@ export default function PayrollManagementPage() {
             </div>
             <div>
               <Label>{t('payroll.employees')}</Label>
-              <div className="max-h-44 overflow-y-auto rounded-lg border p-2 space-y-1 bg-background/50">
+              <div className="max-h-44 overflow-y-auto rounded-lg border p-2 space-y-1 bg-base-100/50">
                 {employees?.data?.map((emp: any) => (
-                  <label key={emp.id} className="flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer">
+                  <label key={emp.id} className="flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-md hover:bg-base-300/50 transition-colors cursor-pointer">
                     <input type="checkbox" name="employeeIds" value={emp.id} className="rounded" />
                     <span>{emp.firstName} {emp.lastName}</span>
                   </label>
                 ))}
                 {(!employees?.data || employees.data.length === 0) && (
-                  <p className="text-xs text-muted-foreground text-center py-4">{t('payroll.no_employees')}</p>
+                  <p className="text-xs text-base-content/60 text-center py-4">{t('payroll.no_employees')}</p>
                 )}
               </div>
             </div>

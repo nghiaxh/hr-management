@@ -73,7 +73,7 @@ export default function MyAttendancePage() {
       } />
 
       {todayRecord && (
-        <div className="bg-card rounded-lg border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <div className="bg-base-200 rounded-lg border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
           <div>{t('attendance.check_in')}: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString('vi-VN') : '-'}</strong></div>
           <div>{t('attendance.check_out')}: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString('vi-VN') : '-'}</strong></div>
           <div>{t('attendance.status')}: <StatusBadge status={todayRecord.status} /></div>

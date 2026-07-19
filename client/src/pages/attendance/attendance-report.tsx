@@ -74,7 +74,7 @@ export default function AttendanceReportPage() {
                   <div className={`h-1 ${meta.bar}`} />
                   <CardContent>
                     <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
+                    <p className="text-xs text-base-content/60 mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
                     <p className="text-xs font-medium mt-1">{pct.toFixed(0)}%</p>
                   </CardContent>
                 </Card>
@@ -84,7 +84,7 @@ export default function AttendanceReportPage() {
 
           <Card className="overflow-hidden mb-6">
             <CardContent className="p-5">
-              <div className="flex h-2.5 rounded-full overflow-hidden bg-muted/30">
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-base-300/30">
                 {Object.keys(STATUS_META).map((key) => {
                   const count = stats[key] || 0;
                   if (count === 0) return null;
@@ -98,7 +98,7 @@ export default function AttendanceReportPage() {
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-muted-foreground">
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-base-content/60">
                 {Object.keys(STATUS_META).map((key) => {
                   const count = stats[key] || 0;
                   if (count === 0) return null;

@@ -14,10 +14,12 @@ import { DataTableColumnHeader } from '../../components/ui/data-table-column-hea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Label } from '../../components/ui/label';
+import { Select } from '../../components/ui/select';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
 import { useDebounce } from '../../hooks/use-debounce';
+import { TooltipRoot, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 import { Department } from '../../types';
 
 const columnHelper = createColumnHelper<Department>();
@@ -90,8 +92,18 @@ export default function DepartmentsListPage() {
       header: t('departments.actions'),
       cell: ({ row }) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }} aria-label={t('departments.edit')}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }} aria-label={t('departments.delete')}><Trash2 className="h-4 w-4" /></Button>
+          <TooltipRoot>
+            <TooltipTrigger>
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }} aria-label={t('departments.edit')}><Pencil className="h-4 w-4" /></Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('departments.edit')}</TooltipContent>
+          </TooltipRoot>
+          <TooltipRoot>
+            <TooltipTrigger>
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }} aria-label={t('departments.delete')}><Trash2 className="h-4 w-4" /></Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('departments.delete')}</TooltipContent>
+          </TooltipRoot>
         </div>
       ),
     }),
@@ -109,7 +121,7 @@ export default function DepartmentsListPage() {
         getRowId={(row) => row.id}
         toolbar={
           <>
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search className="h-4 w-4 text-base-content/60 shrink-0" />
             <Input placeholder={t('departments.search')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
           </>
         }
@@ -124,10 +136,10 @@ export default function DepartmentsListPage() {
             <div><Label>{t('departments.description')}</Label><Input {...createForm.register('description')} /></div>
             <div>
               <Label>{t('departments.manager')}</Label>
-              <select {...createForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+              <Select {...createForm.register('managerId')}>
                 <option value="">{t('employees.none')}</option>
                 {managers.map((m: any) => <option key={m.id} value={m.id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
-              </select>
+              </Select>
             </div>
             <Button type="submit" className="w-full" disabled={createMutation.isPending}>
               {createMutation.isPending ? t('departments.creating') : t('departments.create')}
@@ -145,10 +157,10 @@ export default function DepartmentsListPage() {
             <div><Label>{t('departments.description')}</Label><Input {...editForm.register('description')} /></div>
             <div>
               <Label>{t('departments.manager')}</Label>
-              <select {...editForm.register('managerId')} className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm">
+              <Select {...editForm.register('managerId')}>
                 <option value="">{t('employees.none')}</option>
                 {managers.map((m: any) => <option key={m.id} value={m.id}>{m.firstName} {m.lastName} ({m.userId?.email})</option>)}
-              </select>
+              </Select>
             </div>
             <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
               {updateMutation.isPending ? t('departments.saving') : t('departments.save')}

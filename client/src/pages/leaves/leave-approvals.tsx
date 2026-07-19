@@ -15,6 +15,7 @@ import { toast } from '../../hooks/use-toast';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Leave } from '../../types';
+import { TooltipRoot, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 
 const columnHelper = createColumnHelper<Leave>();
 
@@ -74,8 +75,18 @@ export default function LeaveApprovalsPage() {
       cell: ({ row }) => (
         <div className="flex gap-1">
           {row.original.status === 'pending' && <>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original.id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original.id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
+            <TooltipRoot>
+              <TooltipTrigger>
+                <Button variant="ghost" size="icon" className="text-base-content/60 hover:text-base-content" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original.id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('leaves.approve')}</TooltipContent>
+            </TooltipRoot>
+            <TooltipRoot>
+              <TooltipTrigger>
+                <Button variant="ghost" size="icon" className="text-base-content/60 hover:text-error" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original.id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('leaves.decline')}</TooltipContent>
+            </TooltipRoot>
           </>}
         </div>
       ),
@@ -112,7 +123,7 @@ export default function LeaveApprovalsPage() {
         title={t('auth.confirm_reject_leave')}
         description={
           <div className="space-y-3 pt-1">
-            <p className="text-sm text-muted-foreground">{t('auth.confirm_reject_leave_desc')}</p>
+            <p className="text-sm text-base-content/60">{t('auth.confirm_reject_leave_desc')}</p>
             <div>
               <Label>{t('leaves.rejection_reason')}</Label>
               <Input value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} placeholder={t('leaves.rejection_reason_placeholder')} />

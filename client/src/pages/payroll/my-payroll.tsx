@@ -29,15 +29,15 @@ export default function MyPayrollPage() {
     }),
     columnHelper.accessor('basicSalary', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.basic_salary')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('socialInsurance', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.social_insurance')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('pit', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.pit')} className="justify-end" />,
-      cell: ({ getValue }) => <div className="text-right text-muted-foreground">-{formatCurrency(getValue())}</div>,
+      cell: ({ getValue }) => <div className="text-right text-base-content/60">-{formatCurrency(getValue())}</div>,
     }),
     columnHelper.accessor('totalDeductions', {
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('payroll.total_deductions')} className="justify-end" />,
@@ -66,28 +66,28 @@ export default function MyPayrollPage() {
         <Card className="overflow-hidden">
           <div className="h-1 bg-success" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.total_paid')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.total_paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalPaid)}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-primary/60" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.status')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.status')}</p>
             <p className="text-xl md:text-2xl font-bold">{records.length}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-primary" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.paid')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.paid')}</p>
             <p className="text-xl md:text-2xl font-bold">{paidCount}</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden">
           <div className="h-1 bg-warning" />
           <CardContent className="space-y-0.5">
-            <p className="text-xs text-muted-foreground font-medium">{t('payroll.waiting')}</p>
+            <p className="text-xs text-base-content/60 font-medium">{t('payroll.waiting')}</p>
             <p className="text-xl md:text-2xl font-bold">{draftCount}</p>
           </CardContent>
         </Card>
