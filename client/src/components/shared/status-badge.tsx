@@ -1,7 +1,7 @@
 import { useTranslation } from '../../context/language-context';
 import { Badge } from '../ui/badge';
 
-const variantMap: Record<string, 'success' | 'warning' | 'destructive' | 'secondary' | 'info' | 'default' | 'outline'> = {
+const variantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'> = {
   approved: 'success',
   paid: 'success',
   present: 'success',

@@ -4,7 +4,6 @@ import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
 import { useState } from 'react';
 import { ConfirmDialog } from '../ui/confirm-dialog';
-import { TooltipRoot, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import { notificationsApi } from '../../api/notifications';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -31,23 +30,23 @@ const menuItems: MenuItem[] = [
   { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
   { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], end: true },
   { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
-
 ];
 
 function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
   const { t } = useTranslation();
-  const link = (
+  return (
     <NavLink
       to={item.path}
       end={item.end}
       onClick={onNav}
+      title={collapsed ? t(item.label) : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center px-2 py-1.5 rounded-md text-sm transition-colors',
+          'flex items-center px-2 py-1.5 rounded-lg text-sm transition-colors',
           collapsed ? 'justify-start pl-2.5' : 'gap-2',
           isActive
             ? 'bg-primary/10 text-primary font-medium'
-            : 'text-foreground/70 hover:text-foreground hover:bg-accent/50'
+            : 'text-base-content/60 hover:text-base-content hover:bg-base-300/50'
         )
       }
     >
@@ -58,15 +57,6 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
         </>
       )}
     </NavLink>
-  );
-
-  if (!collapsed) return link;
-
-  return (
-    <TooltipRoot>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{t(item.label)}</TooltipContent>
-    </TooltipRoot>
   );
 }
 
@@ -83,7 +73,7 @@ function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, chil
   const content = (
     <div
       className={cn(
-        'flex items-center w-full rounded-md transition-colors px-2 py-1.5 text-sm cursor-pointer',
+        'flex items-center w-full rounded-lg transition-colors px-2 py-1.5 text-sm cursor-pointer',
         collapsed ? 'justify-start pl-2.5' : 'gap-2',
         className
       )}
@@ -91,6 +81,7 @@ function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, chil
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter') onClick(); } : undefined}
+      title={collapsed ? t(label) : undefined}
     >
       <Icon className="h-4 w-4 shrink-0" />
       {!collapsed && t(label)}
@@ -98,16 +89,7 @@ function BottomLink({ to, icon: Icon, label, collapsed, onClick, className, chil
     </div>
   );
 
-  if (!collapsed) return to ? <NavLink to={to}>{content}</NavLink> : content;
-
-  return (
-    <TooltipRoot>
-      <TooltipTrigger asChild>
-        {to ? <NavLink to={to}>{content}</NavLink> : <span>{content}</span>}
-      </TooltipTrigger>
-      <TooltipContent side="right">{t(label)}</TooltipContent>
-    </TooltipRoot>
-  );
+  return to ? <NavLink to={to}>{content}</NavLink> : content;
 }
 
 interface SidebarProps {
@@ -142,35 +124,30 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-end px-1">
-        <button onClick={closeMobile} className="p-1 rounded-md hover:bg-accent md:hidden cursor-pointer" aria-label="Close sidebar">
+        <button onClick={closeMobile} className="p-1 rounded-lg hover:bg-base-300 md:hidden cursor-pointer" aria-label="Close sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <TooltipRoot>
-        <TooltipTrigger asChild>
-          <NavLink to="/profile" onClick={closeMobile} className={cn(
-            'flex items-center gap-2 px-2 py-2 rounded-lg text-sm hover:bg-accent/50 transition-all w-full group',
-            collapsed && 'justify-start pl-2.5'
-          )}>
-            <div className="h-7 w-7 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0">
-              {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
-            </div>
-            {!collapsed && (
-              <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
-            )}
-          </NavLink>
-        </TooltipTrigger>
-        {collapsed && <TooltipContent side="right">{user?.name || user?.email}</TooltipContent>}
-      </TooltipRoot>
+      <NavLink to="/profile" onClick={closeMobile} title={collapsed ? (user?.name || user?.email) : undefined} className={cn(
+        'flex items-center gap-2 px-2 py-2 rounded-xl text-sm hover:bg-base-300/50 transition-all w-full group',
+        collapsed && 'justify-start pl-2.5'
+      )}>
+        <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+          {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
+        </div>
+        {!collapsed && (
+          <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
+        )}
+      </NavLink>
 
-      <nav className="flex-1 overflow-y-auto space-y-0.5 scrollbar-thin mt-1 mb-1">
+      <nav className="flex-1 overflow-y-auto space-y-0.5 mt-1 mb-1">
         {visibleItems.map((item) => (
           <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
         ))}
       </nav>
 
-      <div className="space-y-0.5 pt-1 border-t border-border">
+      <div className="space-y-0.5 pt-1 border-t border-base-300">
         <BottomLink
           to="/notifications"
           icon={Bell}
@@ -179,7 +156,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           onClick={closeMobile}
         >
           {(typeof unreadCount === 'number' && unreadCount > 0) && (
-            <span className="ml-auto h-4 min-w-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-1">
+            <span className="ml-auto badge badge-primary badge-xs">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -198,19 +175,19 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           label="nav.logout"
           collapsed={collapsed}
           onClick={() => setLogoutOpen(true)}
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className="text-base-content/60 hover:text-error hover:bg-error/10"
         />
       </div>
 
       <button
         onClick={toggleCollapsed}
         className={cn(
-          'rounded-md transition-colors cursor-pointer hover:bg-accent/50 mt-1 flex items-center justify-center w-full',
+          'rounded-lg transition-colors cursor-pointer hover:bg-base-300/50 mt-1 flex items-center justify-center w-full',
           collapsed ? 'p-2' : 'px-2 py-1.5'
         )}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <ChevronLeft className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', collapsed && 'rotate-180')} />
+        <ChevronLeft className={cn('h-3.5 w-3.5 text-base-content/40 transition-transform', collapsed && 'rotate-180')} />
       </button>
 
       <ConfirmDialog
@@ -233,7 +210,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       )}
 
       <aside className={cn(
-        'bg-background border-r border-border h-screen py-3 px-2 flex flex-col transition-all duration-300 ease-in-out',
+        'bg-base-100 border-r border-base-300 h-screen py-3 px-2 flex flex-col transition-all duration-300 ease-in-out',
         'md:sticky md:top-0 md:translate-x-0 md:z-auto fixed z-40 top-0 left-0',
         collapsed ? 'w-14' : 'w-56',
         mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',

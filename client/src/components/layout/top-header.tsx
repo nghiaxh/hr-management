@@ -30,7 +30,7 @@ function getBreadcrumbs(pathname: string, t: (key: string) => string) {
     if (mapped) {
       result.push({ label: t(mapped), href: i < segments.length - 1 ? accumulated : undefined });
     } else if (i === segments.length - 1) {
-      result.push({ label: t('employees.detail') || 'Chi tiết' });
+      result.push({ label: t('employees.detail') || 'Detail' });
     }
   }
   return result;
@@ -49,23 +49,23 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
   const breadcrumbs = getBreadcrumbs(location.pathname, t);
 
   return (
-    <header className="h-12 border-b border-border bg-background flex items-center gap-3 px-3 md:px-6 shrink-0">
+    <header className="h-12 border-b border-base-300 bg-base-100 flex items-center gap-3 px-3 md:px-6 shrink-0">
       <button
         onClick={onMenuToggle}
-        className="md:hidden p-2 -ml-1.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+        className="md:hidden p-2 -ml-1.5 rounded-lg hover:bg-base-300/50 transition-colors cursor-pointer"
         aria-label="Open menu"
       >
         <Menu className="h-4 w-4" />
       </button>
 
-      <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 text-sm text-muted-foreground flex-1 min-w-0">
+      <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 text-sm text-base-content/60 flex-1 min-w-0">
         {breadcrumbs.map((item, i) => (
           <span key={i} className="flex items-center gap-1 min-w-0">
             <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             {item.href ? (
-              <Link to={item.href} className="hover:text-foreground transition-colors truncate">{item.label}</Link>
+              <Link to={item.href} className="hover:text-base-content transition-colors truncate">{item.label}</Link>
             ) : (
-              <span className="text-foreground font-medium truncate">{item.label}</span>
+              <span className="text-base-content font-medium truncate">{item.label}</span>
             )}
           </span>
         ))}
