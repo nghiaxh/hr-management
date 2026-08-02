@@ -10,12 +10,25 @@ Two independent packages: `server/` (Spring Boot + MySQL) and `client/` (React +
 
 ## Quick Start (Development)
 
+### Docker (recommended)
+
+```powershell
+Copy-Item .env.example .env          # root .env drives everything; set JWT_SECRET
+docker compose up -d --build         # builds + starts mysql, server, client
+```
+
+- UI `http://localhost:5173` · API `http://localhost:3001`
+- Re-run `docker compose up -d --build` after code changes
+- First run auto-seeds sample data; later runs skip seeding if DB already has data
+- Reseed/reset: `docker compose run --rm -e SPRING_PROFILES_ACTIVE=seed server`
+
+### Manual dev
+
 ```bash
 # Server (port 3001)
 cd server
-# edit server/src/main/resources/application.properties for DB/JWT settings
 mvn spring-boot:run -D"spring-boot.run.profiles=seed"   # recreate all seed data
-mvn spring-boot:run                                      # normal startup
+mvn spring-boot:run                                      # normal startup (auto-seeds if DB empty)
 
 # Client (port 5173)
 cd client
@@ -24,7 +37,7 @@ npm run dev            # Vite
 npm run build          # tsc && vite build
 ```
 
-Seed is required before first dev run. Drops all data and recreates — safe to re-run.
+Config lives in a single root `.env` (copy from `.env.example`). The server imports it via `spring.config.import=optional:file:../.env[.properties]`; Vite reads it via `envDir: '..'`. `JWT_SECRET` is required — the app will not start without it.
 
 ---
 
@@ -33,7 +46,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 ```
 ┌─────────────┐    HTTP/REST    ┌─────────────┐   JPA/Hibernate ┌──────────┐
 │   Client     │◄──────────────►│   Server     │◄──────────────►│  MySQL 8 │
-│  (React 18)  │   JWT Bearer   │(Spring Boot) │                │Relational│
+│  (React 19)  │   JWT Bearer   │(Spring Boot) │                │Relational│
 │  Port 5173   │                │  Port 3001   │                │  Local   │
 └─────────────┘                └─────────────┘              └──────────┘
        │                              │
@@ -43,8 +56,8 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/src/main/resources/application.properties`. Uses Maven + Java 25.
-- **Client** (`client/src/main.tsx`): Vite dev server, DaisyUI + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
+- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/src/main/resources/application.properties` — values are `${VAR:default}` placeholders resolved from the root `.env` or env vars. Uses Maven + Java 25.
+- **Client** (`client/src/main.tsx`): Vite dev server, HeroUI v3 (CSS-only) + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
 
@@ -56,7 +69,7 @@ Seed is required before first dev run. Drops all data and recreates — safe to 
 6. Role-based access is enforced at the **service layer** — `admin` sees all, `manager` scoped to their department, `employee` sees own data only
 
 Auth details:
-- JWT (jjwt 0.12.6), `JwtAuthenticationFilter` + Spring Security. Token expiry set via `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup.
+- JWT (jjwt 0.12.6), `JwtAuthenticationFilter` + Spring Security. Token expiry set via `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup — set via `JWT_SECRET` in the root `.env`.
 - Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
 
 ---
@@ -180,6 +193,7 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 | Notifications    | `server/src/.../notification/` | In-app notifications (API-based, Socket.IO planned) |
 | Recruitment      | `server/src/.../recruitment/` | *Planned — empty stubs* |
 | PerformanceReview| `server/src/.../performance review/` | *Planned — empty stubs* |
+| Seed            | `server/src/.../seed/` | `DataSeeder` (reset when `seed` profile active) + `FirstRunSeeder` (auto-seeds when DB empty) |
 
 ---
 
@@ -289,7 +303,7 @@ Client shows toast + increments badge count
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
 | **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |
 | **Socket.IO** for notifications *(planned)* | Real-time push without polling; auto-reconnect built-in (API polling for now) |
-| **DaisyUI** | Tailwind CSS plugin, utility-first components, built-in theme support (light/dark) |
+| **HeroUI v3** | CSS-only (no Provider), design tokens in `index.css`, Tailwind 4 integration |
 | **TanStack Query** | Automatic caching, refetching, optimistic updates for API data |
 
 ---
@@ -297,11 +311,13 @@ Client shows toast + increments badge count
 ## Key Facts
 
 - **Server tests**: 85 unit tests (16 test classes) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
-- **Client tests**: Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
+- **Client tests**: 61 tests (17 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
+- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components (Button, Badge, Select, etc.) live in `client/src/components/ui/`. Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use.
 - **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs server tests (MySQL 8 container), client tests, and client build on push.
 - Both packages use ES modules (`"type": "module"`). Client uses Vite/TypeScript.
 - All API routes are protected by `JwtAuthenticationFilter` + Spring Security (except `/api/auth/login` and `/api/auth/register`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
+- All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` + `server/Dockerfile` + `client/Dockerfile` (nginx).
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
 - **Security**: JWT (jjwt 0.12.6) via `JwtAuthenticationFilter`, BCrypt password encoding, CSRF disabled (stateless API), CORS configured via `cors.origin` property. Passwords require min 8 chars with uppercase+lowercase+digit.
 

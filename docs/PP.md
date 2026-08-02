@@ -254,7 +254,7 @@ gantt
 | Task                     | SP | Assignee | Mô tả                          |
 |--------------------------|:--:|:--------:|--------------------------------|
 | Thiết lập dự án FE + BE  | 3  | FS       | React + Spring Boot + MySQL setup |
-| UI Design System         | 5  | Des      | DaisyUI components + Tailwind    |
+| UI Design System         | 5  | Des      | HeroUI v3 components + Tailwind    |
 | User schema + Auth API   | 5  | BE 3     | Register, Login, JWT           |
 | Login page               | 3  | FE 1     | Form + validation              |
 | Employee CRUD API        | 8  | BE 3     | CRUD + search + pagination     |

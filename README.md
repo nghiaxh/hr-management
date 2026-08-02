@@ -1,6 +1,6 @@
 # Hệ thống Quản lý Nhân sự
 
-Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, MySQL 8, React và DaisyUI.
+Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC được xây dựng bằng Spring Boot, MySQL 8, React và HeroUI.
 
 ## Yêu cầu
 
@@ -11,13 +11,31 @@ Hệ thống quản lý nhân sự (HR Management) với phân quyền RBAC đư
 
 ## Bắt đầu nhanh
 
-### 1. Tạo database (nếu không dùng Docker)
+### Cách 1 — Docker (khuyên dùng)
+
+Chạy toàn bộ hệ thống (MySQL + server + client) chỉ với một lệnh:
+
+```powershell
+Copy-Item .env.example .env      # Tạo file .env từ mẫu (đã bị gitignore)
+# Sửa .env: đặt JWT_SECRET bằng giá trị mạnh (ví dụ: openssl rand -hex 32)
+docker compose up -d --build     # Lần đầu: tạo image + khởi động + tự seed dữ liệu mẫu
+```
+
+- UI: http://localhost:5173
+- API: http://localhost:3001
+- Khi sửa code: chạy lại `docker compose up -d --build` để rebuild và cập nhật.
+- Lần chạy sau: dữ liệu MySQL được giữ (volume), seed tự bỏ qua nếu DB đã có dữ liệu.
+- Chi tiết xem mục [Docker](#docker).
+
+### Cách 2 — Phát triển thủ công
+
+#### 1. Tạo database (nếu không dùng Docker)
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hr_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
-### 2. Server (Backend)
+#### 2. Server (Backend)
 
 ```bash
 cd server
@@ -25,7 +43,7 @@ mvn spring-boot:run -D "spring-boot.run.profiles=seed"   # Tạo dữ liệu m�
 mvn spring-boot:run                                     # API tại http://localhost:3001
 ```
 
-### 3. Client (Frontend)
+#### 3. Client (Frontend)
 
 ```bash
 cd client
@@ -33,27 +51,57 @@ npm install
 npm run dev     # UI tại http://localhost:5173
 ```
 
+> Lưu ý: khi phát triển thủ công, server đọc cấu hình từ file `.env` ở thư mục gốc, client (Vite) cũng đọc từ `.env` gốc (qua `envDir`).
+
 ## Biến môi trường
 
-### Server (`server/src/main/resources/application.properties`)
+Mọi cấu hình đều tập trung trong một file `.env` ở **thư mục gốc** dự án. Copy mẫu `/.env.example` thành `/.env` rồi điền giá trị. Docker Compose đọc file này trực tiếp; Spring Boot import qua `spring.config.import`; Vite đọc qua `envDir`.
 
-| Biến             | Mặc định                                             | Mô tả                |
-|------------------|------------------------------------------------------|----------------------|
-| `spring.datasource.url` | `jdbc:mysql://localhost:3306/hr_management?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci` | Chuỗi kết nối MySQL |
-| `spring.datasource.username` | `root`                                      | Tên đăng nhập DB     |
-| `spring.datasource.password` | `root`                                      | Mật khẩu DB          |
-| `jwt.secret`     | *(bắt buộc)*                                   | Khóa bí mật JWT (tối thiểu 32 ký tự) |
-| `jwt.expiration` | `86400000`                                    | Thời hạn token (ms)        |
-| `server.port`    | `3001`                                         | Cổng API                   |
-| `cors.origin`    | `http://localhost:5173`                        | Nguồn CORS được phép       |
+| Biến | Mặc định | Mô tả |
+|------|----------|-------|
+| `MYSQL_DATABASE` | `hr_management` | Tên database MySQL |
+| `MYSQL_ROOT_PASSWORD` | `root` | Mật khẩu root MySQL |
+| `DB_URL` | `jdbc:mysql://localhost:3306/hr_management?...` | Chuỗi kết nối MySQL (dev thủ công) |
+| `DB_USERNAME` | `root` | Tên đăng nhập DB |
+| `DB_PASSWORD` | `root` | Mật khẩu DB |
+| `SERVER_PORT` | `3001` | Cổng API (server + host mapping của Compose) |
+| `JWT_SECRET` | *(bắt buộc)* | Khóa bí mật JWT (tối thiểu 32 ký tự) |
+| `JWT_EXPIRATION` | `86400000` | Thời hạn token (ms) |
+| `CORS_ORIGIN` | `http://localhost:5173` | Nguồn CORS được phép |
+| `VITE_API_URL` | `http://localhost:3001/api` | URL gốc API (Vite, được nạp khi build client) |
 
-> **Bảo mật**: `jwt.secret` là bắt buộc. Ứng dụng sẽ không khởi động nếu không được đặt. Sử dụng giá trị ngẫu nhiên mạnh (ví dụ: `openssl rand -hex 32`).
+> **Bảo mật**: `JWT_SECRET` là bắt buộc — server sẽ không khởi động nếu thiếu. Sử dụng giá trị ngẫu nhiên mạnh (ví dụ: `openssl rand -hex 32`). Không đặt trực tiếp giá trị bí mật trong `application.properties`. Trong Docker, Compose trả về lỗi nếu `JWT_SECRET` chưa được khai báo trong `.env`.
 
-### Client (`client/.env`)
+## Docker
 
-| Biến            | Mặc định                            | Mô tả              |
-|-----------------|-------------------------------------|---------------------|
-| `VITE_API_URL`  | `http://localhost:3001/api`          | URL gốc API        |
+Có 3 service trong `docker-compose.yml`:
+
+| Service  | Image/Base      | Cổng    | Vai trò                        |
+|----------|-----------------|---------|--------------------------------|
+| `database` | `mysql:8`       | `3306`  | Database (volume `database_data`) |
+| `server` | Maven build → `eclipse-temurin:25-jre` | `3001` | Spring Boot API        |
+| `client` | Node build → `nginx:alpine` | `5173` | React SPA (nginx phục vụ `dist/`) |
+
+### Lệnh thường dùng
+
+| Mục đích | Lệnh |
+|----------|------|
+| Khởi động lần đầu / cập nhật sau khi sửa code | `docker compose up -d --build` |
+| Xem log | `docker compose logs -f` |
+| Dừng (giữ dữ liệu MySQL) | `docker compose down` |
+| Xóa hoàn toàn kể cả database | `docker compose down -v` |
+| Seed lại dữ liệu mẫu (xóa + tạo mới) | `docker compose run --rm -e SPRING_PROFILES_ACTIVE=seed server` |
+
+### Hoạt động seed tự động
+
+- Lần đầu `up` với database rỗng: server tự seed dữ liệu mẫu (`FirstRunSeeder`).
+- Các lần `up` sau: nếu DB đã có dữ liệu, seed được **bỏ qua** — dữ liệu không bị xóa.
+- Muốn reset dữ liệu về mặc định: dùng lệnh seed lại ở trên hoặc `docker compose down -v`.
+
+### Lưu ý
+
+- `VITE_API_URL` được nạp vào lúc **build** image client — đổi biến này cần chạy lại `docker compose up -d --build`.
+- Trong Docker, server kết nối MySQL qua hostname `database` (mạng nội bộ Compose), không phải `localhost`.
 
 ## Tài khoản dùng thử
 
@@ -93,7 +141,7 @@ hr-management/
     ├── src/
     │   ├── api/               # Axios client + modules
     │   ├── components/
-    │   │   ├── ui/            # DaisyUI wrapper components
+    │   │   ├── ui/            # HeroUI wrapper components
     │   │   ├── layout/        # Sidebar, AppLayout
     │   │   └── shared/        # StatusBadge, PageHeader
     │   ├── context/           # AuthContext, LanguageContext
@@ -106,7 +154,7 @@ hr-management/
 ### Quy trình phát triển
 
 1. **Khởi động MySQL** — chạy Docker (`docker compose up -d` tại thư mục gốc) hoặc local (cổng mặc định 3306), tạo database `hr_management`
-2. **Cấu hình `server/.env`** — tạo file từ mẫu trong `application.properties`, đặt `jwt.secret`
+2. **Cấu hình `.env`** — copy `/.env.example` thành `/.env` ở thư mục gốc, đặt `JWT_SECRET` (server đọc qua `spring.config.import`, client qua `envDir`)
 3. **Chạy seed** (`mvn spring-boot:run -D spring-boot.run.profiles=seed` trong `server/`) — tạo dữ liệu mẫu (1 admin, 6 quản lý, ~50 nhân viên). An toàn khi chạy lại (xóa và tạo mới)
 4. **Khởi động server** (`mvn spring-boot:run` trong `server/`) — Spring Boot API tại port 3001
 5. **Khởi động client** (`npm run dev` trong `client/`) — Vite dev server với HMR
@@ -120,7 +168,19 @@ hr-management/
 
 ### Dữ liệu mẫu
 
-Chạy seed qua Maven profile `seed` — `DataSeeder.java` tạo:
+Có 2 cơ chế seed:
+
+1. **Tự động khi khởi động lần đầu** — `FirstRunSeeder.java` chạy mỗi lần start server, chỉ seed nếu bảng `users` đang rỗng (bỏ qua nếu DB đã có dữ liệu). Đây là cơ chế mặc định khi `docker compose up` lần đầu.
+2. **Seed thủ công (reset)** — Maven profile `seed` — `DataSeeder.java` xóa toàn bộ rồi tạo lại:
+
+```bash
+cd server
+mvn spring-boot:run -D "spring-boot.run.profiles=seed"
+# hoặc với Docker:
+docker compose run --rm -e SPRING_PROFILES_ACTIVE=seed server
+```
+
+Dữ liệu mẫu gồm:
 
 - **1 admin** — `admin@hr.com` / `admin123`
 - **6 quản lý** — mỗi phòng ban một người (Engineering, HR, Sales, Marketing, Finance, BA)
@@ -314,7 +374,7 @@ Chạy bất kỳ lúc nào để đặt lại cơ sở dữ liệu về trạng
 | Package | Framework                         | Số lượng | Chạy              |
 |---------|-----------------------------------|----------|-------------------|
 | Server  | JUnit 5 + Mockito + `@ActiveProfiles("test")` | 85 tests (16 class) | `mvn test`       |
-| Client  | Vitest + Testing Library + MSW    | —        | `npm test`        |
+| Client  | Vitest + Testing Library + MSW    | 61 tests (17 files) | `npm test`        |
 
 CI/CD tự động qua GitHub Actions (`.github/workflows/test.yml`) — chạy server tests (MySQL 8 container), client tests, và client build khi push.
 
@@ -322,11 +382,11 @@ CI/CD tự động qua GitHub Actions (`.github/workflows/test.yml`) — chạy 
 
 | Lớp            | Công nghệ                                |
 |----------------|-------------------------------------------|
-| Frontend       | React 18, Vite, TypeScript                |
-| UI             | DaisyUI, Tailwind CSS |
+| Frontend       | React 19, Vite, TypeScript                |
+| UI             | HeroUI v3, Tailwind CSS |
 | Backend        | Spring Boot 4.1 (Java 25)                 |
 | Database       | MySQL 8+, JPA/Hibernate                   |
 | Auth           | JWT (jjwt 0.12.6), bcrypt, Spring Security|
 | Client State   | TanStack React Query                      |
-| Icons          | lucide-react                              |
+| Icons          | @phosphor-icons/react                     |
 | Dates          | date-fns                                  |
