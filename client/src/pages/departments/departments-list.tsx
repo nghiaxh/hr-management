@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Label } from '../../components/ui/label';
 import { Select } from '../../components/ui/select';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import { useTranslation } from '../../context/language-context';
 import { toast } from '../../hooks/use-toast';
 import { useDebounce } from '../../hooks/use-debounce';
@@ -94,13 +94,13 @@ export default function DepartmentsListPage() {
         <div className="flex gap-1">
           <TooltipRoot>
             <TooltipTrigger>
-              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }} aria-label={t('departments.edit')}><Pencil className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingDept(row.original); setEditOpen(true); }} aria-label={t('departments.edit')}><PencilSimple className="h-4 w-4" /></Button>
             </TooltipTrigger>
             <TooltipContent>{t('departments.edit')}</TooltipContent>
           </TooltipRoot>
           <TooltipRoot>
             <TooltipTrigger>
-              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }} aria-label={t('departments.delete')}><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="hover:text-danger" onClick={(e) => { e.stopPropagation(); setDeletingDept(row.original); setDeleteOpen(true); }} aria-label={t('departments.delete')}><Trash className="h-4 w-4" /></Button>
             </TooltipTrigger>
             <TooltipContent>{t('departments.delete')}</TooltipContent>
           </TooltipRoot>
@@ -121,7 +121,7 @@ export default function DepartmentsListPage() {
         getRowId={(row) => row.id}
         toolbar={
           <>
-            <Search className="h-4 w-4 text-base-content/60 shrink-0" />
+            <MagnifyingGlass className="h-4 w-4 text-muted shrink-0" />
             <Input placeholder={t('departments.search')} value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
           </>
         }

@@ -2,12 +2,12 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto"><table ref={ref} className={cn('table table-sm w-full', className)} {...props} /></div>
+  <div className="relative w-full overflow-auto"><table ref={ref} className={cn('w-full border-collapse text-sm text-foreground', className)} {...props} /></div>
 ));
 Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn('[&_tr]:border-b border-base-300', className)} {...props} />
+  <thead ref={ref} className={cn('bg-surface-secondary/60 [&_tr]:border-b [&_tr]:border-separator', className)} {...props} />
 ));
 TableHeader.displayName = 'TableHeader';
 
@@ -17,12 +17,12 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes
 TableBody.displayName = 'TableBody';
 
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(({ className, ...props }, ref) => (
-  <tr ref={ref} className={cn('border-b border-base-300 transition-colors hover:bg-base-300/30 data-[state=selected]:bg-base-300', className)} {...props} />
+  <tr ref={ref} className={cn('border-b border-separator transition-colors hover:bg-surface-tertiary/50 data-[state=selected]:bg-surface-tertiary', className)} {...props} />
 ));
 TableRow.displayName = 'TableRow';
 
 const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(({ className, ...props }, ref) => (
-  <th ref={ref} className={cn('h-10 md:h-12 px-2 md:px-4 text-left align-middle font-medium text-base-content/60 [&:has([role=checkbox])]:pr-0', className)} {...props} />
+  <th ref={ref} className={cn('h-10 md:h-11 px-2 md:px-4 text-left align-middle text-xs font-medium uppercase tracking-wide text-muted [&:has([role=checkbox])]:pr-0', className)} {...props} />
 ));
 TableHead.displayName = 'TableHead';
 

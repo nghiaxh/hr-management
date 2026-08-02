@@ -1,14 +1,15 @@
 import * as React from 'react';
+import { Input as HeroInput } from '@heroui/react';
 import { cn } from '../../lib/utils';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
   return (
-    <input
-      ref={ref}
+    <HeroInput
+      ref={ref as React.Ref<HTMLInputElement>}
       type={type}
-      className={cn('input input-bordered w-full text-sm', className)}
+      className={cn('w-full', className)}
       {...props}
     />
   );

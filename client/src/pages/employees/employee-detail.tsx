@@ -16,10 +16,10 @@ import { useTranslation } from '../../context/language-context';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
 import {
-  ArrowLeft, Briefcase, FileText, Mail, Phone,
-  CalendarDays, BadgeDollarSign, Building2,
-  UserRound, Pencil
-} from 'lucide-react';
+  CaretLeft, Briefcase, FileText, Envelope, Phone,
+  CalendarBlank, Money, Buildings,
+  User, PencilSimple
+} from '@phosphor-icons/react';
 
 export default function EmployeeDetailPage() {
   const { t } = useTranslation();
@@ -79,16 +79,16 @@ export default function EmployeeDetailPage() {
     },
   });
 
-  if (isLoading) return <div className="text-center py-8">{t('common.loading')}</div>;
-  if (empError || !emp) return <div className="text-center py-8 text-error">{empError ? t('employees.load_failed') : t('employees.not_found')}</div>;
+  if (isLoading) return <div className="text-center py-8 text-muted">{t('common.loading')}</div>;
+  if (empError || !emp) return <div className="text-center py-8 text-danger">{empError ? t('employees.load_failed') : t('employees.not_found')}</div>;
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex items-center gap-3 py-2.5 border-b border-base-300/40 last:border-0">
-      <div className="h-8 w-8 rounded-lg bg-base-300 flex items-center justify-center shrink-0">
-        <Icon className="h-4 w-4 text-base-content/60" />
+    <div className="flex items-center gap-3 py-2.5 border-b border-separator last:border-0">
+      <div className="h-8 w-8 rounded-lg bg-surface-tertiary flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-muted" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-base-content/60">{label}</p>
+        <p className="text-xs text-muted">{label}</p>
         <p className="text-sm font-medium truncate">{value}</p>
       </div>
     </div>
@@ -97,20 +97,20 @@ export default function EmployeeDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <Button variant="ghost" size="sm" onPress={() => navigate('/employees')} className="mb-6">
-        <ArrowLeft className="h-4 w-4 mr-1.5" />
+        <CaretLeft className="h-4 w-4 mr-1.5" />
         {t('employees.title')}
       </Button>
 
       <div className="flex items-center gap-4 mb-6">
-        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xl font-bold shrink-0 shadow-md">
+        <div className="h-14 w-14 rounded-full bg-foreground flex items-center justify-center text-background text-xl font-bold shrink-0">
           {emp.firstName?.[0]}{emp.lastName?.[0]}
         </div>
         <div className="flex-1">
           <h1 className="text-xl font-bold">{emp.firstName} {emp.lastName}</h1>
-          <p className="text-sm text-base-content/60">{emp.position}</p>
+          <p className="text-sm text-muted">{emp.position}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-          <Pencil className="h-3.5 w-3.5 mr-1.5" />
+          <PencilSimple className="h-3.5 w-3.5 mr-1.5" />
           {t('employees.edit')}
         </Button>
       </div>
@@ -119,29 +119,29 @@ export default function EmployeeDetailPage() {
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-base flex items-center gap-2">
-              <UserRound className="h-4 w-4 text-base-content/60" />
+              <User className="h-4 w-4 text-muted" />
               {t('employees.name')}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <InfoRow icon={Building2} label={t('employees.department')} value={emp.departmentId?.name || t('performance_reviews.na')} />
-            <InfoRow icon={BadgeDollarSign} label={t('employees.salary')} value={formatCurrency(emp.salary)} />
-            <InfoRow icon={CalendarDays} label={t('employees.hire_date')} value={formatDate(emp.hireDate)} />
+            <InfoRow icon={Buildings} label={t('employees.department')} value={emp.departmentId?.name || t('performance_reviews.na')} />
+            <InfoRow icon={Money} label={t('employees.salary')} value={formatCurrency(emp.salary)} />
+            <InfoRow icon={CalendarBlank} label={t('employees.hire_date')} value={formatDate(emp.hireDate)} />
             <InfoRow icon={Phone} label={t('employees.phone')} value={emp.phone || t('performance_reviews.na')} />
-            <InfoRow icon={Mail} label={t('user.email')} value={emp.userId?.email || t('performance_reviews.na')} />
+            <InfoRow icon={Envelope} label={t('user.email')} value={emp.userId?.email || t('performance_reviews.na')} />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-base-content/60" />
+              <Briefcase className="h-4 w-4 text-muted" />
               {t('employees.contract')}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             <InfoRow icon={FileText} label={t('employees.contract_type')} value={t(`employees.contract_${emp.contractType}`) || emp.contractType || t('performance_reviews.na')} />
-            <InfoRow icon={CalendarDays} label={t('employees.contract_expiry')} value={emp.contractExpiry ? formatDate(emp.contractExpiry) : t('performance_reviews.na')} />
+            <InfoRow icon={CalendarBlank} label={t('employees.contract_expiry')} value={emp.contractExpiry ? formatDate(emp.contractExpiry) : t('performance_reviews.na')} />
           </CardContent>
         </Card>
       </div>
@@ -155,34 +155,34 @@ export default function EmployeeDetailPage() {
               <div>
                 <Label>{t('employees.first_name')}</Label>
                 <Input {...editForm.register('firstName')} />
-                {editForm.formState.errors.firstName && <p className="text-xs text-error mt-1">{editForm.formState.errors.firstName.message}</p>}
+                {editForm.formState.errors.firstName && <p className="text-xs text-danger mt-1">{editForm.formState.errors.firstName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.last_name')}</Label>
                 <Input {...editForm.register('lastName')} />
-                {editForm.formState.errors.lastName && <p className="text-xs text-error mt-1">{editForm.formState.errors.lastName.message}</p>}
+                {editForm.formState.errors.lastName && <p className="text-xs text-danger mt-1">{editForm.formState.errors.lastName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.position')}</Label>
                 <Input {...editForm.register('position')} />
-                {editForm.formState.errors.position && <p className="text-xs text-error mt-1">{editForm.formState.errors.position.message}</p>}
+                {editForm.formState.errors.position && <p className="text-xs text-danger mt-1">{editForm.formState.errors.position.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.salary')}</Label>
                 <Input type="number" {...editForm.register('salary')} />
-                {editForm.formState.errors.salary && <p className="text-xs text-error mt-1">{editForm.formState.errors.salary.message}</p>}
+                {editForm.formState.errors.salary && <p className="text-xs text-danger mt-1">{editForm.formState.errors.salary.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.department')}</Label>
                 <Select {...editForm.register('departmentId')}>
                   {departments?.data?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </Select>
-                {editForm.formState.errors.departmentId && <p className="text-xs text-error mt-1">{editForm.formState.errors.departmentId.message}</p>}
+                {editForm.formState.errors.departmentId && <p className="text-xs text-danger mt-1">{editForm.formState.errors.departmentId.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.hire_date')}</Label>
                 <Input type="date" {...editForm.register('hireDate')} />
-                {editForm.formState.errors.hireDate && <p className="text-xs text-error mt-1">{editForm.formState.errors.hireDate.message}</p>}
+                {editForm.formState.errors.hireDate && <p className="text-xs text-danger mt-1">{editForm.formState.errors.hireDate.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.phone')}</Label>

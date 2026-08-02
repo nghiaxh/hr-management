@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { useTranslation } from '../context/language-context';
 import { departmentsApi } from '../api/departments';
 import { SkeletonCard } from '../components/shared/skeleton';
-import { Building2, ChevronRight, Users } from 'lucide-react';
+import { Buildings, CaretRight, Users } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
@@ -34,7 +34,7 @@ export default function OrgChartPage() {
     return (
       <div className="space-y-6">
         <PageHeader title={t('org_chart.title')} description={t('org_chart.description')} />
-        <EmptyState icon={Building2} title={t('departments.no_results')} description={t('departments.no_results_desc')} />
+        <EmptyState icon={Buildings} title={t('departments.no_results')} description={t('departments.no_results_desc')} />
       </div>
     );
   }
@@ -44,36 +44,36 @@ export default function OrgChartPage() {
       <PageHeader title={t('org_chart.title')} description={t('org_chart.description')} />
 
       <div className="relative">
-        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border hidden md:block" />
+        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-separator hidden md:block" />
 
         {deptList.map((dept: any, idx: number) => (
           <div key={dept.id} className={cn('flex', idx % 2 === 0 ? 'md:justify-start' : 'md:justify-end')}>
-            <Card className="relative w-full md:w-[45%] hover:shadow-md transition-shadow">
+            <Card className="relative w-full md:w-[45%] hover:border-foreground/25 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-primary" />
+                      <div className="h-8 w-8 rounded-lg bg-foreground/[0.06] flex items-center justify-center">
+                        <Buildings className="h-4 w-4 text-foreground" />
                       </div>
                       <div>
                         <p className="font-semibold text-sm">{dept.name}</p>
                         {dept.managerName && (
-                          <p className="text-xs text-base-content/60">{dept.managerName}</p>
+                          <p className="text-xs text-muted">{dept.managerName}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-base-content/60 pt-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted pt-1">
                       <Users className="h-3 w-3" />
                       <span>{dept.employeeCount || 0} nhân viên</span>
                     </div>
                   </div>
                   <Link
                     to={`/departments`}
-                    className="p-1.5 rounded-md hover:bg-base-300/50 transition-colors"
+                    className="p-1.5 rounded-md hover:bg-surface-secondary transition-colors"
                     aria-label={t('departments.view') || 'Xem'}
                   >
-                    <ChevronRight className="h-4 w-4 text-base-content/60" />
+                    <CaretRight className="h-4 w-4 text-muted" />
                   </Link>
                 </div>
               </CardContent>
@@ -84,5 +84,3 @@ export default function OrgChartPage() {
     </div>
   );
 }
-
-

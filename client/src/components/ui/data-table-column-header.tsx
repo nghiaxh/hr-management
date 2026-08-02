@@ -1,6 +1,6 @@
 import { Column } from '@tanstack/react-table';
 import { cn } from '../../lib/utils';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, CaretUpDown } from '@phosphor-icons/react';
 
 interface DataTableColumnHeaderProps<TData, TValue> {
   column: Column<TData, TValue>;
@@ -14,16 +14,16 @@ export function DataTableColumnHeader<TData, TValue>({
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <span className={cn('text-sm font-medium', className)}>{title}</span>;
+    return <span className={cn('text-xs font-medium uppercase tracking-wide', className)}>{title}</span>;
   }
 
   const sorted = column.getIsSorted();
-  const Icon = sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ArrowUpDown;
+  const Icon = sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : CaretUpDown;
 
   return (
     <button
       onClick={() => column.toggleSorting(sorted === 'asc')}
-      className={cn('flex w-full items-center gap-1 text-sm font-medium text-base-content/60 hover:text-base-content transition-colors', className)}
+      className={cn('flex w-full items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted hover:text-foreground transition-colors', className)}
     >
       {title}
       <Icon className="h-3.5 w-3.5" />

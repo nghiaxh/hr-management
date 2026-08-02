@@ -21,7 +21,7 @@ import { SkeletonList } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useToast } from '../../hooks/use-toast';
 import { useDebounce } from '../../hooks/use-debounce';
-import { Plus, Search, Trash2, Download, Loader2 } from 'lucide-react';
+import { Plus, MagnifyingGlass, Trash, Download, CircleNotch } from '@phosphor-icons/react';
 import { Employee } from '../../types';
 import { TooltipRoot, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 
@@ -122,7 +122,7 @@ export default function EmployeesListPage() {
       header: ({ table }) => (
         <input
           type="checkbox"
-          className="h-4 w-4 accent-primary"
+          className="h-4 w-4 accent-foreground"
           checked={table.getIsAllPageRowsSelected()}
           ref={(el) => { if (el) el.indeterminate = table.getIsSomePageRowsSelected(); }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
@@ -132,7 +132,7 @@ export default function EmployeesListPage() {
       cell: ({ row }) => (
         <input
           type="checkbox"
-          className="h-4 w-4 accent-primary"
+          className="h-4 w-4 accent-foreground"
           checked={row.getIsSelected()}
           disabled={!row.getCanSelect()}
           onChange={row.getToggleSelectedHandler()}
@@ -144,7 +144,7 @@ export default function EmployeesListPage() {
       id: 'name',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('employees.name')} />,
       cell: ({ row, getValue }) => (
-        <Link to={`/employees/${row.original.id}`} className="text-primary hover:underline">
+        <Link to={`/employees/${row.original.id}`} className="text-link hover:underline">
           {getValue()}
         </Link>
       ),
@@ -166,8 +166,8 @@ export default function EmployeesListPage() {
       cell: ({ row }) => (
         <TooltipRoot>
           <TooltipTrigger>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-base-content/60 hover:text-error" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }} aria-label={t('employees.delete')}>
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted hover:text-danger" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row.original); }} aria-label={t('employees.delete')}>
+              <Trash className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('employees.delete')}</TooltipContent>
@@ -195,20 +195,20 @@ export default function EmployeesListPage() {
         totalLabel={`${meta?.total ?? 0} ${t('employees.total')}`}
         toolbar={
           <>
-            <Search className="h-4 w-4 text-base-content/60 shrink-0" />
+            <MagnifyingGlass className="h-4 w-4 text-muted shrink-0" />
             <Input placeholder={t('employees.search')} value={search} onChange={e => { setSearch(e.target.value); setPagination((prev) => ({ ...prev, pageIndex: 0 })); }} className="w-full md:max-w-sm" />
             <div className="ml-auto flex items-center gap-2">
               {selectedIds.length > 0 && (
                 <>
-                  <span className="text-sm text-base-content/60">{selectedIds.length} {t('employees.selected')}</span>
+                  <span className="text-sm text-muted">{selectedIds.length} {t('employees.selected')}</span>
                   <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    <Trash className="h-3.5 w-3.5 mr-1.5" />
                     {t('employees.delete_bulk')}
                   </Button>
                 </>
               )}
               <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-                {exporting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
+                {exporting ? <CircleNotch className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
                 {t('employees.export_csv')}
               </Button>
             </div>
@@ -225,22 +225,22 @@ export default function EmployeesListPage() {
               <div>
                 <Label>{t('employees.first_name')}</Label>
                 <Input {...createForm.register('firstName')} />
-                {createForm.formState.errors.firstName && <p className="text-xs text-error mt-1">{createForm.formState.errors.firstName.message}</p>}
+                {createForm.formState.errors.firstName && <p className="text-xs text-danger mt-1">{createForm.formState.errors.firstName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.last_name')}</Label>
                 <Input {...createForm.register('lastName')} />
-                {createForm.formState.errors.lastName && <p className="text-xs text-error mt-1">{createForm.formState.errors.lastName.message}</p>}
+                {createForm.formState.errors.lastName && <p className="text-xs text-danger mt-1">{createForm.formState.errors.lastName.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.position')}</Label>
                 <Input {...createForm.register('position')} />
-                {createForm.formState.errors.position && <p className="text-xs text-error mt-1">{createForm.formState.errors.position.message}</p>}
+                {createForm.formState.errors.position && <p className="text-xs text-danger mt-1">{createForm.formState.errors.position.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.salary')}</Label>
                 <Input type="number" {...createForm.register('salary')} />
-                {createForm.formState.errors.salary && <p className="text-xs text-error mt-1">{createForm.formState.errors.salary.message}</p>}
+                {createForm.formState.errors.salary && <p className="text-xs text-danger mt-1">{createForm.formState.errors.salary.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.department')}</Label>
@@ -248,12 +248,12 @@ export default function EmployeesListPage() {
                   <option value="">{t('employees.select')}</option>
                   {departments?.data?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </Select>
-                {createForm.formState.errors.departmentId && <p className="text-xs text-error mt-1">{createForm.formState.errors.departmentId.message}</p>}
+                {createForm.formState.errors.departmentId && <p className="text-xs text-danger mt-1">{createForm.formState.errors.departmentId.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.hire_date')}</Label>
                 <Input type="date" {...createForm.register('hireDate')} />
-                {createForm.formState.errors.hireDate && <p className="text-xs text-error mt-1">{createForm.formState.errors.hireDate.message}</p>}
+                {createForm.formState.errors.hireDate && <p className="text-xs text-danger mt-1">{createForm.formState.errors.hireDate.message}</p>}
               </div>
               <div>
                 <Label>{t('employees.phone')}</Label>
@@ -275,7 +275,7 @@ export default function EmployeesListPage() {
               <div>
                 <Label>{t('employees.user_id')}</Label>
                 <Input {...createForm.register('userId')} placeholder={t('employees.user_id_placeholder')} />
-                {createForm.formState.errors.userId && <p className="text-xs text-error mt-1">{createForm.formState.errors.userId.message}</p>}
+                {createForm.formState.errors.userId && <p className="text-xs text-danger mt-1">{createForm.formState.errors.userId.message}</p>}
               </div>
             </div>
             <Button type="submit" className="w-full mt-4" disabled={createMutation.isPending}>

@@ -1,28 +1,35 @@
 import * as React from 'react';
+import { Chip } from '@heroui/react';
 import { cn } from '../../lib/utils';
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info';
 
-const variantToClass: Record<BadgeVariant, string> = {
-  default: 'badge badge-primary',
-  secondary: 'badge badge-secondary',
-  destructive: 'badge badge-error',
-  outline: 'badge badge-outline',
-  success: 'badge badge-success',
-  warning: 'badge badge-warning',
-  info: 'badge badge-info',
-};
+const variantToChip = {
+  default: { color: 'accent', variant: 'soft' },
+  secondary: { color: 'default', variant: 'secondary' },
+  destructive: { color: 'danger', variant: 'soft' },
+  outline: { color: 'default', variant: 'tertiary' },
+  success: { color: 'success', variant: 'soft' },
+  warning: { color: 'warning', variant: 'soft' },
+  info: { color: 'accent', variant: 'soft' },
+} as const;
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'color' | 'size'> {
   variant?: BadgeVariant;
 }
 
-function Badge({ className, variant = 'default', ...props }: BadgeProps) {
+function Badge({ className, variant = 'default', children, ...props }: BadgeProps) {
+  const { color, variant: chipVariant } = variantToChip[variant];
   return (
-    <span
-      className={cn(variantToClass[variant], 'badge-sm', className)}
-      {...props}
-    />
+    <Chip
+      size="sm"
+      color={color}
+      variant={chipVariant}
+      className={cn('font-medium', className)}
+      {...(props as any)}
+    >
+      {children}
+    </Chip>
   );
 }
 

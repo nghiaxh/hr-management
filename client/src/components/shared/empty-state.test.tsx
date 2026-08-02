@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { EmptyState } from './empty-state';
-import { Inbox } from 'lucide-react';
+import { Tray } from '@phosphor-icons/react';
 
 describe('EmptyState', () => {
   it('renders icon, title, and description', () => {
     render(
       <EmptyState
-        icon={Inbox}
+        icon={Tray}
         title="No results"
         description="Try adjusting your search."
       />
@@ -19,7 +19,7 @@ describe('EmptyState', () => {
   it('renders action when provided', () => {
     render(
       <EmptyState
-        icon={Inbox}
+        icon={Tray}
         title="No leaves"
         action={<button>Request Leave</button>}
       />
@@ -27,3 +27,4 @@ describe('EmptyState', () => {
     expect(screen.getByText('Request Leave')).toBeInTheDocument();
   });
 });
+

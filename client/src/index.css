@@ -1,34 +1,184 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@import "@heroui/styles";
 
-@plugin "daisyui" {
-  themes: light --default, dark --prefersdark, cupcake, emerald, corporate, synthwave, retro, cyberpunk, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk;
+/* ---------------------------------------------------------------------------
+ * HR Management — "Warm Editorial Monochrome" design tokens
+ * Overrides HeroUI v3 theme variables for the light & dark palettes.
+ * ------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: #F5F4F0;
+  --foreground: #221F1B;
+
+  --surface: #FFFFFF;
+  --surface-foreground: #221F1B;
+  --surface-secondary: #F1EFEA;
+  --surface-tertiary: #EAE7E0;
+
+  --overlay: #FFFFFF;
+  --overlay-foreground: #221F1B;
+
+  --muted: #716C63;
+
+  --default: #E9E6DF;
+  --default-foreground: #221F1B;
+
+  /* Single accent — dusty blue, used sparingly */
+  --accent: #2F5B8C;
+  --accent-foreground: #FFFFFF;
+
+  /* Hairlines & structure */
+  --border: #E3E0D8;
+  --separator: #E9E6DF;
+  --focus: var(--accent);
+  --link: var(--foreground);
+
+  /* Form fields */
+  --field-background: #FFFFFF;
+  --field-border: #D9D5CB;
+  --field-border-hover: #B8B2A6;
+  --field-border-focus: var(--accent);
+
+  /* Status — desaturated, editorial */
+  --success: #2F6B3D;
+  --warning: #A8781E;
+  --danger: #B03A38;
+
+  --radius: 0.5rem;
 }
 
-@custom-variant dark (&:is([data-theme="dark"] *));
+.dark {
+  color-scheme: dark;
 
-body {
-  @apply bg-base-100 text-base-content;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Surfaces */
+  --background: #191713;
+  --foreground: #EAE7E0;
+
+  --surface: #211E1A;
+  --surface-foreground: #EAE7E0;
+  --surface-secondary: #26231D;
+  --surface-tertiary: #2C2922;
+
+  --overlay: #211E1A;
+  --overlay-foreground: #EAE7E0;
+
+  --muted: #9A958B;
+
+  --default: #332F28;
+  --default-foreground: #EAE7E0;
+
+  --accent: #8CA8CC;
+  --accent-foreground: #13161A;
+
+  --border: #3B372F;
+  --separator: #322E27;
+
+  --field-background: #211E1A;
+  --field-border: #4A443A;
+  --field-border-hover: #5C554A;
+  --field-border-focus: var(--accent);
+
+  --success: #5C9A6A;
+  --warning: #C79A4E;
+  --danger: #D06A68;
 }
 
-html {
-  scroll-behavior: smooth;
+/* ---------------------------------------------------------------------------
+ * Tailwind theme additions
+ * ------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-ink-faint: #A39E94;
+  --color-surface-muted: #F1EFEA;
+
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-html:focus-within {
-  scroll-behavior: smooth;
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+    color: var(--foreground);
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
 }
 
-*:focus-visible {
-  @apply outline-2 outline-offset-2 outline-primary;
+/* Numeric data renders with stable column width */
+.tabular-nums,
+td[class*="text-right"],
+th[class*="text-right"] {
+  font-variant-numeric: tabular-nums;
 }
 
-::selection {
-  @apply bg-primary/20 text-base-content;
+/* ---------------------------------------------------------------------------
+ * HeroUI component overrides — editorial geometry
+ * ------------------------------------------------------------------------- */
+@layer components {
+  /* Kill the pill default; use the token radius */
+  .button {
+    border-radius: var(--radius);
+  }
+
+  /* Primary action = ink (inverted), not accent */
+  .button--primary {
+    --button-bg: var(--foreground);
+    --button-bg-hover: color-mix(in oklab, var(--foreground) 85%, var(--background) 15%);
+    --button-bg-pressed: color-mix(in oklab, var(--foreground) 72%, var(--background) 28%);
+    --button-fg: var(--background);
+  }
+
+  /* Cards: hairline border, flat surface, square-ish corners */
+  .card {
+    border: 1px solid var(--border);
+    box-shadow: none;
+    border-radius: var(--radius);
+  }
+
+  /* Dialogs: match card geometry */
+  .modal__dialog {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
 }
 
-/* Animation keyframes for toaster */
+/* ---------------------------------------------------------------------------
+ * Animations
+ * ------------------------------------------------------------------------- */
 @keyframes slide-in-from-right-full {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -41,7 +191,7 @@ html:focus-within {
 
 .animate-in {
   animation-duration: 300ms;
-  animation-timing-function: ease-out;
+  animation-timing-function: var(--ease-editorial);
   animation-fill-mode: both;
 }
 

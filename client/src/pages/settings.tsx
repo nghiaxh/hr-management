@@ -3,7 +3,7 @@ import { useTheme } from '../hooks/use-theme';
 import { PageHeader } from '../components/shared/page-header';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from '@phosphor-icons/react';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -15,7 +15,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardContent className="p-5 space-y-4">
-          <h3 className="text-sm font-medium">{t('settings.theme')}</h3>
+          <h3 className="text-sm font-medium text-foreground">{t('settings.theme')}</h3>
           <div className="flex gap-3">
             <Button
               variant={!isDark ? 'primary' : 'outline'}

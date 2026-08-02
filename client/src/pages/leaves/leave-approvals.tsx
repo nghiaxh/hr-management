@@ -13,7 +13,7 @@ import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from '@phosphor-icons/react';
 import { Leave } from '../../types';
 import { TooltipRoot, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 
@@ -77,13 +77,13 @@ export default function LeaveApprovalsPage() {
           {row.original.status === 'pending' && <>
             <TooltipRoot>
               <TooltipTrigger>
-                <Button variant="ghost" size="icon" className="text-base-content/60 hover:text-base-content" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original.id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="text-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setApproveTarget(row.original.id); }} aria-label={t('leaves.approve')}><CheckCircle className="h-4 w-4" /></Button>
               </TooltipTrigger>
               <TooltipContent>{t('leaves.approve')}</TooltipContent>
             </TooltipRoot>
             <TooltipRoot>
               <TooltipTrigger>
-                <Button variant="ghost" size="icon" className="text-base-content/60 hover:text-error" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original.id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="text-muted hover:text-danger" onClick={(e) => { e.stopPropagation(); setRejectTarget(row.original.id); }} aria-label={t('leaves.decline')}><XCircle className="h-4 w-4" /></Button>
               </TooltipTrigger>
               <TooltipContent>{t('leaves.decline')}</TooltipContent>
             </TooltipRoot>
@@ -123,7 +123,7 @@ export default function LeaveApprovalsPage() {
         title={t('auth.confirm_reject_leave')}
         description={
           <div className="space-y-3 pt-1">
-            <p className="text-sm text-base-content/60">{t('auth.confirm_reject_leave_desc')}</p>
+            <p className="text-sm text-muted">{t('auth.confirm_reject_leave_desc')}</p>
             <div>
               <Label>{t('leaves.rejection_reason')}</Label>
               <Input value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} placeholder={t('leaves.rejection_reason_placeholder')} />

@@ -27,12 +27,12 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <DialogDescription className="text-sm text-base-content/60">{description}</DialogDescription>
-        <div className="flex justify-end gap-2 pt-2">
+        <DialogDescription className="text-sm text-muted">{description}</DialogDescription>
+        <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onPress={() => onOpenChange(false)} disabled={loading}>
             {cancelLabel}
           </Button>

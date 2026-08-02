@@ -21,7 +21,7 @@ import { useTranslation } from '../../context/language-context';
 import { useAuth } from '../../context/auth-context';
 import { employeesApi } from '../../api/employees';
 import { toast } from '../../hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus } from '@phosphor-icons/react';
 import { formatDate } from '../../lib/utils';
 import { Leave } from '../../types';
 
@@ -129,10 +129,10 @@ type LeaveForm = z.infer<typeof leaveSchema>;
             return (
               <Card key={item.label}>
                 <CardContent className="pt-4">
-                  <p className="text-sm text-base-content/60">{item.label}</p>
-                  <p className="text-2xl font-bold mt-1">{remaining} <span className="text-sm font-normal text-base-content/60">/ {item.total} {t('leaves.days')}</span></p>
-                  <div className="mt-2 h-2 bg-base-300 rounded-full overflow-hidden">
-                    <div className="h-full bg-muted-foreground/30 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                  <p className="text-sm text-muted">{item.label}</p>
+                  <p className="text-2xl font-bold mt-1">{remaining} <span className="text-sm font-normal text-muted">/ {item.total} {t('leaves.days')}</span></p>
+                  <div className="mt-2 h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                    <div className="h-full bg-foreground/25 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
                 </CardContent>
               </Card>
@@ -162,17 +162,17 @@ type LeaveForm = z.infer<typeof leaveSchema>;
                 <option value="sick">{t('leaves.sick')}</option>
                 <option value="personal">{t('leaves.personal')}</option>
               </Select>
-              {errors.type && <p className="text-xs text-error mt-1">{errors.type.message}</p>}
+              {errors.type && <p className="text-xs text-danger mt-1">{errors.type.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.start_date')}</Label>
               <Input type="date" {...register('startDate')} />
-              {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate.message}</p>}
+              {errors.startDate && <p className="text-xs text-danger mt-1">{errors.startDate.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.end_date')}</Label>
               <Input type="date" {...register('endDate')} />
-              {errors.endDate && <p className="text-xs text-error mt-1">{errors.endDate.message}</p>}
+              {errors.endDate && <p className="text-xs text-danger mt-1">{errors.endDate.message}</p>}
             </div>
             <div>
               <Label>{t('leaves.reason')}</Label>

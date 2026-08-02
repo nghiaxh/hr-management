@@ -7,10 +7,10 @@ import { ConfirmDialog } from '../ui/confirm-dialog';
 import { notificationsApi } from '../../api/notifications';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Users, Building2, CalendarCheck, ClipboardCheck,
-  Clock, BarChart3, Wallet, DollarSign, LogOut,
-  X, Bell, ChevronLeft, GitGraph, Settings,
-} from 'lucide-react';
+  Users, Buildings, CalendarCheck, ClipboardText,
+  Clock, ChartBar, Wallet, Money, SignOut,
+  X, Bell, CaretLeft, GitFork, GearSix,
+} from '@phosphor-icons/react';
 
 interface MenuItem {
   path: string;
@@ -22,14 +22,14 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
-  { path: '/departments', label: 'nav.departments', icon: Building2, roles: ['admin', 'manager'] },
-  { path: '/org-chart', label: 'org_chart.title', icon: GitGraph, roles: ['admin', 'manager'] },
+  { path: '/departments', label: 'nav.departments', icon: Buildings, roles: ['admin', 'manager'] },
+  { path: '/org-chart', label: 'org_chart.title', icon: GitFork, roles: ['admin', 'manager'] },
   { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardCheck, roles: ['admin', 'manager'] },
+  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardText, roles: ['admin', 'manager'] },
   { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/attendance/report', label: 'nav.attendance_report', icon: BarChart3, roles: ['admin', 'manager'] },
+  { path: '/attendance/report', label: 'nav.attendance_report', icon: ChartBar, roles: ['admin', 'manager'] },
   { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/payroll/manage', label: 'nav.payroll_management', icon: DollarSign, roles: ['admin'] },
+  { path: '/payroll/manage', label: 'nav.payroll_management', icon: Money, roles: ['admin'] },
 ];
 
 function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
@@ -45,14 +45,14 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
           'flex items-center px-2 py-1.5 rounded-lg text-sm transition-colors',
           collapsed ? 'justify-start pl-2.5' : 'gap-2',
           isActive
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'text-base-content/60 hover:text-base-content hover:bg-base-300/50'
+            ? 'bg-surface-tertiary text-foreground font-medium'
+            : 'text-muted hover:text-foreground hover:bg-surface-secondary'
         )
       }
     >
       {({ isActive }) => (
         <>
-          <item.icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
+          <item.icon className={cn('h-4 w-4 shrink-0', isActive && 'text-accent')} />
           {!collapsed && t(item.label)}
         </>
       )}
@@ -124,20 +124,20 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-end px-1">
-        <button onClick={closeMobile} className="p-1 rounded-lg hover:bg-base-300 md:hidden cursor-pointer" aria-label="Close sidebar">
+        <button onClick={closeMobile} className="p-1 rounded-lg hover:bg-surface-secondary md:hidden cursor-pointer" aria-label="Close sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <NavLink to="/profile" onClick={closeMobile} title={collapsed ? (user?.name || user?.email) : undefined} className={cn(
-        'flex items-center gap-2 px-2 py-2 rounded-xl text-sm hover:bg-base-300/50 transition-all w-full group',
+        'flex items-center gap-2 px-2 py-2 rounded-xl text-sm hover:bg-surface-secondary transition-all w-full group',
         collapsed && 'justify-start pl-2.5'
       )}>
-        <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+        <div className="h-7 w-7 rounded-full bg-surface-tertiary text-foreground flex items-center justify-center text-xs font-semibold shrink-0">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         {!collapsed && (
-          <p className="text-sm font-medium truncate leading-tight">{user?.name || user?.email}</p>
+          <p className="text-sm font-medium truncate leading-tight text-foreground">{user?.name || user?.email}</p>
         )}
       </NavLink>
 
@@ -147,7 +147,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="space-y-0.5 pt-1 border-t border-base-300">
+      <div className="space-y-0.5 pt-1 border-t border-separator">
         <BottomLink
           to="/notifications"
           icon={Bell}
@@ -156,7 +156,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           onClick={closeMobile}
         >
           {(typeof unreadCount === 'number' && unreadCount > 0) && (
-            <span className="ml-auto badge badge-primary badge-xs">
+            <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold leading-none text-accent-foreground tabular-nums">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -164,30 +164,30 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
         <BottomLink
           to="/settings"
-          icon={Settings}
+          icon={GearSix}
           label="settings"
           collapsed={collapsed}
           onClick={closeMobile}
         />
 
         <BottomLink
-          icon={LogOut}
+          icon={SignOut}
           label="nav.logout"
           collapsed={collapsed}
           onClick={() => setLogoutOpen(true)}
-          className="text-base-content/60 hover:text-error hover:bg-error/10"
+          className="text-muted hover:text-danger hover:bg-danger-soft"
         />
       </div>
 
       <button
         onClick={toggleCollapsed}
         className={cn(
-          'rounded-lg transition-colors cursor-pointer hover:bg-base-300/50 mt-1 flex items-center justify-center w-full',
+          'rounded-lg transition-colors cursor-pointer hover:bg-surface-secondary mt-1 flex items-center justify-center w-full',
           collapsed ? 'p-2' : 'px-2 py-1.5'
         )}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <ChevronLeft className={cn('h-3.5 w-3.5 text-base-content/40 transition-transform', collapsed && 'rotate-180')} />
+        <CaretLeft className={cn('h-3.5 w-3.5 text-muted transition-transform', collapsed && 'rotate-180')} />
       </button>
 
       <ConfirmDialog
@@ -206,14 +206,14 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   return (
     <>
       {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={closeMobile} />
+        <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={closeMobile} />
       )}
 
       <aside className={cn(
-        'bg-base-100 border-r border-base-300 h-screen py-3 px-2 flex flex-col transition-all duration-300 ease-in-out',
+        'bg-background border-r border-separator h-screen py-3 px-2 flex flex-col transition-all duration-300 ease-in-out',
         'md:sticky md:top-0 md:translate-x-0 md:z-auto fixed z-40 top-0 left-0',
         collapsed ? 'w-14' : 'w-56',
-        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
+        mobileOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
       )}>
         {sidebar}
       </aside>

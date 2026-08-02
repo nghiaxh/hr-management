@@ -15,8 +15,8 @@ const columnHelper = createColumnHelper<Attendance>();
 const STATUS_META: Record<string, { color: string; bar: string }> = {
   present: { color: 'text-success', bar: 'bg-success' },
   late: { color: 'text-warning', bar: 'bg-warning' },
-  absent: { color: 'text-destructive', bar: 'bg-destructive' },
-  'half-day': { color: 'text-info', bar: 'bg-info' },
+  absent: { color: 'text-danger', bar: 'bg-danger' },
+  'half-day': { color: 'text-accent', bar: 'bg-accent' },
 };
 
 export default function AttendanceReportPage() {
@@ -56,7 +56,7 @@ export default function AttendanceReportPage() {
   ];
 
   if (isError) {
-    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-destructive">{(queryError as any)?.response?.data?.message || t('attendance.load_failed')}</p></div>;
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-danger">{(queryError as any)?.response?.data?.message || t('attendance.load_failed')}</p></div>;
   }
 
   return (
@@ -74,7 +74,7 @@ export default function AttendanceReportPage() {
                   <div className={`h-1 ${meta.bar}`} />
                   <CardContent>
                     <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-xs text-base-content/60 mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
+                    <p className="text-xs text-muted mt-0.5 capitalize">{t(`status.${key.replace('-', '_')}`)}</p>
                     <p className="text-xs font-medium mt-1">{pct.toFixed(0)}%</p>
                   </CardContent>
                 </Card>
@@ -84,7 +84,7 @@ export default function AttendanceReportPage() {
 
           <Card className="overflow-hidden mb-6">
             <CardContent className="p-5">
-              <div className="flex h-2.5 rounded-full overflow-hidden bg-base-300/30">
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-surface-tertiary/60">
                 {Object.keys(STATUS_META).map((key) => {
                   const count = stats[key] || 0;
                   if (count === 0) return null;
@@ -98,7 +98,7 @@ export default function AttendanceReportPage() {
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-base-content/60">
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-muted">
                 {Object.keys(STATUS_META).map((key) => {
                   const count = stats[key] || 0;
                   if (count === 0) return null;

@@ -11,7 +11,7 @@ export function PageLoader() {
       </div>
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="card bg-base-200 border border-base-300 p-5 space-y-3">
+          <div key={i} className="rounded-xl border border-border bg-surface p-5 space-y-3">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-3 w-20" />
@@ -19,11 +19,11 @@ export function PageLoader() {
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card bg-base-200 border border-base-300 p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-48 w-full" />
         </div>
-        <div className="card bg-base-200 border border-base-300 p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-48 w-full" />
         </div>

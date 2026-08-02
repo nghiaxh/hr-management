@@ -11,7 +11,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../hooks/use-toast';
 import { authApi } from '../api/auth';
-import { Pencil, Lock, Eye, EyeOff } from 'lucide-react';
+import { PencilSimple, Lock, Eye, EyeSlash } from '@phosphor-icons/react';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -79,11 +79,11 @@ export default function ProfilePage() {
   return (
     <div className="max-w-md mx-auto pt-8">
       <div className="flex flex-col items-center mb-8">
-        <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-primary-content text-3xl font-bold mb-4">
+        <div className="h-24 w-24 rounded-full bg-foreground flex items-center justify-center text-background text-3xl font-bold mb-4">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         <h1 className="text-2xl font-bold">{user?.name || user?.email}</h1>
-        <p className="text-sm text-base-content/60 capitalize">{user?.role}</p>
+        <p className="text-sm text-muted capitalize">{user?.role}</p>
       </div>
 
       <Card>
@@ -91,20 +91,20 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('user.info')}</h2>
             <Button variant="outline" size="sm" onClick={() => { profileForm.reset({ name: user?.name || '', email: user?.email || '' }); setProfileOpen(true); }}>
-              <Pencil className="h-4 w-4 mr-2" />{t('user.edit_profile')}
+              <PencilSimple className="h-4 w-4 mr-2" />{t('user.edit_profile')}
             </Button>
           </div>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-base-content/60">{t('user.name')}</span>
+            <div className="flex justify-between border-b border-separator pb-2">
+              <span className="text-muted">{t('user.name')}</span>
               <span className="font-medium">{user?.name || '-'}</span>
             </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-base-content/60">{t('user.email')}</span>
+            <div className="flex justify-between border-b border-separator pb-2">
+              <span className="text-muted">{t('user.email')}</span>
               <span className="font-medium">{user?.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-base-content/60">{t('user.role')}</span>
+              <span className="text-muted">{t('user.role')}</span>
               <span className="font-medium capitalize">{user?.role}</span>
             </div>
           </div>
@@ -130,12 +130,12 @@ export default function ProfilePage() {
             <div>
               <Label>{t('user.name')}</Label>
               <Input {...profileForm.register('name')} />
-              {profileForm.formState.errors.name && <p className="text-xs text-error mt-1">{profileForm.formState.errors.name.message}</p>}
+              {profileForm.formState.errors.name && <p className="text-xs text-danger mt-1">{profileForm.formState.errors.name.message}</p>}
             </div>
             <div>
               <Label>{t('user.email')}</Label>
               <Input {...profileForm.register('email')} />
-              {profileForm.formState.errors.email && <p className="text-xs text-error mt-1">{profileForm.formState.errors.email.message}</p>}
+              {profileForm.formState.errors.email && <p className="text-xs text-danger mt-1">{profileForm.formState.errors.email.message}</p>}
             </div>
             <div>
               <Label>{t('user.role')}</Label>
@@ -156,32 +156,32 @@ export default function ProfilePage() {
             <div>
               <Label>{t('profile.current_password')}</Label>
               <div className="relative">
-                <Input type={showCurrent ? 'text' : 'password'} {...passwordForm.register('currentPassword')} />
-                <Button type="button" variant="ghost" size="icon" onPress={() => setShowCurrent(!showCurrent)} tabIndex={-1} aria-label={showCurrent ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <Input type={showCurrent ? 'text' : 'password'} {...passwordForm.register('currentPassword')} className="pr-10" />
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowCurrent(!showCurrent)} tabIndex={-1} aria-label={showCurrent ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {showCurrent ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {passwordForm.formState.errors.currentPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
+              {passwordForm.formState.errors.currentPassword && <p className="text-xs text-danger mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
             </div>
             <div>
               <Label>{t('profile.new_password')}</Label>
               <div className="relative">
-                <Input type={showNew ? 'text' : 'password'} {...passwordForm.register('newPassword')} />
-                <Button type="button" variant="ghost" size="icon" onPress={() => setShowNew(!showNew)} tabIndex={-1} aria-label={showNew ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <Input type={showNew ? 'text' : 'password'} {...passwordForm.register('newPassword')} className="pr-10" />
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowNew(!showNew)} tabIndex={-1} aria-label={showNew ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {showNew ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {passwordForm.formState.errors.newPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
+              {passwordForm.formState.errors.newPassword && <p className="text-xs text-danger mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
             </div>
             <div>
               <Label>{t('profile.confirm_password')}</Label>
               <div className="relative">
-                <Input type={showConfirm ? 'text' : 'password'} {...passwordForm.register('confirmPassword')} />
-                <Button type="button" variant="ghost" size="icon" onPress={() => setShowConfirm(!showConfirm)} tabIndex={-1} aria-label={showConfirm ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <Input type={showConfirm ? 'text' : 'password'} {...passwordForm.register('confirmPassword')} className="pr-10" />
+                <Button type="button" variant="ghost" size="icon" onPress={() => setShowConfirm(!showConfirm)} tabIndex={-1} aria-label={showConfirm ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {showConfirm ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {passwordForm.formState.errors.confirmPassword && <p className="text-xs text-error mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
+              {passwordForm.formState.errors.confirmPassword && <p className="text-xs text-danger mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={passwordLoading}>
               {passwordLoading ? t('user.saving') : t('profile.change_password')}

@@ -9,7 +9,7 @@ import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
 import { toast } from '../../hooks/use-toast';
-import { LogIn, LogOut } from 'lucide-react';
+import { SignIn, SignOut } from '@phosphor-icons/react';
 import { Attendance } from '../../types';
 
 const columnHelper = createColumnHelper<Attendance>();
@@ -66,14 +66,14 @@ export default function MyAttendancePage() {
     <div>
       <PageHeader title={t('attendance.title')} action={
         !todayRecord?.checkIn ? (
-          <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><LogIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
+          <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><SignIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
         ) : !todayRecord.checkOut ? (
-          <Button onClick={() => checkOutMutation.mutate(todayRecord.id)} disabled={checkOutMutation.isPending}><LogOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
+          <Button onClick={() => checkOutMutation.mutate(todayRecord.id)} disabled={checkOutMutation.isPending}><SignOut className="h-4 w-4 mr-2" />{t('attendance.check_out')}</Button>
         ) : null
       } />
 
       {todayRecord && (
-        <div className="bg-base-200 rounded-lg border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <div className="bg-surface-secondary rounded-lg border border-border p-3 md:p-4 mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
           <div>{t('attendance.check_in')}: <strong>{todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString('vi-VN') : '-'}</strong></div>
           <div>{t('attendance.check_out')}: <strong>{todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString('vi-VN') : '-'}</strong></div>
           <div>{t('attendance.status')}: <StatusBadge status={todayRecord.status} /></div>

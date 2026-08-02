@@ -1,12 +1,13 @@
+import { Skeleton as HeroSkeleton } from '@heroui/react';
 import { cn } from '../../lib/utils';
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('skeleton', className)} {...props} />;
+  return <HeroSkeleton animationType="pulse" className={cn('h-4', className)} {...props} />;
 }
 
 export function SkeletonCard() {
   return (
-    <div className="card bg-base-200 border border-base-300 p-5 space-y-3">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
       <Skeleton className="h-4 w-24" />
       <Skeleton className="h-8 w-32" />
       <Skeleton className="h-3 w-20" />
@@ -34,7 +35,7 @@ export function SkeletonList() {
       <div className="flex items-center gap-2 mb-4">
         <Skeleton className="h-9 w-64" />
       </div>
-      <div className="bg-base-200 rounded-box border border-base-300 p-4">
+      <div className="rounded-xl border border-border bg-surface p-4">
         <SkeletonTable rows={5} cols={5} />
       </div>
     </div>
