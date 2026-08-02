@@ -1,15 +1,49 @@
 services:
-  mysql:
+  database:
     image: mysql:8
-    container_name: hr-management-mysql
+    container_name: hr-management-database
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: hr_management
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-hr_management}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - database_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  server:
+    build: ./server
+    container_name: hr-management-server
+    ports:
+      - "${SERVER_PORT:-3001}:3001"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://database:3306/${MYSQL_DATABASE:-hr_management}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+    container_name: hr-management-client
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  database_data:
