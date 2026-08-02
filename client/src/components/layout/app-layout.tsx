@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router';
 import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../context/language-context';
 import { Sidebar } from './sidebar';

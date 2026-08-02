@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { createColumnHelper, PaginationState } from '@tanstack/react-table';
 import { employeesApi } from '../../api/employees';
 import { departmentsApi } from '../../api/departments';

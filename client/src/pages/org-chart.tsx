@@ -6,7 +6,7 @@ import { useTranslation } from '../context/language-context';
 import { departmentsApi } from '../api/departments';
 import { SkeletonCard } from '../components/shared/skeleton';
 import { Buildings, CaretRight, Users } from '@phosphor-icons/react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { cn } from '../lib/utils';
 
 export default function OrgChartPage() {
