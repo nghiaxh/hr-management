@@ -16,9 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
-@Profile("seed")
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
@@ -43,6 +43,7 @@ public class DataSeeder implements CommandLineRunner {
     private final AttendanceRepository attendanceRepository;
     private final LeaveRepository leaveRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -53,7 +54,8 @@ public class DataSeeder implements CommandLineRunner {
                       LeaveBalanceRepository leaveBalanceRepository,
                       AttendanceRepository attendanceRepository,
                       LeaveRepository leaveRepository,
-                      PasswordEncoder passwordEncoder) {
+                      PasswordEncoder passwordEncoder,
+                      Environment environment) {
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.employeeRepository = employeeRepository;
@@ -61,10 +63,14 @@ public class DataSeeder implements CommandLineRunner {
         this.attendanceRepository = attendanceRepository;
         this.leaveRepository = leaveRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     public void run(String... args) {
+        if (!environment.acceptsProfiles(Profiles.of("seed"))) {
+            return;
+        }
         seed();
         System.exit(0);
     }
