@@ -2,17 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { authApi } from './auth';
 
 describe('authApi', () => {
-  it('login sends email and password', async () => {
+  it('login returns user', async () => {
     const result = await authApi.login('admin@example.com', 'password123');
-    expect(result).toHaveProperty('token');
     expect(result).toHaveProperty('user');
     expect(result.user.email).toBe('admin@example.com');
   });
 
-  it('register sends email and password', async () => {
+  it('register returns user', async () => {
     const result = await authApi.register('new@example.com', 'password123');
-    expect(result).toHaveProperty('token');
-    expect(result.user.role).toBe('admin');
+    expect(result).toHaveProperty('user');
+    expect(result.user.role).toBe('employee');
   });
 
   it('getMe returns current user', async () => {

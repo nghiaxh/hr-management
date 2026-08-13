@@ -16,8 +16,8 @@ function TestComponent() {
   return (
     <div>
       <span data-testid="loading">{loading ? 'loading' : 'loaded'}</span>
-      <span data-testid="user">{user ? user.email : 'no-user'}</span>
-      <span data-testid="token">{token ?? 'no-token'}</span>
+      <span data-testid="user">{user ? user.email : 'no-user'}</span}
+      <span data-testid="jsessionid">{token ?? 'no-cookie'}</span>
       <button data-testid="login-btn" onClick={() => login('a@b.com', 'pwd')}>Login</button>
       <button data-testid="logout-btn" onClick={logout}>Logout</button>
     </div>
@@ -26,14 +26,11 @@ function TestComponent() {
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    localStorage.clear();
+    document.cookie = '';
     vi.clearAllMocks();
   });
 
-  it('shows loading initially when token exists', () => {
-    localStorage.setItem('token', 'existing-token');
-    vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
-
+  it('shows loading initially', () => {
     render(
       <AuthProvider>
         <TestComponent />
@@ -43,8 +40,8 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('loading').textContent).toBe('loading');
   });
 
-  it('loads user from token on mount', async () => {
-    localStorage.setItem('token', 'existing-token');
+  it('loads user from cookie on mount', async () => {
+    document.cookie = 'JSESSIONID=existing-token';
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(
@@ -59,7 +56,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('loading').textContent).toBe('loaded');
   });
 
-  it('shows no user when no token', async () => {
+  it('shows no user when no cookie', async () => {
     render(
       <AuthProvider>
         <TestComponent />
@@ -69,12 +66,11 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('no-user');
     });
-    expect(screen.getByTestId('token').textContent).toBe('no-token');
+    expect(screen.getByTestId('jsessionid').textContent).toBe('no-cookie');
   });
 
-  it('login stores token and sets user', async () => {
+  it('login sets cookie and user', async () => {
     vi.mocked(authApi.login).mockResolvedValue({
-      token: 'new-token',
       user: { id: '1', email: 'test@example.com', role: 'admin' },
     });
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'test@example.com', role: 'admin' });
@@ -88,14 +84,14 @@ describe('AuthContext', () => {
     await userEvent.click(screen.getByTestId('login-btn'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('token').textContent).toBe('new-token');
+      expect(screen.getByTestId('user').textContent).toBe('test@example.com');
     });
-    expect(screen.getByTestId('user').textContent).toBe('test@example.com');
-    expect(localStorage.getItem('token')).toBe('new-token');
+    expect(document.cookie).toContain('JSESSIONID=new-token');
+    expect(screen.getByTestId('jsessionid').textContent).toBe('new-token');
   });
 
-  it('logout clears token and user', async () => {
-    localStorage.setItem('token', 'existing-token');
+  it('logout clears cookie and user', async () => {
+    document.cookie = 'JSESSIONID=existing-token';
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(
@@ -110,8 +106,7 @@ describe('AuthContext', () => {
 
     await userEvent.click(screen.getByTestId('logout-btn'));
 
-    expect(screen.getByTestId('token').textContent).toBe('no-token');
     expect(screen.getByTestId('user').textContent).toBe('no-user');
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(document.cookie).toBeNull() || !document.cookie.includes('JSESSIONID');
   });
 });
