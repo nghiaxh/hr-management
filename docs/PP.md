@@ -77,8 +77,8 @@ Xây dựng hệ thống quản lý nhân sự toàn diện dạng web SPA (Sing
 | 1   | BRD                    | Tài liệu yêu cầu nghiệp vụ             | 07/07/2026   |
 | 2   | SRS                    | Đặc tả yêu cầu phần mềm                | 14/07/2026   |
 | 3   | SDD                    | Đặc tả thiết kế phần mềm               | 21/07/2026   |
-| 4   | MVP (Sprint 1-4)       | Sản phẩm tối thiểu (Auth + CRUD core)  | 22/09/2026   |
-| 5   | Full features          | Đầy đủ tính năng                       | 17/11/2026   |
+| 4   | MVP (Sprint 1-4)       | Sản phẩm tối thiểu (Auth + CRUD core; Dashboard chưa triển khai) | 22/09/2026   |
+| 5   | Full features          | Đầy đủ tính năng (Dashboard, Recruitment, Performance chưa triển khai — kế hoạch) | 17/11/2026   |
 | 6   | Test report            | Báo cáo kiểm thử                       | 01/12/2026   |
 | 7   | Deployment             | Triển khai production                  | 15/12/2026   |
 | 8   | User Manual            | Hướng dẫn sử dụng                      | 20/12/2026   |
@@ -162,6 +162,8 @@ graph TB
 | Performance Reviews | Dev 2  | Dev 4  | Des    | Sprint 5 |
 | UI/UX Polish        | Dev 1,2| -      | Des    | Sprint 6 |
 | i18n + Dark Mode    | FS     | -      | Des    | Sprint 6 |
+
+> **Ghi chú:** Dashboard, Recruitment, Performance Reviews chưa được triển khai (chỉ là kế hoạch).
 
 ---
 
@@ -247,6 +249,8 @@ gantt
     Sprint 8: Deployment + Training                   :s8, after s7, 14d
 ```
 
+> **Trạng thái hiện tại:** Dashboard (Sprint 3), Socket.IO + Employee History (Sprint 4), Recruitment + Performance (Sprint 5) chưa được triển khai — chỉ là kế hoạch. Thông báo triển khai bằng API polling thay cho Socket.IO.
+
 ### 5.2 Sprint 1: Foundation (01/07 - 14/07)
 
 **Mục tiêu**: Thiết lập dự án, auth, CRUD cơ bản
@@ -255,7 +259,7 @@ gantt
 |--------------------------|:--:|:--------:|--------------------------------|
 | Thiết lập dự án FE + BE  | 3  | FS       | React + Spring Boot + MySQL setup |
 | UI Design System         | 5  | Des      | HeroUI v3 components + Tailwind    |
-| User schema + Auth API   | 5  | BE 3     | Register, Login, JWT           |
+| User schema + Auth API   | 5  | BE 3     | Register, Login, session auth  |
 | Login page               | 3  | FE 1     | Form + validation              |
 | Employee CRUD API        | 8  | BE 3     | CRUD + search + pagination     |
 | Employee list page       | 5  | FE 1     | DataTable + search             |
@@ -284,7 +288,7 @@ gantt
 
 ### 5.4 Sprint 3: Payroll + Dashboard (29/07 - 11/08)
 
-**Mục tiêu**: Xử lý lương và dashboard
+**Mục tiêu**: Xử lý lương và dashboard *(phần Dashboard chưa triển khai)*
 
 | Task                          | SP | Assignee | Mô tả                            |
 |-------------------------------|:--:|:--------:|----------------------------------|
@@ -292,24 +296,24 @@ gantt
 | Payroll process dialog        | 5  | FE 1     | Month/year/employee selection    |
 | My payroll page               | 3  | FE 1     | Employee view                    |
 | Payroll management page       | 5  | FE 1     | Admin view + mark paid           |
-| Dashboard API                 | 5  | BE 4     | Role-based stats, charts data    |
-| Dashboard page (admin)        | 5  | FE 2     | Stat cards + bar chart           |
-| Dashboard page (manager)      | 3  | FE 2     | Department stats                 |
-| Dashboard page (employee)     | 5  | FE 2     | Pie chart + bar chart            |
+| Dashboard API                 | 5  | BE 4     | Role-based stats, charts data *(chưa triển khai)*    |
+| Dashboard page (admin)        | 5  | FE 2     | Stat cards + bar chart *(chưa triển khai)*           |
+| Dashboard page (manager)      | 3  | FE 2     | Department stats *(chưa triển khai)*                 |
+| Dashboard page (employee)     | 5  | FE 2     | Pie chart + bar chart *(chưa triển khai)*            |
 | **Tổng**                      |**36**|        |                                  |
 
 ### 5.5 Sprint 4: Notifications + Polish (12/08 - 25/08)
 
-**Mục tiêu**: Thông báo real-time, profile, cải thiện UX
+**Mục tiêu**: Thông báo trong ứng dụng (API polling), profile, cải thiện UX
 
 | Task                          | SP | Assignee | Mô tả                            |
 |-------------------------------|:--:|:--------:|----------------------------------|
 | Notification schema + API     | 3  | FS       | CRUD, mark read                  |
-| Socket.IO gateway             | 5  | FS       | Real-time push + rooms           |
+| Socket.IO gateway             | 5  | FS       | Real-time push + rooms *(chưa triển khai — thông báo dùng API polling: unread-count 30s, list 15s)* |
 | Notification bell + badge     | 3  | FE 1     | Sidebar badge, toast             |
 | Notifications list page       | 3  | FE 1     | List + mark read                 |
 | Profile page                  | 5  | FE 2     | View + edit + change password    |
-| Employee history API + UI     | 5  | BE+FE    | Timeline component               |
+| Employee history API + UI     | 5  | BE+FE    | Timeline component *(chưa triển khai)*               |
 | Unsaved changes guard         | 3  | FE 2     | Prevent accidental navigation    |
 | Keyboard shortcuts            | 3  | FE 1     | G+D, G+L, ? help dialog         |
 | Route loading indicator       | 2  | FE 2     | Top progress bar                 |
@@ -319,26 +323,28 @@ gantt
 
 **Mục tiêu**: Tuyển dụng và đánh giá hiệu suất
 
+> **Trạng thái: chưa triển khai (kế hoạch)** — không có module/endpoint/UI Recruitment hay Performance Reviews.
+
 | Task                          | SP | Assignee | Mô tả                            |
 |-------------------------------|:--:|:--------:|----------------------------------|
-| Job posting schema + API      | 5  | BE 3     | CRUD + filter                    |
-| Candidate schema + API        | 5  | BE 3     | CRUD + status management         |
-| Job postings page             | 5  | FE 1     | Table + CRUD dialogs             |
-| Candidates page               | 5  | FE 1     | Table + CRUD + filter by posting |
-| Performance review API        | 5  | BE 4     | CRUD + role-based scoping        |
-| My reviews page               | 3  | FE 2     | Card list                        |
-| Review management page        | 5  | FE 2     | Table + CRUD dialogs             |
+| Job posting schema + API      | 5  | BE 3     | CRUD + filter *(kế hoạch — chưa triển khai)*             |
+| Candidate schema + API        | 5  | BE 3     | CRUD + status management *(kế hoạch — chưa triển khai)*  |
+| Job postings page             | 5  | FE 1     | Table + CRUD dialogs *(kế hoạch — chưa triển khai)*      |
+| Candidates page               | 5  | FE 1     | Table + CRUD + filter by posting *(kế hoạch — chưa triển khai)* |
+| Performance review API        | 5  | BE 4     | CRUD + role-based scoping *(kế hoạch — chưa triển khai)* |
+| My reviews page               | 3  | FE 2     | Card list *(kế hoạch — chưa triển khai)*                 |
+| Review management page        | 5  | FE 2     | Table + CRUD dialogs *(kế hoạch — chưa triển khai)*      |
 | **Tổng**                      |**33**|        |                                  |
 
 ### 5.7 Sprint 6: Polish (09/09 - 22/09)
 
-**Mục tiêu**: i18n, dark mode, responsive, bug fixes
+**Mục tiêu**: i18n (tiếng Anh chưa triển khai — UI hiện chỉ tiếng Việt), dark mode, responsive, bug fixes
 
 | Task                          | SP | Assignee | Mô tả                            |
 |-------------------------------|:--:|:--------:|----------------------------------|
-| i18n English translations     | 5  | FE 1     | ~830 keys                        |
-| i18n Vietnamese translations  | 5  | FE 1     | ~830 keys                        |
-| Language switcher UI          | 3  | FE 2     | Settings dialog + context         |
+| i18n English translations     | 5  | FE 1     | ~830 keys *(chưa triển khai — UI hiện chỉ có vi.ts)*     |
+| i18n Vietnamese translations  | 5  | FE 1     | ~830 keys (đã triển khai: client/src/locales/vi.ts)      |
+| Language switcher UI          | 3  | FE 2     | Settings dialog + context *(chưa triển khai)*            |
 | Dark mode implementation      | 5  | FE 2     | CSS variables, toggle            |
 | Responsive layout             | 5  | FE 1     | Mobile sidebar, breakpoints      |
 | Error boundaries              | 3  | FS       | Global error handling            |
@@ -355,9 +361,9 @@ gantt
 | Test plan                     | 3  | QA Lead  | Strategy, scope, resources       |
 | Test cases (all modules)      | 8  | QA Eng   | Chi tiết test cases              |
 | Manual testing                | 8  | QA Eng   | Smoke + regression + UAT         |
-| API testing (Postman)         | 5  | BE team  | End-to-end API tests             |
-| Performance testing           | 5  | DevOps   | Load test, stress test           |
-| Security audit                | 5  | TL       | JWT, CORS, rate limiting         |
+| API testing (Postman)         | 5  | BE team  | End-to-end API tests *(chưa triển khai)*                 |
+| Performance testing           | 5  | DevOps   | Load test, stress test *(chưa triển khai — chưa có k6/Artillery)* |
+| Security audit                | 5  | TL       | Session auth, CORS, CSRF         |
 | Bug fixing                    | 8  | Dev team | Fix bugs found                   |
 | **Tổng**                      |**42**|        |                                  |
 
@@ -417,8 +423,8 @@ gantt
 | Milestone                | Ngày       | Mô tả                                |
 |--------------------------|------------|---------------------------------------|
 | M1: Tài liệu hoàn thành  | 21/07/2026 | BRD, SRS, SDD phê duyệt              |
-| M2: MVP hoàn thành       | 15/09/2026 | Sprint 1-4: Auth, Employees, Leaves, Attendance, Payroll, Dashboard |
-| M3: Full features        | 13/10/2026 | Sprint 5-6: Recruitment, Performance, i18n, Dark Mode |
+| M2: MVP hoàn thành       | 15/09/2026 | Sprint 1-4: Auth, Employees, Leaves, Attendance, Payroll (Dashboard chưa triển khai) |
+| M3: Full features        | 13/10/2026 | Sprint 5-6: Dark Mode + responsive (Recruitment, Performance, i18n tiếng Anh chưa triển khai — kế hoạch) |
 | M4: Sẵn sàng UAT         | 03/11/2026 | Testing hoàn thành, staging sẵn sàng |
 | M5: Go-live              | 25/11/2026 | Production deployment                |
 | M6: Kết thúc hỗ trợ      | 25/12/2026 | Kết thúc hypercare support            |
@@ -466,7 +472,7 @@ gantt
 | R2  | Nhân sự nghỉ việc giữa chừng              | Trung bình| Cao     | 8    | Giảm thiểu + Cross-training |
 | R3  | Chậm tiến độ do ước lượng sai             | Cao      | Trung bình| 9   | Chấp nhận + Buffer SP  |
 | R4  | Hiệu năng database kém                    | Thấp     | Cao      | 6    | Giảm thiểu + Indexing + Load test |
-| R5  | Bảo mật thông tin nhân viên              | Thấp     | Rất cao  | 10   | Giảm thiểu + Audit + JWT |
+| R5  | Bảo mật thông tin nhân viên              | Thấp     | Rất cao  | 10   | Giảm thiểu + Audit + Session auth |
 | R6  | Người dùng từ chối sử dụng hệ thống       | Cao      | Cao      | 12   | Giảm thiểu + Training + Change management |
 | R7  | Tích hợp với hệ thống khác khó khăn       | Thấp     | Cao      | 6    | Tránh (out of scope)    |
 | R8  | Vấn đề về license / bản quyền             | Thấp     | Trung bình| 4   | Chấp nhận (open source) |
@@ -495,7 +501,7 @@ graph TB
 | R2     | Mỗi module có 2 người biết, code review, tài liệu đầy đủ |
 | R3     | Sprint buffer 20%, không thêm tính năng giữa sprint |
 | R4     | Index từ đầu, load test trước release            |
-| R5     | JWT + bcrypt + rate limiting + security audit     |
+| R5     | Session-based auth (Spring Session JDBC) + bcrypt + CSRF + security audit |
 | R6     | Training kỹ, support 1:1, demo lợi ích, có giai đoạn chuyển đổi |
 | R7     | API-first design, webhook cho tích hợp sau       |
 
@@ -508,21 +514,23 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Test Pyramid"
-        E2E[E2E Tests<br/>Critical paths]
-        API[API Integration Tests<br/>Postman / Supertest]
-        UNIT[Unit Tests<br/>Services, Guards, Pipes]
+        E2E[E2E Tests<br/>Critical paths *(chưa triển khai)*]
+        API[API Integration Tests<br/>JUnit 5 + Mockito]
+        UNIT[Unit Tests<br/>Services, Controllers]
     end
 ```
 
 | Loại test     | Công cụ         | Mục tiêu coverage | Thực hiện bởi |
 |---------------|-----------------|:------------------:|:-------------:|
-| Unit tests    | Jest            | > 70% services     | Dev team      |
-| API tests     | Postman / Supertest | 100% endpoints | Dev + QA    |
-| Integration   | Supertest + MongoMemoryServer | Critical flows | QA     |
-| E2E           | Playwright      | User journeys      | QA            |
-| Performance   | k6 / Artillery  | 100 concurrent users | DevOps      |
+| Unit tests    | JUnit 5 + Mockito (BE), Vitest + Testing Library (FE) | > 70% services | Dev team |
+| API tests     | JUnit 5 + Mockito (BE), MSW (FE) | Critical flows | Dev + QA    |
+| Integration   | *(chưa triển khai — kế hoạch)* | Critical flows | QA     |
+| E2E           | Playwright *(chưa triển khai — kế hoạch)* | User journeys | QA |
+| Performance   | k6 / Artillery *(chưa triển khai — kế hoạch)* | 100 concurrent users | DevOps |
 | Security      | Manual + tools  | OWASP top 10       | TL + DevOps   |
 | UAT           | Manual          | Acceptance criteria | PO + HR team |
+
+> **Thực tế hiện tại:** Server có 85 unit tests (16 test classes, JUnit 5 + Mockito, chạy bằng `mvn test`); client có 61 tests (17 files, Vitest + Testing Library + MSW, chạy bằng `npm test`). CI: GitHub Actions — server tests trên MySQL 8 container (Java 25), client tests + build (Node 24).
 
 ### 9.2 Test schedule
 

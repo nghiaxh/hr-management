@@ -8,7 +8,7 @@
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 830/ISO 29148 |
 | 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai     |
 
-> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment (JobPostings, Candidates), Performance Reviews, Socket.IO chưa triển khai (API và giao diện đang kế hoạch).
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, LeaveBalance, Notifications đã triển khai (Spring Boot + MySQL). Dashboard, EmployeeHistory, Recruitment (JobPostings, Candidates), Performance Reviews, Socket.IO chưa triển khai (API và giao diện đang kế hoạch).
 >
 > > **Ghi chú công nghệ thực tế:** Hệ thống được triển khai với **Spring Boot 4.1 + MySQL 8** (JPA/Hibernate) thay vì Express + MongoDB như thiết kế ban đầu. Các tham chiếu đến Express/MongoDB trong tài liệu đã được cập nhật tương ứng.
 
@@ -58,17 +58,17 @@ Tài liệu này mô tả chi tiết các yêu cầu chức năng và phi chức
 
 Hệ thống là một ứng dụng web SPA (Single Page Application) quản lý nhân sự toàn diện, bao gồm các phân hệ chính sau:
 
-- **Xác thực và Phân quyền**: Đăng ký, đăng nhập, quản lý phiên làm việc, kiểm soát truy cập dựa trên vai trò (RBAC) với JWT.
-- **Quản lý Nhân viên**: Thêm, sửa, xóa, tìm kiếm, phân trang, xuất CSV, quản lý tài liệu đính kèm, lịch sử thay đổi.
+- **Xác thực và Phân quyền**: Đăng ký, đăng nhập, quản lý phiên làm việc, kiểm soát truy cập dựa trên vai trò (RBAC) dựa trên phiên (session).
+- **Quản lý Nhân viên**: Thêm, sửa, xóa, tìm kiếm, phân trang, xuất CSV.
 - **Quản lý Phòng ban**: Tổ chức phòng ban, gán trưởng phòng, sơ đồ tổ chức dạng cây.
 - **Quản lý Nghỉ phép**: Tạo đơn (annual/sick/personal), phê duyệt/từ chối, kiểm tra chồng chéo, tự động trừ quỹ phép, tối đa 30 ngày/đơn.
 - **Quản lý Chấm công**: Check-in/check-out, tự động phân loại trạng thái (present, late, half-day, absent).
-- **Quản lý Bảng lương**: Tính lương hàng tháng (netPay = basicSalary + bonus - deductions, bao gồm BHSS 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, thuế TNCN lũy tiến 7 bậc), chống trùng lặp, quản lý trạng thái thanh toán.
-- **Quản lý Tuyển dụng**: Đăng tin tuyển dụng, theo dõi ứng viên qua các vòng (applied → screening → interview → offered → hired/rejected).
-- **Đánh giá Hiệu suất**: Tạo, cập nhật, xem đánh giá (rating 1-5, comments, goals, status: draft → submitted → acknowledged).
-- **Dashboard và Thống kê**: Báo cáo tổng quan theo từng vai trò (admin/manager/employee) với biểu đồ.
-- **Thông báo thời gian thực**: Thông báo đẩy qua Socket.IO, đánh dấu đã đọc, đếm chưa đọc.
-- **Lịch sử nhân viên**: Timeline các thay đổi về lương, chức vụ, phòng ban (raise/promotion/transfer/other).
+- **Quản lý Bảng lương**: Tính lương hàng tháng (netPay = basicSalary - deductions, bao gồm BHXH 8%, BHYT 1.5%, BHTN 1%, Công đoàn 1%, thuế TNCN lũy tiến 5 bậc với giảm trừ gia cảnh 15.500.000 VND, bonus luôn bằng 0), chống trùng lặp, quản lý trạng thái thanh toán.
+- **Quản lý Tuyển dụng**: Đăng tin tuyển dụng, theo dõi ứng viên qua các vòng (applied → screening → interview → offered → hired/rejected). *(Chưa triển khai - kế hoạch)*
+- **Đánh giá Hiệu suất**: Tạo, cập nhật, xem đánh giá (rating 1-5, comments, goals, status: draft → submitted → acknowledged). *(Chưa triển khai - kế hoạch)*
+- **Dashboard và Thống kê**: Báo cáo tổng quan theo từng vai trò (admin/manager/employee) với biểu đồ. *(Chưa triển khai - kế hoạch)*
+- **Thông báo**: Thông báo trong ứng dụng khi duyệt/từ chối đơn, đánh dấu đã đọc, đếm chưa đọc, giao qua API polling (không dùng Socket.IO).
+- **Lịch sử nhân viên**: Timeline các thay đổi về lương, chức vụ, phòng ban (raise/promotion/transfer/other). *(Chưa triển khai - kế hoạch)*
 - **Giao diện & Trải nghiệm**: Đa ngôn ngữ (EN/VI), dark mode, responsive, phím tắt.
 
 Hệ thống KHÔNG bao gồm: tích hợp bảo hiểm xã hội, tích hợp thuế, chấm công vân tay/khuôn mặt, ứng dụng mobile native, email/SMS gateway, quản lý đào tạo, cổng thông tin ứng viên tự apply.
@@ -78,13 +78,12 @@ Hệ thống KHÔNG bao gồm: tích hợp bảo hiểm xã hội, tích hợp t
 | Thuật ngữ | Ý nghĩa                                                    |
 | --------- | ---------------------------------------------------------- |
 | HR        | Human Resources - Nhân sự                                  |
-| JWT       | JSON Web Token - chuẩn xác thực dạng token                 |
+| JWT       | JSON Web Token - chuẩn xác thực dạng token (auth hiện tại dùng session) |
 | RBAC      | Role-Based Access Control - phân quyền dựa trên vai trò    |
 | SPA       | Single Page Application - ứng dụng trang đơn               |
 | REST      | Representational State Transfer - kiến trúc API            |
 | CRUD      | Create, Read, Update, Delete - bốn thao tác dữ liệu cơ bản |
-| Socket.IO | Thư viện WebSocket cho giao tiếp thời gian thực            |
-| ODM       | Object Document Mapping - ánh xạ đối tượng-tài liệu        |
+| Socket.IO | Thư viện WebSocket cho giao tiếp thời gian thực (chưa triển khai) |
 | MVP       | Minimum Viable Product - sản phẩm tối thiểu khả dụng       |
 | UUID      | Universally Unique Identifier                              |
 | API       | Application Programming Interface                          |
@@ -126,36 +125,36 @@ Tài liệu gồm 10 phần chính:
 
 ### 2.1 Góc nhìn sản phẩm
 
-Hệ thống là một ứng dụng web SPA với kiến trúc client-server phân tách rõ ràng, giao tiếp qua REST API với xác thực JWT Bearer token và WebSocket (Socket.IO) cho thông báo thời gian thực.
+Hệ thống là một ứng dụng web SPA với kiến trúc client-server phân tách rõ ràng, giao tiếp qua REST API với xác thực dựa trên phiên làm việc (session) qua cookie JSESSIONID.
 
 ```
 ┌──────────────┐    HTTP/REST    ┌──────────────┐   JPA/Hibernate ┌────────────┐
 │   Client     │◄──────────────►│   Server     │◄───────────────►│  MySQL 8   │
-│   (React 19)  │   JWT Bearer   │ (Spring Boot)│                 │ (Relational)│
-│  Port 5173   │   + Socket.IO  │  Port 3001   │                 │  Local     │
+│   (React 19)  │ Session (Cookie │ (Spring Boot)│                 │ (Relational)│
+│  Port 5173   │   JSESSIONID)   │  Port 3001   │                 │  Local     │
 └──────────────┘                └──────────────┘                └────────────┘
 ```
 
 - **Client (React 19)**: Giao diện người dùng, chạy trên trình duyệt, port 5173 (dev). Sử dụng HeroUI v3, Tailwind CSS, @phosphor-icons/react, TanStack Query, React Router.
-- **Server (Spring Boot)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Spring Data JPA, Spring Security, JWT (jjwt), Socket.IO, Jakarta Validation.
+- **Server (Spring Boot)**: API backend xử lý nghiệp vụ, port 3001. Sử dụng Spring Data JPA, Spring Security, Spring Session JDBC, Jakarta Validation.
 - **Database (MySQL 8)**: Lưu trữ dữ liệu quan hệ, chạy local (dev) hoặc cloud (production).
 
 ### 2.2 Chức năng sản phẩm
 
-Hệ thống cung cấp các chức năng chính sau, được tổ chức thành 11 phân hệ:
+Hệ thống cung cấp các chức năng chính sau (các phân hệ chưa triển khai được đánh dấu kế hoạch):
 
 | Phân hệ               | Mô tả                                                                 |
 | --------------------- | --------------------------------------------------------------------- |
-| Xác thực & Phân quyền | Đăng nhập, đăng ký, quản lý profile, đổi mật khẩu, JWT, RBAC          |
-| Quản lý Nhân viên     | CRUD, tìm kiếm, lọc, phân trang, export CSV, upload tài liệu, history |
-| Quản lý Phòng ban     | CRUD, gán manager, sơ đồ tổ chức dạng cây                             |
+| Xác thực & Phân quyền | Đăng nhập, đăng ký, quản lý profile, đổi mật khẩu, phiên (session), RBAC |
+| Quản lý Nhân viên     | CRUD, tìm kiếm, lọc, phân trang, export CSV                               |
+| Quản lý Phòng ban     | CRUD, gán manager, sơ đồ tổ chức dạng cây (dựng client-side)              |
 | Quản lý Nghỉ phép     | Tạo đơn, duyệt/từ chối, quỹ phép, kiểm tra chồng chéo, thông báo      |
 | Quản lý Chấm công     | Check-in/out, tự động phân loại, báo cáo                              |
 | Quản lý Bảng lương    | Tính lương tháng, chống trùng lặp, đánh dấu đã trả                    |
-| Dashboard             | Thống kê theo vai trò với biểu đồ (bar, pie)                          |
-| Tuyển dụng            | Quản lý tin tuyển dụng, ứng viên, theo dõi trạng thái                 |
-| Đánh giá Hiệu suất    | Tạo/xem/sửa/xóa đánh giá, quản lý theo kỳ                             |
-| Thông báo             | In-app real-time qua Socket.IO, đánh dấu đã đọc, đếm chưa đọc         |
+| Dashboard             | Thống kê theo vai trò với biểu đồ (bar, pie) *(Chưa triển khai - kế hoạch)* |
+| Tuyển dụng            | Quản lý tin tuyển dụng, ứng viên, theo dõi trạng thái *(Chưa triển khai - kế hoạch)* |
+| Đánh giá Hiệu suất    | Tạo/xem/sửa/xóa đánh giá, quản lý theo kỳ *(Chưa triển khai - kế hoạch)* |
+| Thông báo             | In-app qua API polling, đánh dấu đã đọc, đếm chưa đọc                 |
 | Giao diện & UX        | Đa ngôn ngữ (EN/VI), dark mode, responsive, phím tắt                  |
 
 ### 2.3 Đặc điểm người dùng
@@ -171,8 +170,8 @@ Hệ thống cung cấp các chức năng chính sau, được tổ chức thàn
 | Mã     | Ràng buộc                                                      | Loại       |
 | ------ | -------------------------------------------------------------- | ---------- |
 | CON-01 | Server yêu cầu `JWT_SECRET` trong biến môi trường để khởi động | Kỹ thuật   |
-| CON-02 | Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa + thường + số          | Bảo mật    |
-| CON-03 | File upload tối đa 5MB, chỉ JPEG/PNG/GIF/PDF/DOC/DOCX          | Kỹ thuật   |
+| CON-02 | Mật khẩu tối thiểu 8 ký tự, tối đa 128 ký tự, không yêu cầu độ phức tạp | Bảo mật    |
+| CON-03 | File upload tối đa 5MB, chỉ JPEG/PNG/GIF/PDF/DOC/DOCX (chưa triển khai - kế hoạch) | Kỹ thuật   |
 | CON-04 | API giới hạn 60 request/phút/IP                                | Hiệu năng  |
 | CON-05 | Chạy seed script trước lần đầu sử dụng                         | Triển khai |
 | CON-06 | Sử dụng Spring Boot (Maven), Java 25, JPA/Hibernate             | Kiến trúc  |
@@ -188,7 +187,7 @@ Hệ thống cung cấp các chức năng chính sau, được tổ chức thàn
 3. Dữ liệu nhân sự hiện tại có sẵn ở dạng số hóa (Excel)
 4. Ban lãnh đạo cam kết hỗ trợ quá trình chuyển đổi
 5. Nhân viên được trang bị máy tính/điện thoại có trình duyệt web hiện đại
-6. Trình duyệt hỗ trợ JavaScript (ES6+), WebSocket và localStorage
+6. Trình duyệt hỗ trợ JavaScript (ES6+)
 
 **Phụ thuộc:**
 
@@ -236,7 +235,7 @@ Hệ thống cung cấp các chức năng chính sau, được tổ chức thàn
 
 #### 3.1.2 Giao diện API (REST)
 
-Tất cả API có prefix `/api`, trả về JSON. Authentication qua `Authorization: Bearer <JWT>`.
+Tất cả API có prefix `/api`, trả về JSON. Authentication dựa trên phiên làm việc (session) qua cookie `JSESSIONID`, CSRF dùng header `X-XSRF-TOKEN`.
 
 **Response format - Thành công:**
 
@@ -263,7 +262,7 @@ Tất cả API có prefix `/api`, trả về JSON. Authentication qua `Authoriza
 
 #### 3.1.3 Giao diện giao tiếp (Socket.IO)
 
-Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:{userId}` để nhận thông báo cá nhân.
+Chưa triển khai (kế hoạch). Hiện tại thông báo được giao qua API polling: client poll `GET /api/notifications/unread-count` mỗi 30 giây và danh sách thông báo mỗi 15 giây.
 
 ### 3.2 Yêu cầu chức năng
 
@@ -272,13 +271,13 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | Mã         | Yêu cầu                  | Mô tả                                                             | Mức ưu tiên |
 | ---------- | ------------------------ | ----------------------------------------------------------------- | :---------: |
 | FR-AUTH-01 | Đăng ký tài khoản        | Người dùng đăng ký với email và mật khẩu. Role mặc định: employee |    Could    |
-| FR-AUTH-02 | Đăng nhập                | Email + mật khẩu, server trả về JWT token                         |    Must     |
-| FR-AUTH-03 | Xem thông tin cá nhân    | GET /api/auth/me, trả về thông tin user từ JWT                    |    Must     |
+| FR-AUTH-02 | Đăng nhập                | Email + mật khẩu, server tạo phiên và đặt cookie JSESSIONID            |    Must     |
+| FR-AUTH-03 | Xem thông tin cá nhân    | GET /api/auth/me, trả về thông tin user từ phiên (session)              |    Must     |
 | FR-AUTH-04 | Cập nhật profile         | PUT /api/auth/profile: cập nhật name, email                       |    Must     |
 | FR-AUTH-05 | Đổi mật khẩu             | POST /api/auth/change-password, yêu cầu xác thực mật khẩu cũ      |    Must     |
-| FR-AUTH-06 | Đăng xuất                | Xóa JWT khỏi localStorage (phía client)                           |    Must     |
-| FR-AUTH-07 | Bảo vệ API bằng JWT      | Tất cả API (trừ register, login) yêu cầu JWT hợp lệ               |    Must     |
-| FR-AUTH-08 | Phân quyền API theo role | RolesGuard kiểm tra role trước khi cho phép truy cập API          |    Must     |
+| FR-AUTH-06 | Đăng xuất                | Xóa cookie phiên phía client (không có endpoint logout phía server)     |    Must     |
+| FR-AUTH-07 | Bảo vệ API bằng phiên    | Tất cả API (trừ register, login) yêu cầu phiên hợp lệ                    |    Must     |
+| FR-AUTH-08 | Phân quyền API theo role | SecurityUtil + requireRoles() kiểm tra role trước khi cho phép truy cập |    Must     |
 | FR-AUTH-09 | Demo accounts            | Nút demo tự động điền thông tin admin/manager/employee            |   Should    |
 
 #### 3.2.2 Phân hệ Quản lý Nhân viên
@@ -286,16 +285,16 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | Mã        | Yêu cầu                | Mô tả                                                     | Mức ưu tiên |
 | --------- | ---------------------- | --------------------------------------------------------- | :---------: |
 | FR-EMP-01 | Danh sách nhân viên    | Admin/Manager xem danh sách với tìm kiếm, lọc, phân trang |    Must     |
-| FR-EMP-02 | Xem chi tiết nhân viên | Thông tin cá nhân, hợp đồng, tài liệu, lịch sử thay đổi   |    Must     |
+| FR-EMP-02 | Xem chi tiết nhân viên | Thông tin cá nhân, hợp đồng                                |    Must     |
 | FR-EMP-03 | Thêm nhân viên mới     | Admin thêm với đầy đủ thông tin bắt buộc                  |    Must     |
 | FR-EMP-04 | Cập nhật nhân viên     | Admin chỉnh sửa thông tin nhân viên                       |    Must     |
 | FR-EMP-05 | Xóa nhân viên          | Admin xóa một nhân viên                                   |    Must     |
 | FR-EMP-06 | Xóa hàng loạt          | Admin xóa tối đa 100 nhân viên cùng lúc                   |    Could    |
 | FR-EMP-07 | Export CSV             | Admin/Manager xuất danh sách ra file CSV                  |    Could    |
-| FR-EMP-08 | Upload tài liệu        | Admin upload (hợp đồng, CV, chứng chỉ), tối đa 5MB/file   |   Should    |
-| FR-EMP-09 | Xóa tài liệu           | Admin xóa tài liệu đã upload                              |   Should    |
-| FR-EMP-10 | Xem lịch sử            | Timeline các thay đổi: raise, promotion, transfer         |    Must     |
-| FR-EMP-11 | Thêm lịch sử           | Admin/Manager thêm ghi chép lịch sử cho nhân viên         |    Must     |
+| FR-EMP-08 | Upload tài liệu        | Admin upload (hợp đồng, CV, chứng chỉ), tối đa 5MB/file *(Chưa triển khai - kế hoạch)* |   Should    |
+| FR-EMP-09 | Xóa tài liệu           | Admin xóa tài liệu đã upload *(Chưa triển khai - kế hoạch)* |   Should    |
+| FR-EMP-10 | Xem lịch sử            | Timeline các thay đổi: raise, promotion, transfer *(Chưa triển khai - kế hoạch)* |    Must     |
+| FR-EMP-11 | Thêm lịch sử           | Admin/Manager thêm ghi chép lịch sử cho nhân viên *(Chưa triển khai - kế hoạch)* |    Must     |
 
 #### 3.2.3 Phân hệ Quản lý Phòng ban
 
@@ -345,6 +344,8 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 #### 3.2.7 Phân hệ Dashboard
 
+*Chưa triển khai (kế hoạch) — không có module, endpoint hay giao diện.*
+
 | Mã         | Yêu cầu            | Mô tả                                                                                   | Mức ưu tiên |
 | ---------- | ------------------ | --------------------------------------------------------------------------------------- | :---------: |
 | FR-DASH-01 | Admin Dashboard    | Tổng NV, phòng ban, đơn chờ, chấm công hôm nay, tổng lương tháng, biểu đồ NV theo phòng |    Must     |
@@ -352,6 +353,8 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | FR-DASH-03 | Employee Dashboard | Thống kê nghỉ phép, chấm công, lương gần nhất, đơn sắp tới                              |    Must     |
 
 #### 3.2.8 Phân hệ Tuyển dụng
+
+*Chưa triển khai (kế hoạch) — không có module, endpoint hay giao diện.*
 
 | Mã        | Yêu cầu                | Mô tả                                                                | Mức ưu tiên |
 | --------- | ---------------------- | -------------------------------------------------------------------- | :---------: |
@@ -361,6 +364,8 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | FR-REC-04 | Lọc ứng viên           | Lọc theo tin tuyển dụng và trạng thái                                |   Should    |
 
 #### 3.2.9 Phân hệ Đánh giá Hiệu suất
+
+*Chưa triển khai (kế hoạch) — không có module, endpoint hay giao diện.*
 
 | Mã        | Yêu cầu           | Mô tả                                                              | Mức ưu tiên |
 | --------- | ----------------- | ------------------------------------------------------------------ | :---------: |
@@ -373,12 +378,14 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 | Mã        | Yêu cầu                  | Mô tả                                  | Mức ưu tiên |
 | --------- | ------------------------ | -------------------------------------- | :---------: |
-| FR-NOT-01 | Thông báo trong ứng dụng | Khi duyệt/từ chối đơn, lương sẵn sàng  |    Must     |
-| FR-NOT-02 | Thời gian thực           | Đẩy qua Socket.IO ngay lập tức         |   Should    |
+| FR-NOT-01 | Thông báo trong ứng dụng | Khi duyệt/từ chối đơn nghỉ phép                     |    Must     |
+| FR-NOT-02 | Thời gian thực           | Socket.IO *(Chưa triển khai - kế hoạch)*; hiện tại dùng API polling |   Should    |
 | FR-NOT-03 | Đánh dấu đã đọc          | Đánh dấu từng cái hoặc tất cả          |    Must     |
-| FR-NOT-04 | Đếm chưa đọc             | Badge trên sidebar, cập nhật real-time |    Must     |
+| FR-NOT-04 | Đếm chưa đọc             | Badge trên sidebar, cập nhật qua API polling (mỗi 30 giây) |    Must     |
 
 #### 3.2.11 Phân hệ Lịch sử nhân viên
+
+*Chưa triển khai (kế hoạch) — không có module, endpoint hay giao diện.*
 
 | Mã         | Yêu cầu      | Mô tả                                                     | Mức ưu tiên |
 | ---------- | ------------ | --------------------------------------------------------- | :---------: |
@@ -413,7 +420,7 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | --------- | -------------------------------------- | -------------------------------------------------------- | :---------: |
 | CON-DS-01 | Kiến trúc client-server phân tách      | React SPA giao tiếp với Spring Boot API qua REST         |    Must     |
 | CON-DS-02 | Tách biệt User và Employee             | Auth credentials riêng biệt với HR profile data          |    Must     |
-| CON-DS-03 | JWT trong localStorage                 | Đơn giản cho SPA, httpOnly cookies an toàn hơn           |    Must     |
+| CON-DS-03 | Phiên (session) qua cookie HTTP        | Spring Session JDBC lưu phiên trong bảng `sessions`, cookie httpOnly |    Must     |
 | CON-DS-04 | ESM (ES Modules)                       | `"type": "module"` trong client (Vite/TypeScript)       |    Must     |
 | CON-DS-05 | Server dùng Maven + Java               | Build và dependency management qua pom.xml               |    Must     |
 | CON-DS-06 | Controller/Service/Repository pattern  | Tách biệt rõ giữa controller, service, repository layers  |    Must     |
@@ -425,14 +432,14 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | Mã         | Yêu cầu                          | Chỉ tiêu                                      | Mức ưu tiên |
 | ---------- | -------------------------------- | --------------------------------------------- | :---------: |
 | NFR-SEC-01 | Mã hóa mật khẩu                  | bcrypt với 10 salt rounds                     |    Must     |
-| NFR-SEC-02 | JWT expiration                   | Token hết hạn sau 1 ngày (JWT_EXPIRES_IN=1d)  |    Must     |
-| NFR-SEC-03 | Rate limiting                    | Tối đa 60 request/phút/IP                     |    Must     |
+| NFR-SEC-02 | Thời gian phiên                  | Session hết hạn sau 1 ngày (jwt.expiration mặc định 86400000ms, tên cũ kế thừa) |    Must     |
+| NFR-SEC-03 | Rate limiting                    | Tối đa 60 request/phút/IP *(chưa triển khai - kế hoạch)*                     |    Must     |
 | NFR-SEC-04 | HTTP security headers            | Spring Security headers: X-Frame-Options, CSP, etc |    Must     |
 | NFR-SEC-05 | Input validation                 | Bean Validation (Jakarta Validation) + Spring validation |    Must     |
 | NFR-SEC-06 | CORS                             | Chỉ cho phép origin được ủy quyền             |    Must     |
-| NFR-SEC-07 | File upload restriction          | Tối đa 5MB, JPEG/PNG/GIF/PDF/DOC/DOCX         |    Must     |
+| NFR-SEC-07 | File upload restriction          | Tối đa 5MB, JPEG/PNG/GIF/PDF/DOC/DOCX *(Chưa triển khai - kế hoạch)* |    Must     |
 | NFR-SEC-08 | Regex escape cho search input    | Ngăn chặn SQL injection                       |   Should    |
-| NFR-SEC-09 | WebSocket auth via JWT handshake | Xác thực trước khi kết nối Socket.IO          |    Must     |
+| NFR-SEC-09 | WebSocket auth                  | Socket.IO *(Chưa triển khai - kế hoạch)*      |    Must     |
 
 #### 3.6.2 Độ tin cậy
 
@@ -441,7 +448,7 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 | NFR-REL-01 | Uptime                   | 99.9% trong giờ hành chính                   |   Should    |
 | NFR-REL-02 | Data consistency         | JPA transactions (@Transactional) cho critical operations |   Should    |
 | NFR-REL-03 | Error handling           | GlobalExceptionHandler (@ControllerAdvice), client error boundary |    Must     |
-| NFR-REL-04 | Socket.IO auto-reconnect | Tự động kết nối lại khi mất kết nối          |    Must     |
+| NFR-REL-04 | Socket.IO auto-reconnect | *(Chưa triển khai - kế hoạch)*               |    Must     |
 
 #### 3.6.3 Khả dụng
 
@@ -469,7 +476,7 @@ Kết nối WebSocket qua Socket.IO với JWT handshake. Client join room `user:
 
 ## 4. Mô hình dữ liệu
 
-Hệ thống sử dụng MySQL 8 với 10 tables. Dưới đây là cấu trúc chi tiết (UUID primary keys, quan hệ khóa ngoại).
+Hệ thống sử dụng MySQL 8. Dưới đây là cấu trúc chi tiết (UUID primary keys, quan hệ khóa ngoại).
 
 ### 4.1 User (users table)
 
@@ -504,7 +511,7 @@ Hệ thống sử dụng MySQL 8 với 10 tables. Dưới đây là cấu trúc 
 
 **Indexes:** `department_id`, `user_id` (unique)
 
-> Employee documents stored in separate `employee_documents` table.
+> Employee documents — chưa triển khai (kế hoạch); entity Employee không có trường documents.
 
 ### 4.3 Department (departments table)
 
@@ -580,6 +587,8 @@ Hệ thống sử dụng MySQL 8 với 10 tables. Dưới đây là cấu trúc 
 
 ### 4.8 EmployeeHistory (employee_histories table)
 
+> Chưa triển khai (kế hoạch) — bảng chưa tồn tại trong schema hiện tại.
+
 | Column          | Type          | Constraints                |
 |-----------------|---------------|---------------------------|
 | id              | UUID (BINARY)| PK                         |
@@ -609,6 +618,8 @@ Hệ thống sử dụng MySQL 8 với 10 tables. Dưới đây là cấu trúc 
 **Indexes:** `user_id + is_read + created_at`
 
 ### 4.10 EmployeeDocument (employee_documents table)
+
+> Chưa triển khai (kế hoạch) — bảng chưa tồn tại trong schema hiện tại.
 
 | Column       | Type          | Constraints                |
 |--------------|---------------|---------------------------|
@@ -744,11 +755,11 @@ graph TB
 | Xóa                    |  Có   |   Không    |     Không     |
 | Bulk delete            |  Có   |   Không    |     Không     |
 | Export CSV             |  Có   | Có (phòng) |     Không     |
-| Upload/Xóa document    |  Có   |   Không    |     Không     |
+| Upload/Xóa document (chưa triển khai - kế hoạch) |   -   |     -      |       -       |
 | **Phòng ban**          |       |            |               |
 | CRUD                   |  Có   |   Không    |     Không     |
 | Xem danh sách          |  Có   |     Có     |     Không     |
-| Sơ đồ tổ chức          |  Có   |     Có     |     Không     |
+| Sơ đồ tổ chức (dựng client-side từ danh sách phòng ban) |  Có   |     Có     |     Không     |
 | **Nghỉ phép**          |       |            |               |
 | Tạo đơn                | Không |   Không    |      Có       |
 | Duyệt/Từ chối          |  Có   | Có (phòng) |     Không     |
@@ -761,31 +772,31 @@ graph TB
 | Xử lý lương            |  Có   |   Không    |     Không     |
 | Xem lương              |  Có   | Có (phòng) | Có (bản thân) |
 | Đánh dấu đã trả        |  Có   |   Không    |     Không     |
-| **Tuyển dụng**         |       |            |               |
-| CRUD tin tuyển dụng    |  Có   |   Không    |     Không     |
-| CRUD ứng viên          |  Có   |     Có     |     Không     |
-| **Đánh giá hiệu suất** |       |            |               |
-| Tạo/Sửa                |  Có   |     Có     |     Không     |
-| Xóa                    |  Có   |   Không    |     Không     |
-| Xem                    |  Có   | Có (phòng) | Có (bản thân) |
+| **Tuyển dụng** (chưa triển khai - kế hoạch) |       |            |               |
+| CRUD tin tuyển dụng    |   -   |     -      |       -       |
+| CRUD ứng viên          |   -   |     -      |       -       |
+| **Đánh giá hiệu suất** (chưa triển khai - kế hoạch) |       |            |               |
+| Tạo/Sửa                |   -   |     -      |       -       |
+| Xóa                    |   -   |     -      |       -       |
+| Xem                    |   -   |     -      |       -       |
 | **Thông báo**          |  Có   |     Có     |      Có       |
-| **Dashboard**          |  Có   | Có (phòng) | Có (cá nhân)  |
-| **Lịch sử NV**         |  Có   | Có (phòng) | Có (bản thân) |
+| **Dashboard** (chưa triển khai - kế hoạch) |   -   |     -      |       -       |
+| **Lịch sử NV** (chưa triển khai - kế hoạch) |   -   |     -      |       -       |
 
 ### 6.2 Quyền truy cập giao diện
 
 | Menu sidebar        |   Admin   |  Manager  | Employee |
 | ------------------- | :-------: | :-------: | :------: |
-| Dashboard           |    Có     |    Có     |    Có    |
+| Dashboard (chưa triển khai) |   Không  |   Không  |  Không   |
 | Employees           |    Có     |    Có     |  Không   |
 | Departments         |    Có     |    Có     |  Không   |
 | Org Chart           |    Có     |    Có     |  Không   |
 | Leaves              | Approvals | Approvals |    Có    |
 | Attendance          |  Report   |  Report   |    Có    |
 | Payroll             |  Manage   |  Manage   |    Có    |
-| Job Postings        |    Có     |    Có     |  Không   |
-| Candidates          |    Có     |    Có     |  Không   |
-| Performance Reviews |  Manage   |  Manage   |    Có    |
+| Job Postings (chưa triển khai) |   Không  |   Không  |  Không   |
+| Candidates (chưa triển khai) |   Không  |   Không  |  Không   |
+| Performance Reviews (chưa triển khai) |  Không  |  Không  |  Không   |
 | Notifications       |    Có     |    Có     |    Có    |
 | Profile             |    Có     |    Có     |    Có    |
 | Settings            |    Có     |    Có     |    Có    |
@@ -813,9 +824,9 @@ sequenceDiagram
     UI->>API: PATCH /leaves/:id/status {status: 'approved'}
     API->>LB: deduct(employeeId, type, days)
     API->>NOT: create(notification)
-    NOT-->>UI: Socket.IO push
+    NOT-->>UI: Lưu thông báo vào DB
     API-->>UI: Leave updated
-    UI-->>E: Real-time thông báo
+    UI-->>E: Thông báo (client poll qua API)
 ```
 
 ### 7.2 Luồng chấm công
@@ -856,7 +867,7 @@ sequenceDiagram
     A->>U: Chọn tháng, năm, nhân viên
     U->>P: POST /payroll/process {employeeIds, month, year}
     P->>EMP: Lấy salary từng NV
-    P->>P: netPay = salary + bonus - deductions (BHXH+BHTN+BHTNLD+Công đoàn+PIT)
+    P->>P: netPay = salary - deductions (BHXH 8% + BHYT 1.5% + BHTN 1% + Công đoàn 1% + PIT 5 bậc, giảm trừ 15.500.000 VND)
     P->>P: Kiểm tra trùng (employeeId+month+year)
     P->>P: Tạo payroll records
     P-->>U: 201 Created
@@ -871,13 +882,13 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant JWT as JWT Middleware
-    participant ROLE as Role Middleware
+    participant FILTER as SessionAuthenticationFilter
+    participant ROLE as Service layer (SecurityUtil)
     participant ROUTE as Route Handler
-    C->>JWT: Request + JWT Bearer
-    JWT->>JWT: Giải mã & xác thực JWT
-    alt Token hợp lệ
-        JWT->>ROLE: req.user
+    C->>FILTER: Request + JSESSIONID cookie
+    FILTER->>FILTER: Đọc userId/userRole từ HttpSession
+    alt Phiên hợp lệ
+        FILTER->>ROLE: SecurityContext (userId, userRole)
         ROLE->>ROLE: Kiểm tra role
         alt Role hợp lệ
             ROLE->>ROUTE: Xử lý
@@ -885,8 +896,8 @@ sequenceDiagram
         else Sai role
             ROLE-->>C: 403 Forbidden
         end
-    else Token lỗi
-        JWT-->>C: 401 Unauthorized
+    else Phiên lỗi/hết hạn
+        FILTER-->>C: 401 Unauthorized
     end
 ```
 
@@ -900,118 +911,128 @@ sequenceDiagram
 | ------ | --------------------------- | ----------------- | :---: |
 | POST   | `/api/auth/register`        | Đăng ký tài khoản | Không |
 | POST   | `/api/auth/login`           | Đăng nhập         | Không |
-| GET    | `/api/auth/me`              | Xem profile       |  JWT  |
-| PUT    | `/api/auth/profile`         | Cập nhật profile  |  JWT  |
-| POST   | `/api/auth/change-password` | Đổi mật khẩu      |  JWT  |
+| GET    | `/api/auth/me`              | Xem profile       | Phiên |
+| PUT    | `/api/auth/profile`         | Cập nhật profile  | Phiên |
+| POST   | `/api/auth/change-password` | Đổi mật khẩu      | Phiên |
 
 ### 8.2 Employees
 
 | Method | Endpoint                              | Mô tả                  | Auth |     Role      |
 | ------ | ------------------------------------- | ---------------------- | :--: | :-----------: |
-| GET    | `/api/employees`                      | Danh sách + phân trang | JWT  | Admin,Manager |
-| GET    | `/api/employees/export`               | Export CSV             | JWT  | Admin,Manager |
-| GET    | `/api/employees/:id`                  | Chi tiết               | JWT  |      All      |
-| POST   | `/api/employees`                      | Thêm mới               | JWT  |     Admin     |
-| PUT    | `/api/employees/:id`                  | Cập nhật               | JWT  |     Admin     |
-| DELETE | `/api/employees/:id`                  | Xóa                    | JWT  |     Admin     |
-| POST   | `/api/employees/bulk-delete`          | Xóa hàng loạt          | JWT  |     Admin     |
-| POST   | `/api/employees/:id/documents`        | Upload tài liệu        | JWT  |     Admin     |
-| DELETE | `/api/employees/:id/documents/:docId` | Xóa tài liệu           | JWT  |     Admin     |
+| GET    | `/api/employees`                      | Danh sách + phân trang | Phiên | Admin,Manager |
+| GET    | `/api/employees/me`                   | Thông tin cá nhân của tôi | Phiên |   Employee   |
+| GET    | `/api/employees/export`               | Export CSV             | Phiên | Admin,Manager |
+| GET    | `/api/employees/:id`                  | Chi tiết               | Phiên |      All      |
+| POST   | `/api/employees`                      | Thêm mới               | Phiên |     Admin     |
+| PUT    | `/api/employees/:id`                  | Cập nhật               | Phiên |     Admin     |
+| DELETE | `/api/employees/:id`                  | Xóa                    | Phiên |     Admin     |
+| POST   | `/api/employees/bulk-delete`          | Xóa hàng loạt          | Phiên |     Admin     |
 
 ### 8.3 Departments
 
 | Method | Endpoint                     | Mô tả         | Auth |     Role      |
 | ------ | ---------------------------- | ------------- | :--: | :-----------: |
-| GET    | `/api/departments`           | Danh sách     | JWT  | Admin,Manager |
-| GET    | `/api/departments/org-chart` | Sơ đồ tổ chức | JWT  | Admin,Manager |
-| GET    | `/api/departments/:id`       | Chi tiết      | JWT  | Admin,Manager |
-| POST   | `/api/departments`           | Thêm mới      | JWT  |     Admin     |
-| PUT    | `/api/departments/:id`       | Cập nhật      | JWT  |     Admin     |
-| DELETE | `/api/departments/:id`       | Xóa           | JWT  |     Admin     |
+| GET    | `/api/departments`           | Danh sách     | Phiên | Admin,Manager |
+| GET    | `/api/departments/:id`       | Chi tiết      | Phiên | Admin,Manager |
+| POST   | `/api/departments`           | Thêm mới      | Phiên |     Admin     |
+| PUT    | `/api/departments/:id`       | Cập nhật      | Phiên |     Admin     |
+| DELETE | `/api/departments/:id`       | Xóa           | Phiên |     Admin     |
+
+> Sơ đồ tổ chức được dựng phía client từ `GET /api/departments` (không có endpoint `/org-chart` riêng).
 
 ### 8.4 Leaves
 
 | Method | Endpoint                 | Mô tả         | Auth |     Role      |
 | ------ | ------------------------ | ------------- | :--: | :-----------: |
-| GET    | `/api/leaves`            | Danh sách     | JWT  |      All      |
-| POST   | `/api/leaves`            | Tạo đơn       | JWT  |   Employee    |
-| GET    | `/api/leaves/:id`        | Chi tiết      | JWT  |      All      |
-| PATCH  | `/api/leaves/:id/status` | Duyệt/từ chối | JWT  | Admin,Manager |
+| GET    | `/api/leaves`            | Danh sách     | Phiên |      All      |
+| POST   | `/api/leaves`            | Tạo đơn       | Phiên |   Employee    |
+| GET    | `/api/leaves/:id`        | Chi tiết      | Phiên |      All      |
+| PATCH  | `/api/leaves/:id/status` | Duyệt/từ chối | Phiên | Admin,Manager |
 
 ### 8.5 Attendance
 
 | Method | Endpoint                        | Mô tả     | Auth |   Role   |
 | ------ | ------------------------------- | --------- | :--: | :------: |
-| GET    | `/api/attendance`               | Danh sách | JWT  |   All    |
-| POST   | `/api/attendance/check-in`      | Check-in  | JWT  | Employee |
-| PATCH  | `/api/attendance/:id/check-out` | Check-out | JWT  | Employee |
+| GET    | `/api/attendance`               | Danh sách | Phiên |   All    |
+| POST   | `/api/attendance/check-in`      | Check-in  | Phiên | Employee |
+| PATCH  | `/api/attendance/:id/check-out` | Check-out | Phiên | Employee |
 
 ### 8.6 Payroll
 
 | Method | Endpoint               | Mô tả           | Auth | Role  |
 | ------ | ---------------------- | --------------- | :--: | :---: |
-| GET    | `/api/payroll`         | Danh sách       | JWT  |  All  |
-| POST   | `/api/payroll/process` | Xử lý lương     | JWT  | Admin |
-| PATCH  | `/api/payroll/:id/pay` | Đánh dấu đã trả | JWT  | Admin |
+| GET    | `/api/payroll`         | Danh sách       | Phiên |  All  |
+| POST   | `/api/payroll/process` | Xử lý lương     | Phiên | Admin |
+| PATCH  | `/api/payroll/:id/pay` | Đánh dấu đã trả | Phiên | Admin |
 
 ### 8.7 Job Postings
 
+> Chưa triển khai (kế hoạch) — không có endpoint.
+
 | Method | Endpoint                | Mô tả     | Auth |     Role      |
 | ------ | ----------------------- | --------- | :--: | :-----------: |
-| GET    | `/api/job-postings`     | Danh sách | JWT  | Admin,Manager |
-| POST   | `/api/job-postings`     | Thêm mới  | JWT  |     Admin     |
-| GET    | `/api/job-postings/:id` | Chi tiết  | JWT  | Admin,Manager |
-| PUT    | `/api/job-postings/:id` | Cập nhật  | JWT  |     Admin     |
-| DELETE | `/api/job-postings/:id` | Xóa       | JWT  |     Admin     |
+| GET    | `/api/job-postings`     | Danh sách | Phiên | Admin,Manager |
+| POST   | `/api/job-postings`     | Thêm mới  | Phiên |     Admin     |
+| GET    | `/api/job-postings/:id` | Chi tiết  | Phiên | Admin,Manager |
+| PUT    | `/api/job-postings/:id` | Cập nhật  | Phiên |     Admin     |
+| DELETE | `/api/job-postings/:id` | Xóa       | Phiên |     Admin     |
 
 ### 8.8 Candidates
 
+> Chưa triển khai (kế hoạch) — không có endpoint.
+
 | Method | Endpoint              | Mô tả     | Auth |     Role      |
 | ------ | --------------------- | --------- | :--: | :-----------: |
-| GET    | `/api/candidates`     | Danh sách | JWT  | Admin,Manager |
-| POST   | `/api/candidates`     | Thêm mới  | JWT  | Admin,Manager |
-| GET    | `/api/candidates/:id` | Chi tiết  | JWT  | Admin,Manager |
-| PUT    | `/api/candidates/:id` | Cập nhật  | JWT  | Admin,Manager |
-| DELETE | `/api/candidates/:id` | Xóa       | JWT  |     Admin     |
+| GET    | `/api/candidates`     | Danh sách | Phiên | Admin,Manager |
+| POST   | `/api/candidates`     | Thêm mới  | Phiên | Admin,Manager |
+| GET    | `/api/candidates/:id` | Chi tiết  | Phiên | Admin,Manager |
+| PUT    | `/api/candidates/:id` | Cập nhật  | Phiên | Admin,Manager |
+| DELETE | `/api/candidates/:id` | Xóa       | Phiên |     Admin     |
 
 ### 8.9 Performance Reviews
 
+> Chưa triển khai (kế hoạch) — không có endpoint.
+
 | Method | Endpoint                       | Mô tả     | Auth |     Role      |
 | ------ | ------------------------------ | --------- | :--: | :-----------: |
-| GET    | `/api/performance-reviews`     | Danh sách | JWT  |      All      |
-| POST   | `/api/performance-reviews`     | Thêm mới  | JWT  | Admin,Manager |
-| GET    | `/api/performance-reviews/:id` | Chi tiết  | JWT  |      All      |
-| PUT    | `/api/performance-reviews/:id` | Cập nhật  | JWT  | Admin,Manager |
-| DELETE | `/api/performance-reviews/:id` | Xóa       | JWT  |     Admin     |
+| GET    | `/api/performance-reviews`     | Danh sách | Phiên |      All      |
+| POST   | `/api/performance-reviews`     | Thêm mới  | Phiên | Admin,Manager |
+| GET    | `/api/performance-reviews/:id` | Chi tiết  | Phiên |      All      |
+| PUT    | `/api/performance-reviews/:id` | Cập nhật  | Phiên | Admin,Manager |
+| DELETE | `/api/performance-reviews/:id` | Xóa       | Phiên |     Admin     |
 
 ### 8.10 Notifications
 
 | Method | Endpoint                          | Mô tả                  | Auth | Role |
 | ------ | --------------------------------- | ---------------------- | :--: | :--: |
-| GET    | `/api/notifications`              | Danh sách              | JWT  | All  |
-| GET    | `/api/notifications/unread-count` | Số chưa đọc            | JWT  | All  |
-| PATCH  | `/api/notifications/:id/read`     | Đánh dấu đã đọc        | JWT  | All  |
-| PATCH  | `/api/notifications/read-all`     | Đánh dấu tất cả đã đọc | JWT  | All  |
+| GET    | `/api/notifications`              | Danh sách              | Phiên | All  |
+| GET    | `/api/notifications/unread-count` | Số chưa đọc            | Phiên | All  |
+| PATCH  | `/api/notifications/:id/read`     | Đánh dấu đã đọc        | Phiên | All  |
+| PATCH  | `/api/notifications/read-all`     | Đánh dấu tất cả đã đọc | Phiên | All  |
 
 ### 8.11 Dashboard
 
+> Chưa triển khai (kế hoạch) — không có endpoint.
+
 | Method | Endpoint         | Mô tả     | Auth | Role |
 | ------ | ---------------- | --------- | :--: | :--: |
-| GET    | `/api/dashboard` | Dashboard | JWT  | All  |
+| GET    | `/api/dashboard` | Dashboard | Phiên | All  |
 
 ### 8.12 Employee History
 
+> Chưa triển khai (kế hoạch) — không có endpoint.
+
 | Method | Endpoint                             | Mô tả        | Auth |     Role      |
 | ------ | ------------------------------------ | ------------ | :--: | :-----------: |
-| GET    | `/api/employees/:employeeId/history` | Xem lịch sử  | JWT  |      All      |
-| POST   | `/api/employees/:employeeId/history` | Thêm lịch sử | JWT  | Admin,Manager |
+| GET    | `/api/employees/:employeeId/history` | Xem lịch sử  | Phiên |      All      |
+| POST   | `/api/employees/:employeeId/history` | Thêm lịch sử | Phiên | Admin,Manager |
 
 ### 8.13 Leave Balance
 
 | Method | Endpoint                         | Mô tả            | Auth |     Role      |
 | ------ | -------------------------------- | ---------------- | :--: | :-----------: |
-| GET    | `/api/leave-balance/my`          | Quỹ phép của tôi | JWT  |   Employee    |
-| GET    | `/api/leave-balance/:employeeId` | Quỹ phép của NV  | JWT  | Admin,Manager |
+| GET    | `/api/leave-balance/my`          | Quỹ phép của tôi | Phiên |   Employee    |
+| GET    | `/api/leave-balance/:employeeId` | Quỹ phép của NV  | Phiên | Admin,Manager |
 
 ---
 
@@ -1021,25 +1042,25 @@ sequenceDiagram
 
 | Mã yêu cầu  | Phương pháp xác minh                | Công cụ                            |
 | ----------- | ----------------------------------- | ---------------------------------- |
-| FR-AUTH-\*  | Kiểm thử chức năng, API test        | Postman, Jest (unit)               |
-| FR-EMP-\*   | Kiểm thử CRUD, kiểm tra phân quyền  | Postman, Playwright (E2E)          |
-| FR-DEPT-\*  | Kiểm thử CRUD, org-chart API        | Postman, Jest                      |
-| FR-LEAVE-\* | Kiểm thử luồng, overlap validation  | Supertest + MongoMemoryServer      |
-| FR-ATT-\*   | Kiểm thử check-in/out, auto status  | Supertest + date mocking           |
-| FR-PAY-\*   | Kiểm thử tính toán, chống trùng lặp | Supertest, Jest                    |
-| FR-DASH-\*  | Kiểm thử API dashboard              | Supertest                          |
-| FR-REC-\*   | Kiểm thử CRUD, status flow          | Postman, Playwright                |
-| FR-PRF-\*   | Kiểm thử CRUD, role scoping         | Postman, Jest                      |
-| FR-NOT-\*   | Kiểm thử Socket.IO events           | Socket.IO client test              |
+| FR-AUTH-\*  | Kiểm thử chức năng, API test        | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-EMP-\*   | Kiểm thử CRUD, kiểm tra phân quyền  | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-DEPT-\*  | Kiểm thử CRUD phòng ban              | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-LEAVE-\* | Kiểm thử luồng, overlap validation  | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-ATT-\*   | Kiểm thử check-in/out, auto status  | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-PAY-\*   | Kiểm thử tính toán, chống trùng lặp | JUnit 5 + Mockito (server), Vitest + MSW (client) |
+| FR-DASH-\*  | Chưa triển khai (kế hoạch)          | -                                 |
+| FR-REC-\*   | Chưa triển khai (kế hoạch)          | -                                 |
+| FR-PRF-\*   | Chưa triển khai (kế hoạch)          | -                                 |
+| FR-NOT-\*   | Kiểm thử API polling                | Vitest + MSW                       |
 | NFR-PERF-\* | Kiểm thử hiệu năng                  | k6 / Artillery                     |
 | NFR-SEC-\*  | Kiểm thử bảo mật                    | OWASP ZAP, manual review           |
-| FR-UI-\*    | Kiểm thử giao diện                  | Playwright, Storybook, manual test |
+| FR-UI-\*    | Kiểm thử giao diện                  | Vitest + Testing Library, manual test |
 
 ### 9.2 Tiêu chí chấp nhận
 
 1. 100% chức năng trong scope hoạt động đúng theo các acceptance criteria trong tài liệu US.md
 2. Thời gian phản hồi API < 500ms cho 95% request
-3. Bảo mật: JWT, bcrypt (10 rounds), Helmet, rate limiting (60 req/min)
+3. Bảo mật: phiên (session) qua Spring Session JDBC, bcrypt, CSRF (`X-XSRF-TOKEN`), Spring Security headers
 4. Hỗ trợ đồng thời 100+ người dùng
 5. Không có lỗi critical hoặc blocker trong UAT
 
@@ -1055,8 +1076,8 @@ sequenceDiagram
 | BR-002 | Số ngày nghỉ <= 30                                | Leave              |
 | BR-003 | Không trùng ngày với đơn approved                 | Leave              |
 | BR-004 | email là duy nhất trong hệ thống                  | User               |
-| BR-005 | Mật khẩu >= 8 ký tự, có chữ hoa + thường + số     | User               |
-| BR-006 | netPay = max(0, basicSalary + bonus - deductions), deductions = BHXH(8%) + BHTN(1%) + BHTNLD(0.5%) + Công đoàn(2.5%) + PIT(lũy tiến) | Payroll            |
+| BR-005 | Mật khẩu >= 8 ký tự, tối đa 128 ký tự (không yêu cầu độ phức tạp) | User               |
+| BR-006 | netPay = basicSalary - deductions, deductions = BHXH(8%) + BHYT(1.5%) + BHTN(1%) + Công đoàn(1%) + PIT(lũy tiến 5 bậc, giảm trừ 15.500.000 VND); bonus luôn bằng 0 | Payroll            |
 | BR-007 | Check-in < 9:00 → present, >= 9:00 → late         | Attendance         |
 | BR-008 | workedHours < 4h → half-day                       | Attendance         |
 | BR-009 | Employee chỉ thấy dữ liệu bản thân                | All scoped queries |
@@ -1075,7 +1096,7 @@ sequenceDiagram
 | FR-EMP-03   | BR-001 | UC-04    | POST /api/employees                 |
 | FR-EMP-07   | BR-005 | UC-04    | GET /api/employees/export           |
 | FR-DEPT-01  | BR-010 | UC-05    | GET /api/departments                |
-| FR-DEPT-06  | BR-012 | UC-17    | GET /api/departments/org-chart      |
+| FR-DEPT-06  | BR-012 | UC-17    | GET /api/departments (dựng client-side) |
 | FR-LEAVE-02 | BR-020 | UC-06    | POST /api/leaves                    |
 | FR-LEAVE-05 | BR-022 | UC-07    | PATCH /api/leaves/:id/status        |
 | FR-LEAVE-08 | BR-025 | UC-08    | GET /api/leave-balance/my           |
@@ -1083,19 +1104,19 @@ sequenceDiagram
 | FR-ATT-02   | BR-030 | UC-09    | PATCH /api/attendance/:id/check-out |
 | FR-PAY-02   | BR-040 | UC-11    | POST /api/payroll/process           |
 | FR-PAY-05   | BR-043 | UC-11    | PATCH /api/payroll/:id/pay          |
-| FR-DASH-01  | BR-070 | UC-15    | GET /api/dashboard                  |
-| FR-REC-01   | BR-050 | UC-13    | GET/POST /api/job-postings          |
-| FR-REC-02   | BR-051 | UC-13    | GET/POST /api/candidates            |
-| FR-PRF-01   | BR-060 | UC-14    | POST /api/performance-reviews       |
+| FR-DASH-01  | BR-070 | UC-15    | (Chưa triển khai - kế hoạch)        |
+| FR-REC-01   | BR-050 | UC-13    | (Chưa triển khai - kế hoạch)        |
+| FR-REC-02   | BR-051 | UC-13    | (Chưa triển khai - kế hoạch)        |
+| FR-PRF-01   | BR-060 | UC-14    | (Chưa triển khai - kế hoạch)        |
 | FR-NOT-01   | BR-080 | UC-16    | GET /api/notifications              |
-| FR-HIST-01  | BR-004 | UC-18    | GET /api/employees/:id/history      |
-| FR-HIST-02  | BR-004 | UC-19    | POST /api/employees/:id/history     |
+| FR-HIST-01  | BR-004 | UC-18    | (Chưa triển khai - kế hoạch)        |
+| FR-HIST-02  | BR-004 | UC-19    | (Chưa triển khai - kế hoạch)        |
 
 ### 10.3 Giới hạn (Limitations)
 
 - Hệ thống chưa hỗ trợ xác thực đa yếu tố (MFA)
 - Chưa có cơ chế khôi phục mật khẩu qua email
-- File upload lưu trên local filesystem, chưa tích hợp cloud storage (S3, GCS)
+- Chưa hỗ trợ file upload (tài liệu nhân viên)
 - Chưa có audit log chi tiết cho tất cả thao tác
 - Chưa hỗ trợ offline mode
 

@@ -2,7 +2,7 @@
 
 ## What This Project Does
 
-An HR management web app where companies can manage employees, track attendance, handle leave requests, run payroll, and manage recruitment — all with role-based access control (admin, manager, employee).
+An HR management web app where companies can manage employees, track attendance, handle leave requests, run payroll, and manage departments — all with role-based access control (admin, manager, employee).
 
 Two independent packages: `server/` (Spring Boot + MySQL) and `client/` (React + Vite). No root workspace config.
 
@@ -37,7 +37,7 @@ npm run dev            # Vite
 npm run build          # tsc && vite build
 ```
 
-Config lives in a single root `.env` (copy from `.env.example`). The server imports it via `spring.config.import=optional:file:../.env[.properties]`; Vite reads it via `envDir: '..'`. `JWT_SECRET` is required — the app will not start without it.
+Config lives in a single root `.env` (copy from `.env.example`). The server imports it via `spring.config.import=optional:file:../.env[.properties],optional:file:.env[.properties]`; Vite reads it via `envDir: '..'`. `JWT_SECRET` is still required at startup (it seeds `jwt.secret`, whose `jwt.expiration` is reused as the session timeout) — the app will not start without it.
 
 ---
 
@@ -46,8 +46,8 @@ Config lives in a single root `.env` (copy from `.env.example`). The server impo
 ```
 ┌─────────────┐    HTTP/REST    ┌─────────────┐   JPA/Hibernate ┌──────────┐
 │   Client     │◄──────────────►│   Server     │◄──────────────►│  MySQL 8 │
-│  (React 19)  │   JWT Bearer   │(Spring Boot) │                │Relational│
-│  Port 5173   │                │  Port 3001   │                │  Local   │
+│  (React 19)  │  Session       │(Spring Boot) │                │Relational│
+│  Port 5173   │  (JSESSIONID)  │  Port 3001   │                │  Local   │
 └─────────────┘                └─────────────┘              └──────────┘
        │                              │
    ┌───┴───┐                    ┌─────┴──────┐
@@ -56,21 +56,23 @@ Config lives in a single root `.env` (copy from `.env.example`). The server impo
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/...`): Spring Boot, global prefix `/api`, CORS from env `cors.origin`. Config from `server/src/main/resources/application.properties` — values are `${VAR:default}` placeholders resolved from the root `.env` or env vars. Uses Maven + Java 25.
-- **Client** (`client/src/main.tsx`): Vite dev server, HeroUI v3 (CSS-only) + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), JWT from localStorage. Path alias `@/` → `./src/*`.
+- **Server** (`server/src/...`): Spring Boot 4.1, global prefix `/api`, CORS from env `cors.origin` (credentials allowed). Config from `server/src/main/resources/application.properties` — values are `${VAR:default}` placeholders resolved from the root `.env` or env vars. Uses Maven + Java 25.
+- **Client** (`client/src/main.tsx`): Vite dev server, HeroUI v3 (CSS-only) + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), session restored via `GET /api/auth/me` when a `JSESSIONID` cookie exists. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
 
 1. User enters email + password on the login page
-2. Server validates credentials via bcrypt, returns a **JWT token**
-3. Client stores the token in `localStorage` and attaches it as `Authorization: Bearer <token>` on every request
-4. Server's `JwtAuthenticationFilter` (`server/src/.../auth/filter/JwtAuthenticationFilter.java`) extracts and verifies the JWT from the `Authorization` header
-5. `SecurityConfig` permits `/api/auth/login` and `/api/auth/register`; all other routes require authentication
+2. Server validates credentials via bcrypt, stores `userId` + `userRole` in the `HttpSession` and sets the `JSESSIONID` cookie (Spring Session JDBC persists sessions in a `sessions` table)
+3. Server's `SessionAuthenticationFilter` (`server/src/.../auth/filter/SessionAuthenticationFilter.java`) reads `userId`/`userRole` from the session on each request and populates the `SecurityContext`
+4. `SecurityConfig` permits `/api/auth/login` and `/api/auth/register`; all other routes require authentication. CSRF is enabled with the `X-XSRF-TOKEN` header (`HttpSessionCsrfTokenRepository`)
+5. The client restores the logged-in user on page load via `GET /api/auth/me` whenever a `JSESSIONID` cookie exists; logout clears the cookie client-side
 6. Role-based access is enforced at the **service layer** — `admin` sees all, `manager` scoped to their department, `employee` sees own data only
 
 Auth details:
-- JWT (jjwt 0.12.6), `JwtAuthenticationFilter` + Spring Security. Token expiry set via `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup — set via `JWT_SECRET` in the root `.env`.
+- Session-based (Spring Session JDBC) + bcrypt + Spring Security. Session max-inactive-interval is set from `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup — set via `JWT_SECRET` in the root `.env`.
+- CSRF enabled (`X-XSRF-TOKEN` header). No logout endpoint — the client deletes the session cookie.
 - Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
+- Passwords: min 8, max 128 chars (no complexity requirement).
 
 ---
 
@@ -83,7 +85,7 @@ User clicks "Submit Leave"
 Client POST /api/leaves  { type, startDate, endDate, reason }
        │
        ▼
-JwtAuthenticationFilter — extracts & verifies JWT from Authorization header
+SessionAuthenticationFilter — loads userId/userRole from HttpSession, sets SecurityContext
        │
        ▼
 SecurityConfig — permits endpoint (authenticated), assigns SecurityContext
@@ -104,7 +106,7 @@ Response 201: { id, type, startDate, endDate, status: "pending", ... }
        ▼
 When admin/manager approves via PATCH /api/leaves/:id/status
   ├── LeaveBalanceService.deduct() — subtracts days from balance
-  └── NotificationsService.create() — sends in-app notification to employee
+  └── NotificationService.create() — sends in-app notification to employee
 ```
 
 ---
@@ -120,10 +122,10 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 ### Employee (HR profile)
 ```
 { id (UUID), userId→User, departmentId→Department, firstName, lastName,
-  position, salary, contractType, hireDate, phone, documents[] }
+  position, salary, contractType, contractExpiry, hireDate, phone }
 ```
 - Every User may have zero or one Employee record
-- Documents array stores file metadata (name, url, type, uploadedAt)
+- Created with an existing `userId` (an account must exist first)
 
 ### Department
 ```
@@ -142,22 +144,15 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 { id (UUID), employeeId→Employee, date, checkIn, checkOut,
   status: "present"|"late"|"half-day"|"absent" }
 ```
-- Auto-calculated: check-in after 9AM → `late`; worked < 4h → `half-day`
+- Auto-calculated: check-in after 9AM → `late`; worked < 4h → `half-day`; late but ≥ 8h worked → upgraded to `present`
 
 ### Payroll
 ```
 { id (UUID), employeeId→Employee, month, year, basicSalary, bonus,
   deductions, netPay, status: "draft"|"paid", paidAt? }
 ```
-- Deductions: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), PIT (7 brackets lũy tiến)
-- Bonus: Tết (0.5-2x salary), quarterly performance, regular month
-
-### EmployeeHistory
-```
-{ id (UUID), employeeId→Employee, type: "raise"|"promotion"|"transfer",
-  previousValue?, newValue, effectiveDate, note? }
-```
-- Timeline of salary changes, promotions, department transfers
+- Deductions: BHXH (8%), BHYT (1.5%), BHTN (1%), Công đoàn (1%), PIT (5 progressive brackets, personal deduction 15,500,000 VND)
+- Bonus is always 0 in the current calculation
 
 ### LeaveBalance
 ```
@@ -171,7 +166,7 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 { id (UUID), userId→User, title, message, type, relatedId?,
   relatedModel?, isRead: false, createdAt }
 ```
-- Triggered by leave approval/rejection; delivered via Socket.IO in real-time (planned)
+- Created on leave approval/rejection; delivered via API polling (the client polls unread-count every 30s, list every 15s)
 
 ---
 
@@ -181,19 +176,17 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 
 | Module           | Entry file                        | Notes                              |
 |------------------|-----------------------------------|------------------------------------|
-| Auth             | `server/src/.../auth/` | JWT + bcrypt + Spring Security     |
-| Employees        | `server/src/.../employee/` | Business logic for employees |
+| Auth             | `server/src/.../auth/` | bcrypt + Spring Security + session auth |
+| Employees        | `server/src/.../employee/` | Business logic for employees, CSV export, bulk delete |
 | Departments      | `server/src/.../department/` | Department management |
 | Leaves           | `server/src/.../leave/` | Leave requests with validation |
 | Attendance       | `server/src/.../attendance/` | Check-in/out with auto logic |
 | Payroll          | `server/src/.../payroll/` | Monthly batch processing |
-| Dashboard        | `server/src/.../dashboard/` | Role-based statistics |
-| EmployeeHistory  | `server/src/.../employeehistory/` | Timeline of changes |
-| LeaveBalance     | `server/src/.../leavebalance/` | Auto-deduct on approval |
-| Notifications    | `server/src/.../notification/` | In-app notifications (API-based, Socket.IO planned) |
-| Recruitment      | `server/src/.../recruitment/` | *Planned — empty stubs* |
-| PerformanceReview| `server/src/.../performance review/` | *Planned — empty stubs* |
+| LeaveBalance     | `server/src/.../leavebalance/` | Auto-create + deduct on approval |
+| Notifications    | `server/src/.../notification/` | In-app notifications (API polling) |
 | Seed            | `server/src/.../seed/` | `DataSeeder` (reset when `seed` profile active) + `FirstRunSeeder` (auto-seeds when DB empty) |
+
+> Dashboard, Employee History, Recruitment, and Performance Reviews are **not implemented** (no modules, endpoints, or UI).
 
 ---
 
@@ -201,13 +194,13 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 
 | Role | What They Can See | What They Can Do |
 |------|-------------------|------------------|
-| **admin** | Everything | Full CRUD on all modules, process payroll, manage all settings |
-| **manager** | Their department only | Approve/reject leave requests, view department reports, manage their team's history |
+| **admin** | Everything | Full CRUD on all modules, process payroll |
+| **manager** | Their department only | Approve/reject leave requests, view department reports |
 | **employee** | Self only | View own profile/leaves/attendance/payroll, create leave requests, check in/out |
 
 Enforcement happens at two layers:
-- **Server**: `authenticate` + `requireRoles()` method in service layer on every route (except `/api/auth/login` and `/api/auth/register`)
-- **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links
+- **Server**: `SecurityUtil` + `requireRoles()` at the service layer on every route (except `/api/auth/login` and `/api/auth/register`)
+- **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links; the home route redirects to `/leaves`
 
 ---
 
@@ -227,36 +220,33 @@ Manager sees in approval queue
 ### Daily Attendance Flow
 ```
 Employee clicks "Check In" (before 9AM → "present", after → "late")
-Employee clicks "Check Out" (< 4h worked → "half-day")
+Employee clicks "Check Out" (< 4h worked → "half-day", ≥ 8h late → "present")
 Monthly attendance report aggregates all days
 ```
 
 ### Payroll Processing Flow
 ```
-Admin selects employees + month/year
-Server calculates: netPay = basicSalary + bonus - deductions
-Deductions include: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), PIT (7 brackets lũy tiến)
-Bonus varies by month: Tết (tháng 1/12), quarter-end performance, regular
+Admin selects month/year
+Server calculates per employee: netPay = basicSalary - deductions
+Deductions: BHXH (8%), BHYT (1.5%), BHTN (1%), Công đoàn (1%), PIT (5 progressive brackets, 15,500,000 VND personal deduction)
 Creates payroll records (skips if already exists for that month)
 Admin marks each as "paid" when disbursed
 ```
 
-### Notifications (API-based, Socket.IO planned)
+### Notifications (API polling)
 ```
 Server event (leave approved/rejected)
        │
        ▼
-NotificationsService.create() — saves notification to DB
+NotificationService.create() — saves notification to DB
        │
        ▼
-Client polls GET /api/notifications/unread-count periodically
+Client polls GET /api/notifications/unread-count every 30s (sidebar badge)
+Client list page polls GET /api/notifications every 15s
        │
        ▼
 Client shows toast + increments badge count
 ```
-
-> Socket.IO real-time push is planned but not yet implemented.
-> Notifications are currently delivered on page refresh or manual fetch.
 
 ---
 
@@ -270,24 +260,25 @@ Client shows toast + increments badge count
 │  │ User avatar + name  │  │  (Page content  │
 │  │ Role badge          │  │   rendered via  │
 │  ├─────────────────────┤  │   React Router  │
-│  │ Dashboard           │  │   Outlet)       │
-│  │ Employees           │  │                 │
+│  │ Employees           │  │   Outlet)       │
 │  │ Departments         │  │                 │
 │  │ Org Chart           │  │                 │
 │  │ Leaves              │  │                 │
+│  │ Leave Approvals     │  │                 │
 │  │ Attendance          │  │                 │
+│  │ Attendance Report   │  │                 │
 │  │ Payroll             │  │                 │
-│  │ Recruitment         │  │                 │
-│  │ Performance Reviews │  │                 │
+│  │ Payroll Management  │  │                 │
 │  ├─────────────────────┤  │                 │
 │  │ Notifications       │  │                 │
-│  │ Profile             │  │                 │
 │  │ Settings            │  │                 │
-│  │ Logout              │  │                 │
+│  │ Profile / Logout    │  │                 │
 │  └─────────────────────┘  │                 │
 └─────────────────────────────┘
 ```
 
+- Routes: `/login`, `/employees`, `/employees/:id`, `/departments`, `/org-chart`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/settings`, `/profile`; `/` redirects to `/leaves`
+- Org chart is rendered client-side from the departments API (no org-chart endpoint)
 - Sidebar items are filtered by role (employees don't see admin links)
 - Mobile: sidebar hidden behind hamburger menu
 - Content area: max-width 1280px, responsive padding
@@ -301,8 +292,8 @@ Client shows toast + increments badge count
 | **Spring Boot** over Express | Opinionated DI, Spring Security, mature JPA/Hibernate integration |
 | **MySQL 8** over PostgreSQL | Standard choice, zero PG-specific features needed, wide hosting support |
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
-| **JWT in localStorage** | Simple SPA auth; httpOnly cookies are more secure but add complexity |
-| **Socket.IO** for notifications *(planned)* | Real-time push without polling; auto-reconnect built-in (API polling for now) |
+| **Session-based auth** over JWT | httpOnly session cookie managed by Spring Session JDBC; `jwt.expiration` reused for session timeout |
+| **API polling for notifications** | Simple push-less delivery; no WebSocket infrastructure yet |
 | **HeroUI v3** | CSS-only (no Provider), design tokens in `index.css`, Tailwind 4 integration |
 | **TanStack Query** | Automatic caching, refetching, optimistic updates for API data |
 
@@ -310,16 +301,16 @@ Client shows toast + increments badge count
 
 ## Key Facts
 
-- **Server tests**: 85 unit tests (16 test classes) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
+- **Server tests**: 85 unit tests (16 test classes, including `AppApplicationTests`) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
 - **Client tests**: 61 tests (17 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
-- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components (Button, Badge, Select, etc.) live in `client/src/components/ui/`. Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use.
-- **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs server tests (MySQL 8 container), client tests, and client build on push.
-- Both packages use ES modules (`"type": "module"`). Client uses Vite/TypeScript.
-- All API routes are protected by `JwtAuthenticationFilter` + Spring Security (except `/api/auth/login` and `/api/auth/register`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
+- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components (Button, Badge, Select, etc.) live in `client/src/components/ui/`. Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use. UI text uses a single Vietnamese locale in `client/src/locales/vi.ts` via `t()`.
+- **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs server compile + tests (MySQL 8 container, Java 25), client tests, and client build (Node 24) on push.
+- Both packages use ES modules (`"type": "module"`). Client uses Vite 8 + TypeScript.
+- All API routes are protected by Spring Security + `SessionAuthenticationFilter` (except `/api/auth/login` and `/api/auth/register`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
 - `server/.env` is NOT tracked in git — already exists with dev defaults.
-- All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` + `server/Dockerfile` + `client/Dockerfile` (nginx).
+- All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` (mysql:8.0) + `server/Dockerfile` + `client/Dockerfile` (nginx).
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
-- **Security**: JWT (jjwt 0.12.6) via `JwtAuthenticationFilter`, BCrypt password encoding, CSRF disabled (stateless API), CORS configured via `cors.origin` property. Passwords require min 8 chars with uppercase+lowercase+digit.
+- **Security**: session-based auth (Spring Session JDBC) via `SessionAuthenticationFilter`, BCrypt password encoding, CSRF enabled (`X-XSRF-TOKEN` header), CORS configured via `cors.origin` property with credentials. Passwords require min 8 chars (max 128), no complexity requirement.
 
 ---
 

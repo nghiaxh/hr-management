@@ -169,6 +169,8 @@ graph TB
     A --> UC19
 ```
 
+> **Ghi chú:** UC-13 (Tuyển dụng), UC-14 (Đánh giá hiệu suất), UC-15 (Dashboard), UC-18/UC-19 (Lịch sử nhân viên) chưa được triển khai trong hệ thống hiện tại.
+
 ---
 
 ## 2. UC-01: Đăng nhập
@@ -191,9 +193,8 @@ graph TB
 
 ### 2.3 Hậu điều kiện (Postconditions)
 
-- Người dùng nhận được JWT token
-- Token được lưu vào `localStorage`
-- Người dùng được chuyển đến trang Dashboard
+- Server tạo session (`HttpSession`) chứa `userId`, `userRole` và thiết lập cookie `JSESSIONID`
+- Người dùng được chuyển đến trang `/leaves`
 
 ### 2.4 Luồng chính (Basic Flow)
 
@@ -210,9 +211,9 @@ sequenceDiagram
     API->>DB: Tìm user theo email
     DB-->>API: User document
     API->>API: So sánh password với bcrypt
-    API-->>UI: 200 OK {token, user}
-    UI->>UI: Lưu token vào localStorage
-    UI-->>U: Chuyển hướng đến Dashboard
+    API->>API: Tạo session, lưu userId + userRole, thiết lập cookie JSESSIONID
+    API-->>UI: 200 OK {user}
+    UI-->>U: Chuyển hướng đến /leaves
 ```
 
 ### 2.5 Luồng thay thế (Alternative Flows)
@@ -226,8 +227,8 @@ sequenceDiagram
 
 ### 2.6 Yêu cầu đặc biệt
 
-- Mật khẩu được mã hóa bằng bcrypt (10 rounds) trước khi lưu
-- Token JWT có thời hạn 1 ngày
+- Mật khẩu được mã hóa bằng bcrypt trước khi lưu
+- Session hết hạn sau 1 ngày không hoạt động (max-inactive-interval lấy từ `jwt.expiration`, mặc định 86400000ms)
 
 ---
 
@@ -247,7 +248,7 @@ sequenceDiagram
 
 ### Postconditions
 - Tài khoản mới được tạo với role `employee`
-- Người dùng tự động đăng nhập
+- Người dùng đăng nhập sau khi đăng ký (đăng ký không tự động tạo session)
 
 ### Basic Flow
 
@@ -258,18 +259,18 @@ sequenceDiagram
     participant API as Auth API
 
     U->>UI: Nhập email, mật khẩu, xác nhận mật khẩu
-    UI->>UI: Validate: email, mật khẩu >= 8 ký tự, có chữ hoa+thường+số
+    UI->>UI: Validate: email hợp lệ, mật khẩu 8-128 ký tự
     UI->>API: POST /api/auth/register {email, password}
     API->>API: Kiểm tra email đã tồn tại?
-    API->>API: Hash password (bcrypt, 10 rounds)
+    API->>API: Hash password (bcrypt)
     API->>API: Tạo user với role='employee'
-    API-->>UI: 201 Created {token, user}
-    UI-->>U: Đăng nhập thành công, vào Dashboard
+    API-->>UI: 200 OK {user}
+    UI-->>U: Đăng ký thành công, chuyển hướng đến trang đăng nhập
 ```
 
 ### Validation Rules
 - Email: đúng định dạng email
-- Mật khẩu: 8-128 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 số
+- Mật khẩu: từ 8 đến 128 ký tự, không yêu cầu độ phức tạp (chữ hoa/thường/số)
 
 ---
 
@@ -478,7 +479,7 @@ sequenceDiagram
     alt Đủ quỹ phép
         LB-->>API: OK
         API->>NOT: Tạo thông báo cho employee
-        NOT-->>E: Real-time notification
+        NOT-->>E: Chuyển qua API polling (client poll)
         API-->>UI: 200 OK
         UI-->>M: Duyệt thành công
     else Không đủ quỹ phép
@@ -492,7 +493,7 @@ sequenceDiagram
     M->>UI: Nhập lý do + xác nhận
     UI->>API: PATCH /api/leaves/:id/status {status: 'rejected', rejectionReason}
     API->>NOT: Tạo thông báo
-    NOT-->>E: Real-time notification
+    NOT-->>E: Chuyển qua API polling (client poll)
     API-->>UI: 200 OK
     UI-->>M: Từ chối thành công
 ```
@@ -639,7 +640,7 @@ sequenceDiagram
     UI->>API: POST /api/payroll/process {employeeIds, month, year}
     API->>API: Duyệt từng employeeId
     API->>API: Bỏ qua nếu đã tồn tại (employeeId + month + year)
-    API->>API: netPay = salary + bonus - deductions (min 0), deductions = BHXH+BHTN+BHTNLD+Công đoàn+PIT
+    API->>API: deductions = BHXH (8%) + BHYT (1.5%) + BHTN (1%) + Công đoàn (1%) + PIT (5 bậc: 5/10/20/30/35%, giảm trừ gia cảnh 15.500.000 VNĐ); netPay = salary + bonus - deductions; bonus luôn = 0
     API-->>UI: 201 Created
     UI-->>A: Xử lý lương thành công
 
@@ -673,152 +674,19 @@ sequenceDiagram
 
 ## 14. UC-13: Quản lý tuyển dụng
 
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-13                                         |
-| **Tên**        | Quản lý tuyển dụng                             |
-| **Actor**      | Admin, Manager                                |
-
-### Sub Use Cases
-
-```mermaid
-graph TB
-    subgraph "UC-13: Quản lý tuyển dụng"
-        UC13a[Đăng tin tuyển dụng]
-        UC13b[Sửa tin tuyển dụng]
-        UC13c[Đóng tin tuyển dụng]
-        UC13d[Thêm ứng viên]
-        UC13e[Cập nhật trạng thái ứng viên]
-    end
-
-    A[Admin] --> UC13a
-    A --> UC13b
-    A --> UC13c
-    A --> UC13d
-    A --> UC13e
-    M[Manager] --> UC13d
-    M --> UC13e
-```
-
-### UC-13a: Đăng tin tuyển dụng
-
-| Trường | Giá trị |
-|--------|---------|
-| Actor | Admin |
-| Basic Flow | 1. Vào trang Job Postings<br/>2. Nhấn "Create Job Posting"<br/>3. Nhập: title, department, description, requirements, status, openings<br/>4. Submit -> POST /api/job-postings<br/>5. Hiển thị thông báo thành công |
-
-### UC-13d: Thêm ứng viên
-
-| Trường | Giá trị |
-|--------|---------|
-| Actor | Admin, Manager |
-| Basic Flow | 1. Vào trang Candidates<br/>2. Nhấn "Add Candidate"<br/>3. Nhập: firstName, lastName, email, phone, jobPostingId, notes<br/>4. Submit -> POST /api/candidates<br/>5. Ứng viên được tạo với status `applied` |
-
-### Candidate Status Flow
-
-```mermaid
-graph LR
-    A[applied] -->|Xem xét| B[screening]
-    B -->|Phù hợp| C[interview]
-    C -->|Đạt| D[offered]
-    D -->|Chấp nhận| E[hired]
-    D -->|Từ chối| F[rejected]
-    C -->|Không đạt| F
-    B -->|Không phù hợp| F
-```
+> **Trạng thái: KHÔNG TRIỂN KHAI** — Hệ thống hiện tại không có module Recruitment: không có endpoint `/api/job-postings`, `/api/candidates` và không có giao diện tuyển dụng.
 
 ---
 
 ## 15. UC-14: Đánh giá hiệu suất
 
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-14                                         |
-| **Tên**        | Đánh giá hiệu suất                             |
-| **Actor**      | Admin, Manager, Employee                      |
-
-### Sub Use Cases
-
-| Mã     | Tên               | Actor    | Mô tả                              |
-|--------|-------------------|----------|------------------------------------|
-| UC-14a | Tạo đánh giá       | Admin, Manager | Tạo đánh giá cho nhân viên      |
-| UC-14b | Xem đánh giá       | Employee | Xem đánh giá của bản thân           |
-| UC-14c | Cập nhật đánh giá  | Admin, Manager | Sửa rating, comments, goals |
-| UC-14d | Xóa đánh giá       | Admin    | Xóa đánh giá                       |
-
-### UC-14a Basic Flow
-
-1. Admin/Manager vào trang Review Management
-2. Nhấn "Create Review"
-3. Chọn: employee, period (vd "2024-Q1"), rating (1-5), comments, goals
-4. Submit -> POST /api/performance-reviews
-5. Đánh giá được tạo với status `draft`
+> **Trạng thái: KHÔNG TRIỂN KHAI** — Hệ thống hiện tại không có module Performance Reviews: không có endpoint `/api/performance-reviews` và không có giao diện đánh giá hiệu suất.
 
 ---
 
 ## 16. UC-15: Xem Dashboard
 
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-15                                         |
-| **Tên**        | Xem Dashboard                                  |
-| **Actor**      | Employee, Manager, Admin                      |
-| **Mô tả**      | Xem thống kê tổng quan theo từng vai trò       |
-
-### Admin Dashboard
-
-```mermaid
-graph TB
-    subgraph "Admin Dashboard"
-        STATS[Thẻ thống kê]
-        CHART[Biểu đồ]
-        LIST[Danh sách gần đây]
-    end
-
-    STATS --> S1[Tổng nhân viên]
-    STATS --> S2[Phòng ban]
-    STATS --> S3[Đơn chờ duyệt]
-    STATS --> S4[Có mặt hôm nay]
-    STATS --> S5[Tổng lương tháng]
-
-    CHART --> C1[Nhân viên theo phòng]
-
-    LIST --> L1[5 đơn nghỉ phép gần nhất]
-```
-
-### Manager Dashboard
-
-```mermaid
-graph TB
-    subgraph "Manager Dashboard"
-        INFO[Thông tin phòng ban]
-        STATS[Thống kê]
-        CHART[Biểu đồ]
-    end
-
-    INFO --> I1[Tên phòng ban]
-    STATS --> S1[Số nhân viên]
-    STATS --> S2[Đơn chờ duyệt]
-    STATS --> S3[Có mặt hôm nay]
-    STATS --> S4[Quỹ lương phòng]
-```
-
-### Employee Dashboard
-
-```mermaid
-graph TB
-    subgraph "Employee Dashboard"
-        STATS[Thống kê cá nhân]
-        CHART[Biểu đồ]
-        LIST[Đơn sắp tới]
-    end
-
-    STATS --> S1[Đơn: pending/approved/rejected]
-    STATS --> S2[Chấm công: present/late/absent]
-    CHART --> C1[Phân bố nghỉ phép]
-    CHART --> C2[Chấm công theo ngày]
-    LIST --> L1[3 đơn approved sắp tới]
-```
+> **Trạng thái: KHÔNG TRIỂN KHAI** — Hệ thống hiện tại không có Dashboard; route `/` được redirect sang `/leaves` và không có trang thống kê tổng quan theo vai trò.
 
 ---
 
@@ -838,17 +706,14 @@ graph TB
 | UC-16b | Xem số chưa đọc                  | GET /api/notifications/unread-count, badge |
 | UC-16c | Đánh dấu đã đọc (1 cái)          | PATCH /api/notifications/:id/read          |
 | UC-16d | Đánh dấu tất cả đã đọc           | PATCH /api/notifications/read-all          |
-| UC-16e | Nhận thông báo real-time         | Socket.IO, toast + cập nhật badge          |
+| UC-16e | Nhận thông báo qua API polling | Client poll unread-count mỗi 30s (badge) + danh sách mỗi 15s |
 
 ### Notification Types
 
 | Type              | Kích hoạt bởi                      | Nội dung                         |
 |-------------------|------------------------------------|----------------------------------|
-| leave_request     | Employee tạo đơn                   | "Có đơn nghỉ phép mới từ {name}" |
-| leave_approved    | Manager duyệt                      | "Đơn nghỉ phép của bạn đã được duyệt" |
-| leave_rejected    | Manager từ chối                    | "Đơn nghỉ phép của bạn đã bị từ chối" |
-| payroll_ready     | Admin xử lý lương                  | "Bảng lương tháng {month}/{year} đã sẵn sàng" |
-| system            | Hệ thống                            | Thông báo hệ thống               |
+| leave_approved    | Admin/Manager duyệt đơn            | "Đơn nghỉ phép ... đã được duyệt" |
+| leave_rejected    | Admin/Manager từ chối đơn          | "Đơn nghỉ phép ... đã bị từ chối" |
 
 ---
 
@@ -863,59 +728,23 @@ graph TB
 
 ### Basic Flow
 1. Admin/Manager vào trang Org Chart
-2. Hệ thống gọi `GET /api/departments/org-chart`
+2. Hệ thống gọi `GET /api/departments` (không có endpoint org-chart; sơ đồ được render client-side từ API departments)
 3. Server trả về:
    - Danh sách phòng ban
    - Mỗi phòng ban: tên, mô tả, trưởng phòng
-   - Danh sách nhân viên trong phòng
 4. Giao diện hiển thị dạng card grid 2 cột
 
 ---
 
 ## 19. UC-18: Xem lịch sử nhân viên
 
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-18                                         |
-| **Tên**        | Xem lịch sử nhân viên                          |
-| **Actor**      | Employee, Manager, Admin                      |
-| **Mô tả**      | Xem timeline thay đổi của nhân viên            |
-
-### Scope
-
-| Actor    | Phạm vi                                       |
-|----------|-----------------------------------------------|
-| Employee | Chỉ xem lịch sử của bản thân                   |
-| Manager  | Xem lịch sử của nhân viên trong phòng          |
-| Admin    | Xem lịch sử của tất cả nhân viên              |
-
-### History Event Types
-
-| Type       | previousValue | newValue       | Ví dụ                              |
-|------------|---------------|----------------|------------------------------------|
-| raise      | "20000000"    | "25000000"     | Tăng lương từ 20M lên 25M          |
-| promotion  | "Junior Dev"  | "Senior Dev"   | Thăng chức                         |
-| transfer   | "Engineering" | "BA"           | Chuyển phòng từ Engineering sang BA |
-| other      | -             | -              | Ghi chú khác                        |
+> **Trạng thái: KHÔNG TRIỂN KHAI** — Hệ thống hiện tại không có module Employee History: không có endpoint lịch sử nhân viên và không có timeline thay đổi.
 
 ---
 
 ## 20. UC-19: Thêm lịch sử nhân viên
 
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-19                                         |
-| **Tên**        | Thêm lịch sử nhân viên                         |
-| **Actor**      | Admin, Manager                                |
-| **Mô tả**      | Thêm ghi chép lịch sử (tăng lương, thăng chức) |
-
-### Basic Flow
-1. Admin/Manager vào Employee Detail
-2. Xem phần History Timeline
-3. Nhấn "Add History"
-4. Form: type (raise/promotion/transfer/other), previousValue, newValue, effectiveDate, note
-5. Submit -> POST /api/employees/:employeeId/history
-6. Timeline cập nhật
+> **Trạng thái: KHÔNG TRIỂN KHAI** — Không có endpoint `POST /api/employees/:employeeId/history`; tính năng lịch sử nhân viên chưa được triển khai.
 
 ---
 
@@ -935,12 +764,14 @@ graph TB
 | UC-10   | Xem báo cáo chấm công       | -     | -        | Co      | Co    |
 | UC-11   | Xử lý bảng lương            | -     | -        | -       | Co    |
 | UC-12   | Xem bảng lương              | -     | Co       | Co      | Co    |
-| UC-13   | Quản lý tuyển dụng          | -     | -        | GH      | Co    |
-| UC-14   | Đánh giá hiệu suất          | -     | GH       | Co      | Co    |
-| UC-15   | Xem Dashboard               | -     | Co       | Co      | Co    |
+| UC-13   | Quản lý tuyển dụng (chưa triển khai)  | -     | -        | -       | -     |
+| UC-14   | Đánh giá hiệu suất (chưa triển khai)  | -     | -        | -       | -     |
+| UC-15   | Xem Dashboard (chưa triển khai)       | -     | -        | -       | -     |
 | UC-16   | Quản lý thông báo           | -     | Co       | Co      | Co    |
 | UC-17   | Xem sơ đồ tổ chức           | -     | -        | Co      | Co    |
-| UC-18   | Xem lịch sử nhân viên       | -     | Co       | Co      | Co    |
-| UC-19   | Thêm lịch sử nhân viên      | -     | -        | Co      | Co    |
+| UC-18   | Xem lịch sử nhân viên (chưa triển khai) | - | -       | -       | -     |
+| UC-19   | Thêm lịch sử nhân viên (chưa triển khai) | - | -      | -       | -     |
 
 > Co = Co quyen | GH = Quyen gioi han (theo phong ban) | - = Khong co quyen
+>
+> UC-13, UC-14, UC-15, UC-18, UC-19 chưa được triển khai trong hệ thống hiện tại.

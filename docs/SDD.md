@@ -7,7 +7,7 @@
 | 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 1016       |
 
-> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, LeaveBalance, Notifications, EmployeeHistory đã triển khai (Spring Boot + MySQL). Recruitment, Performance Reviews, Socket.IO chưa triển khai (đang kế hoạch).
+> **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, LeaveBalance, Notifications đã triển khai (Spring Boot + MySQL). Dashboard, EmployeeHistory, Recruitment, Performance Reviews, Socket.IO chưa triển khai (đang kế hoạch).
 >
 > > **Ghi chú kiến trúc thực tế:** Hệ thống được triển khai với **Spring Boot 4.1 + MySQL 8** (JPA/Hibernate) thay vì Express + MongoDB như thiết kế ban đầu. Các sơ đồ và mô tả dưới đây đã được cập nhật tương ứng.
 
@@ -49,13 +49,13 @@
    6.2 [Định dạng Response](#62-định-dạng-response)
    6.3 [Mã trạng thái HTTP](#63-mã-trạng-thái-http)
 7. [Thiết kế Xác thực & Phân quyền](#7-thiết-kế-xác-thực--phân-quyền)
-   7.1 [Luồng JWT](#71-luồng-jwt)
-   7.2 [JWT Payload](#72-jwt-payload)
+   7.1 [Luồng đăng nhập (Session)](#71-luồng-đăng-nhập-session)
+   7.2 [Dữ liệu lưu trong Session](#72-dữ-liệu-lưu-trong-session)
    7.3 [Logic Role Middleware](#73-logic-role-middleware)
    7.4 [Scoped Data theo Role](#74-scoped-data-theo-role)
-8. [Thiết kế Thông báo Thời gian thực](#8-thiết-kế-thông-báo-thời-gian-thực)
-   8.1 [Kiến trúc Socket.IO](#81-kiến-trúc-socketio)
-   8.2 [Vòng đời kết nối](#82-vòng-đời-kết-nối)
+8. [Thiết kế Thông báo (API Polling)](#8-thiết-kế-thông-báo-api-polling)
+   8.1 [Kiến trúc Polling](#81-kiến-trúc-polling)
+   8.2 [Vòng đời Polling](#82-vòng-đời-polling)
 9. [Thiết kế chi tiết Module](#9-thiết-kế-chi-tiết-module)
    9.1 [Class Diagram - Service Layer](#91-class-diagram---service-layer)
    9.2 [Sequence Diagram - Xử lý đơn nghỉ phép](#92-sequence-diagram---xử-lý-đơn-nghỉ-phép)
@@ -86,7 +86,7 @@ Tài liệu này mô tả chi tiết thiết kế kiến trúc phần mềm cho 
 
 ### 1.2 Phạm vi
 
-Tài liệu bao gồm thiết kế cho toàn bộ hệ thống HR Management với kiến trúc client-server (React + Spring Boot + MySQL). Các module được thiết kế bao gồm: xác thực, nhân viên, phòng ban, nghỉ phép, chấm công, lương, dashboard, tuyển dụng, đánh giá hiệu suất, thông báo, lịch sử nhân viên.
+Tài liệu bao gồm thiết kế cho toàn bộ hệ thống HR Management với kiến trúc client-server (React + Spring Boot + MySQL). Các module được thiết kế bao gồm: xác thực, nhân viên, phòng ban, nghỉ phép, chấm công, lương, thông báo, quỹ phép (leave balance). Dashboard, lịch sử nhân viên, tuyển dụng và đánh giá hiệu suất chưa được triển khai.
 
 Tài liệu KHÔNG bao gồm: thiết kế chi tiết giao diện người dùng (UI mockups), thiết kế test cases, kế hoạch dự án.
 
@@ -101,7 +101,7 @@ Tài liệu KHÔNG bao gồm: thiết kế chi tiết giao diện người dùng
 | Middleware     | Bộ lọc xử lý request (Filter) trong pipeline Spring Security     |
 | REST           | Representational State Transfer - kiến trúc API                 |
 | SPA            | Single Page Application                                         |
-| JWT            | JSON Web Token                                                  |
+| Session        | Trạng thái đăng nhập do server quản lý, lưu trong HttpSession (Spring Session JDBC) |
 | RBAC           | Role-Based Access Control                                       |
 
 ### 1.4 Tài liệu tham khảo
@@ -124,78 +124,61 @@ Tài liệu gồm 14 phần chính: Giới thiệu, Thiết kế kiến trúc t�
 
 ### 2.1 Kiến trúc hệ thống
 
-Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Spring Boot) qua REST API và WebSocket (Socket.IO). Server kết nối với MySQL 8 qua JPA/Hibernate.
+Hệ thống sử dụng kiến trúc client-server phân tách rõ ràng (Two-tier architectural pattern). Client (React SPA) giao tiếp với Server (Spring Boot) qua REST API. Server kết nối với MySQL 8 qua JPA/Hibernate.
 
 ```mermaid
 graph TB
     subgraph "Client (React SPA)"
         UI[Giao diện người dùng]
         API_Layer[Tầng API Client]
-        SC[Socket.IO Client]
         CACHE[TanStack Query Cache]
     end
 
     subgraph "Server (Spring Boot)"
         subgraph "Tầng Filter / Config"
-            AUTH[JwtAuthenticationFilter]
+            AUTH[SessionAuthenticationFilter]
             SECURITY[SecurityConfig]
             CORS[CorsConfig]
             VALIDATE[@Valid Validation]
-            UPLOAD[File Upload Config]
         end
         subgraph "Tầng Controller"
             AC[AuthController]
             EC[EmployeeController]
-            DC[DeptController]
+            DC[DepartmentController]
             LC[LeaveController]
             ATC[AttendanceController]
             PC[PayrollController]
-            RC[RecruitmentController]
-            PRC[PerformanceReviewController]
             NC[NotificationController]
-            DBC[DashboardController]
-            EHC[EmployeeHistoryController]
             LBC[LeaveBalanceController]
         end
         subgraph "Tầng Service"
             AS[AuthService]
             ES[EmployeeService]
-            DS[DeptService]
+            DS[DepartmentService]
             LS[LeaveService]
             ATS[AttendanceService]
             PS[PayrollService]
-            RS[RecruitmentService]
-            PRS[PerformanceReviewService]
             NS[NotificationService]
-            DBS[DashboardService]
-            EHS[EmployeeHistoryService]
             LBS[LeaveBalanceService]
         end
         subgraph "Tầng Database"
             MYSQL[(MySQL 8)]
         end
-        subgraph "Real-time"
-            GW[Notifications Gateway]
-        end
     end
 
     subgraph "External"
         BROWSER[Web Browser]
-        FS[File System - Uploads]
     end
 
     BROWSER --> UI
-    UI --> API_Layer & SC
-    API_Layer -->|HTTP/REST| AUTH
+    UI --> API_Layer
+    API_Layer -->|HTTP/REST + Session cookie| AUTH
     AUTH --> SECURITY --> CORS
-    CORS --> AC & EC & DC & LC & ATC & PC & RC & PRC & NC & DBC & EHC & LBC
+    CORS --> AC & EC & DC & LC & ATC & PC & NC & LBC
     AC --> AS; EC --> ES; DC --> DS; LC --> LS; ATC --> ATS
-    PC --> PS; RC --> RS; PRC --> PRS; NC --> NS; DBC --> DBS; EHC --> EHS; LBC --> LBS
-    AS & ES & DS & LS & ATS & PS & RS & PRS & NS & DBS & EHS & LBS --> MYSQL
+    PC --> PS; NC --> NS; LBC --> LBS
+    AS & ES & DS & LS & ATS & PS & NS & LBS --> MYSQL
     LS --> LBS & NS
-    ES -->|Upload| FS
-    SC -->|WebSocket| GW
-    GW --> NS
 ```
 
 ### 2.2 Phân rã kiến trúc
@@ -203,13 +186,12 @@ graph TB
 | Tầng             | Thành phần                    | Trách nhiệm                                        |
 |------------------|-------------------------------|----------------------------------------------------|
 | **Client**       | UI Layer (Components)         | Render giao diện, xử lý sự kiện người dùng         |
-|                  | API Layer (Axios)             | Gọi REST API, gắn JWT, xử lý response              |
+|                  | API Layer (Axios)             | Gọi REST API kèm session cookie, xử lý response    |
 |                  | Query Layer (TanStack Query)  | Cache, refetch, optimistic updates                 |
-|                  | Socket Layer (Socket.IO)      | Kết nối WebSocket, nhận thông báo real-time        |
-| **Server**       | Middleware Layer               | JWT auth, role check, validation, rate limit       |
+|                  | Polling Layer (API polling)   | Poll unread-count (30s) và list (15s)              |
+| **Server**       | Middleware Layer               | Session auth (SessionAuthenticationFilter), role check, validation |
 |                  | Route Handler Layer            | Xử lý request, gọi service, trả về response        |
 |                  | Service Layer                  | Business logic, gọi database, orchestration        |
-|                  | Gateway Layer (Socket.IO)     | Quản lý WebSocket connections, emit events         |
 |                  | Database Layer (JPA Repository)| Entity mapping, CRUD operations, query methods     |
 
 ### 2.3 Chiến lược thiết kế
@@ -229,11 +211,11 @@ graph TB
 | AD-01| Spring Boot (không Express)           | DI container mạnh, Spring Security tích hợp, JPA/Hibernate mature |
 | AD-02| MySQL 8 thay vì MongoDB               | Quan hệ chuẩn hóa cho HR data, phù hợp với JPA entity mapping, wide hosting support |
 | AD-03| Tách User và Employee                 | Cô lập thông tin xác thực khỏi HR profile                     |
-| AD-04| JWT trong localStorage                | Đơn giản cho SPA; httpOnly cookies an toàn hơn nhưng phức tạp |
-| AD-05| Socket.IO thay vì SSE/Polling         | Real-time hai chiều, auto-reconnect, room support              |
+| AD-04| Xác thực bằng session (Spring Session JDBC) | httpOnly session cookie do server quản lý, chống XSS tốt hơn token lưu trong localStorage |
+| AD-05| API polling cho thông báo            | Không cần hạ tầng WebSocket; poll unread-count 30s, list 15s    |
 | AD-06| TanStack Query thay vì Redux          | Tự động cache, refetch, không cần boilerplate cho API calls   |
 | AD-07| HeroUI v3 thay vì shadcn/ui         | CSS-only (không cần Provider), component sẵn có + design tokens, tích hợp Tailwind 4 |
-| AD-08| Zod validation (server + client)       | Chia sẻ cùng schema validation giữa FE và BE                  |
+| AD-08| Zod (client) + Jakarta Validation (server)| Client dùng Zod/react-hook-form; server dùng Jakarta Validation (`@Valid`) |
 
 ---
 
@@ -271,21 +253,20 @@ graph TB
     end
 
     subgraph "Pages"
-        LOGIN[Login Page] & DASH[Dashboard Page]
+        LOGIN[Login Page]
         EMPL[Employees List] & EMPD[Employee Detail]
         DEPT[Departments List] & ORG[Org Chart]
         PROF[Profile Page] & NOTI[Notifications List] & NF[Not Found]
         ML[My Leaves] & LA[Leave Approvals]
         MAT[My Attendance] & ATR[Attendance Report]
         MYP[My Payroll] & PYM[Payroll Management]
-        JBP[Job Postings] & CAD[Candidates]
-        MPR[My Reviews] & PRM[Review Management]
+        SETT[Settings]
     end
 
     QC --> BR --> AP --> LP --> AL
     AL --> SID & OUT
-    OUT --> LOGIN & DASH & EMPL & EMPD & DEPT & ORG & PROF & NOTI & NF
-    OUT --> ML & LA & MAT & ATR & MYP & PYM & JBP & CAD & MPR & PRM
+    OUT --> LOGIN & EMPL & EMPD & DEPT & ORG & PROF & NOTI & NF & SETT
+    OUT --> ML & LA & MAT & ATR & MYP & PYM
     AL --> KS & RL & UT & EB & TST
 ```
 
@@ -297,7 +278,7 @@ graph TB
 |-----------------------|-------------------------------------------------------------|
 | `QueryClientProvider` | TanStack Query provider, quản lý cache và state async       |
 | `BrowserRouter`       | React Router v6, định tuyến client-side SPA                 |
-| `AuthProvider`        | Context cho user, token, login/logout functions             |
+| `AuthProvider`        | Context cho user, login/logout functions; khôi phục phiên qua GET /api/auth/me khi có cookie JSESSIONID |
 | `LanguageProvider`    | Context cho i18n: lang hiện tại, `t(key)` function          |
 
 #### 3.2.2 Layout Components
@@ -339,37 +320,32 @@ graph LR
     COMP -->|useQuery/useMutation| QUERY[TanStack Query Cache]
     QUERY -->|Gọi API| API[API Module]
     API -->|HTTP Request| AXI[Axios Instance]
-    AXI -->|Authorization Header| SERVER[Spring Boot Server]
+    AXI -->|JSESSIONID cookie| SERVER[Spring Boot Server]
     SERVER -->|JSON Response| AXI -->|Response| API
     API -->|Dữ liệu| QUERY -->|Cập nhật state| COMP -->|Render| USER
-    SERVER -->|Socket.IO Event| SOCK[Socket.IO]
-    SOCK -->|Invalidate Query| QUERY
-    SOCK -->|Toast| COMP
+    QUERY -->|Poll unread-count 30s / list 15s| API
+    QUERY -->|Toast| COMP
 ```
 
 ### 3.4 Chi tiết Route
 
 ```mermaid
 graph TB
-    ROOT[/] -->|redirect| DASH[/dashboard]
+    ROOT[/] -->|redirect| LEAVES[/leaves]
     LOGIN[/login] -->|public| LOGIN
-    DASH -->|admin/manager/employee| DASH
     EMP[/employees] -->|admin/manager| EMP
     EMPID[/employees/:id] -->|admin/manager/employee| EMPID
     PROF[/profile] -->|all| PROF
     DEPT[/departments] -->|admin/manager| DEPT
     ORG[/org-chart] -->|admin/manager| ORG
-    LEAVES[/leaves] -->|employee| LEAVES
+    LEAVES[/leaves] -->|all| LEAVES
     LEAVEA[/leaves/approvals] -->|admin/manager| LEAVEA
-    ATT[/attendance] -->|employee| ATT
+    ATT[/attendance] -->|all| ATT
     ATTR[/attendance/report] -->|admin/manager| ATTR
-    PAY[/payroll] -->|employee| PAY
+    PAY[/payroll] -->|all| PAY
     PAYM[/payroll/manage] -->|admin| PAYM
     NOTI[/notifications] -->|all| NOTI
-    RECJ[/recruitment/job-postings] -->|admin/manager| RECJ
-    RECC[/recruitment/candidates] -->|admin/manager| RECC
-    PRF[/performance-reviews] -->|employee| PRF
-    PRFM[/performance-reviews/manage] -->|admin/manager| PRFM
+    SETT[/settings] -->|all| SETT
     NF404["* (404)"] -->|any| NF404
 ```
 
@@ -379,7 +355,6 @@ graph TB
 classDiagram
     class useAuth {
         +user
-        +token
         +loading
         +login(email, password)
         +logout()
@@ -392,11 +367,6 @@ classDiagram
         +lang
         +setLang()
         +t(key)
-    }
-    class useSocket {
-        -socket
-        +connect()
-        +disconnect()
     }
     class useToast {
         +toasts
@@ -412,7 +382,6 @@ classDiagram
         +withWarning()
         +UnsavedChangesDialog
     }
-    useAuth --> useSocket : khởi tạo sau login
     useLanguage --> useTheme : cùng dùng trong Settings
 ```
 
@@ -422,14 +391,14 @@ classDiagram
 |--------------------------|-------------------------------------------------------|
 | Responsive               | Mobile-first, sidebar ẩn trên mobile, hamburger menu |
 | Dark mode                | CSS variables + class `.dark` trên `<html>` (use-theme hook), toggle trong Settings |
-| Đa ngôn ngữ              | LanguageProvider + translation objects (~830 keys)    |
+| Đa ngôn ngữ              | Locale tiếng Việt duy nhất trong `locales/vi.ts` (~430 keys), truy cập qua `t()` |
 | Skeleton loading         | Trên mọi danh sách và chi tiết                        |
 | Empty state              | Khi không có dữ liệu                                  |
 | Error boundary           | Global + per-component ErrorBoundary                  |
 | Unsaved changes guard    | Cảnh báo khi rời form có dữ liệu chưa lưu             |
 | Keyboard shortcuts       | G+D, G+E, G+L, G+A, G+P, Escape, ? help              |
 | Phân trang               | 10/20/30/50 items per page, first/prev/next/last     |
-| Toast notifications      | Socket.IO real-time + action feedback                |
+| Toast notifications      | API polling (thông báo mới) + action feedback        |
 
 ---
 
@@ -439,28 +408,25 @@ classDiagram
 
 | Thành phần               | Đầu vào (file)                                           |
 |--------------------------|----------------------------------------------------------|
-| **Entry point**          | `server/src/index.ts`                                    |
-| **Route Handlers**       | `server/src/routes/*.routes.ts`                          |
-| **Services**             | `server/src/services/*.service.ts`                       |
-| **Models/Schemas**       | `server/src/models/*.model.ts` + `server/src/schemas/`   |
-| **Middleware**           | `server/src/middleware/` (auth, roles, validation)       |
+| **Entry point**          | `server/src/main/java/.../AppApplication.java`           |
+| **Controllers**          | `server/src/.../<module>/controller/*.java`              |
+| **Services**             | `server/src/.../<module>/service/*.java`                 |
+| **Entities/Repos**       | `server/src/.../<module>/entity/*.java` + `repository/`  |
+| **DTOs**                 | `server/src/.../<module>/dto/*.java`                     |
+| **Filter/Config**        | `server/src/.../auth/filter/` + `config/`                |
 
 ### 4.2 Chi tiết Route Handlers
 
-| Module                 | File                                      | Routes                                      |
-|------------------------|-------------------------------------------|---------------------------------------------|
-| Auth                   | `server/src/routes/auth.routes.ts`        | POST register/login, GET me, PUT profile    |
-| Employees              | `server/src/routes/employees.routes.ts`   | CRUD + bulk-delete + export + documents     |
-| Departments            | `server/src/routes/departments.routes.ts` | CRUD + org-chart                            |
-| Leaves                 | `server/src/routes/leaves.routes.ts`      | CRUD + updateStatus                         |
-| Attendance             | `server/src/routes/attendance.routes.ts`  | checkIn, checkOut, list                     |
-| Payroll                | `server/src/routes/payroll.routes.ts`     | process, pay, list                          |
-| Recruitment            | `server/src/routes/recruitment.routes.ts` | JobPosting + Candidate CRUD                 |
-| Performance Reviews    | `server/src/routes/performance.routes.ts` | CRUD                                        |
-| Notifications          | `server/src/routes/notifications.routes.ts` | list, markRead, markAllRead, unreadCount  |
-| Dashboard              | `server/src/routes/dashboard.routes.ts`   | getDashboard                                |
-| Employee History       | `server/src/routes/history.routes.ts`     | list, create                                |
-| Leave Balance          | `server/src/routes/leave-balance.routes.ts` | getMy, getByEmployeeId                    |
+| Module                 | Controller                                 | Routes                                      |
+|------------------------|--------------------------------------------|---------------------------------------------|
+| Auth                   | `auth/controller/AuthController.java`      | POST register/login, GET me, PUT profile, POST change-password |
+| Employees              | `employee/controller/EmployeeController.java` | GET, GET me, GET export, GET /{id}, POST, POST bulk-delete, PUT /{id}, DELETE /{id} |
+| Departments            | `department/controller/DepartmentController.java` | CRUD (GET, GET /{id}, POST, PUT /{id}, DELETE /{id}) |
+| Leaves                 | `leave/controller/LeaveController.java`    | GET, POST, GET /{id}, PATCH /{id}/status    |
+| Attendance             | `attendance/controller/AttendanceController.java` | GET, POST check-in, PATCH /{id}/check-out |
+| Payroll                | `payroll/controller/PayrollController.java` | GET, POST process, PATCH /{id}/pay         |
+| Notifications          | `notification/controller/NotificationController.java` | GET, GET unread-count, PATCH read-all, PATCH /{id}/read |
+| Leave Balance          | `leavebalance/controller/LeaveBalanceController.java` | GET /my, GET /{employeeId} |
 
 ### 4.3 Chi tiết Service Layer
 
@@ -468,29 +434,27 @@ classDiagram
 
 | Method                          | Tham số                                  | Trả về        | Mô tả                      |
 |---------------------------------|------------------------------------------|---------------|----------------------------|
-| `register(dto)`                 | `{ email, password }`                    | `AuthResponse` | Đăng ký, hash password    |
-| `login(dto)`                    | `{ email, password }`                    | `AuthResponse` | Xác thực, tạo JWT         |
-| `getMe(userId)`                 | `userId: string`                         | `User`         | Lấy thông tin user        |
-| `updateProfile(userId, dto)`    | `userId, { name?, email? }`              | `User`         | Cập nhật profile          |
-| `changePassword(userId, dto)`   | `userId, { currentPassword, newPassword }`| `void`        | Đổi mật khẩu              |
-| `-generateToken(user)`          | `user: User`                             | `string`       | Tạo JWT (private)         |
+| `register(dto)`                 | `{ email, password }`                    | `AuthResponse` | Đăng ký, hash password, luôn tạo role `employee` |
+| `login(dto)`                    | `{ email, password }`                    | `AuthResponse` | Xác thực bcrypt, lưu `userId`/`userRole` vào HttpSession, set maxInactiveInterval, đặt cookie JSESSIONID |
+| `getMe(userId)`                 | `userId: string`                         | `Map`          | Lấy thông tin user        |
+| `updateProfile(userId, dto)`    | `userId, { name?, email? }`              | `Map`          | Cập nhật profile          |
+| `changePassword(userId, dto)`   | `userId, { currentPassword, newPassword }`| `Map`         | Đổi mật khẩu              |
 
-#### 4.3.2 EmployeesService
+#### 4.3.2 EmployeeService
 
 | Method                          | Tham số                                  | Trả về        | Mô tả                      |
 |---------------------------------|------------------------------------------|---------------|----------------------------|
-| `findAll(query, user)`          | `{ search, department, page, limit }`    | `PaginatedResult`| Danh sách + phân trang  |
+| `findAll(query, user)`          | `{ search, departmentId, page, limit }`  | `PaginatedResponse`| Danh sách + phân trang |
 | `findOne(id, user)`             | `id: string`                             | `Employee`    | Chi tiết, kiểm tra scope  |
 | `create(dto)`                   | Employee DTO                             | `Employee`    | Tạo mới                    |
 | `update(id, dto)`               | `id, EmployeeDTO`                        | `Employee`    | Cập nhật                   |
 | `remove(id)`                    | `id: string`                             | `void`        | Xóa                        |
-| `bulkDelete(ids)`               | `ids: string[]`                          | `void`        | Xóa hàng loạt (max 100)    |
-| `exportCsv(user)`               | `user`                                   | `Buffer`      | Xuất CSV                   |
-| `addDocument(id, file)`         | `id, file`                               | `Employee`    | Upload tài liệu            |
-| `removeDocument(id, docId)`     | `id, docId`                              | `Employee`    | Xóa tài liệu               |
+| `bulkDelete(ids)`               | `ids: string[]`                          | `Map`         | Xóa hàng loạt              |
+| `getMyEmployee(userId)`         | `userId: string`                         | `Employee`    | Employee profile của user hiện tại |
+| `exportCsv(user)`               | `user`                                   | `void`        | Xuất CSV (ghi vào HttpServletResponse) |
 | `findByUserId(userId)`          | `userId: string`                         | `Employee`    | Tìm employee theo userId   |
 
-#### 4.3.3 LeavesService
+#### 4.3.3 LeaveService
 
 | Method                          | Tham số                                  | Trả về        | Mô tả                      |
 |---------------------------------|------------------------------------------|---------------|----------------------------|
@@ -505,13 +469,13 @@ classDiagram
 
 ```mermaid
 graph LR
-    REQ[HTTP Request] --> AUTH[JWT Middleware]
-    AUTH -->|xác thực JWT| REQUSER[req.user]
-    REQUSER --> ROLES[Role Middleware]
+    REQ[HTTP Request] --> AUTH[SessionAuthenticationFilter]
+    AUTH -->|đọc userId/userRole từ HttpSession| SECCTX[SecurityContext]
+    SECCTX --> ROLES[SecurityUtil.requireRoles]
     ROLES -->|Kiểm tra role| CHECK{role trong danh sách?}
     CHECK -->|Có| VAL[Input Validation]
     CHECK -->|Không| 403[403 Forbidden]
-    AUTH -->|Token lỗi| 401[401 Unauthorized]
+    AUTH -->|Không có session hợp lệ| 401[401 Unauthorized]
     VAL -->|Hợp lệ| SRV[Service]
     VAL -->|Lỗi| 400[400 Bad Request]
     SRV --> DB[(MySQL 8)]
@@ -519,17 +483,16 @@ graph LR
 
 | Filter/Middleware          | Thứ tự | Trách nhiệm                                          |
 |---------------------------|:------:|------------------------------------------------------|
-| RateLimitingFilter        | 1      | Giới hạn 60 request/phút/IP |
-| Spring Security Filter    | 2      | Security headers, CORS, CSRF disable                 |
-| JwtAuthenticationFilter   | 3      | Xác thực JWT từ Authorization header                |
-| `requireRoles()`          | 4      | Kiểm tra user role với danh sách allowed roles       |
-| `@Valid` / Jakarta Validation | 5  | Validate input từ request body/param/query           |
-| Controller Handler        | 6      | Xử lý request và gọi service                         |
+| Spring Security Filter Chain | 1  | Bảo mật, session management, CSRF enable (header `X-XSRF-TOKEN`) |
+| SessionAuthenticationFilter | 2    | Đọc `userId`/`userRole` từ HttpSession, gán SecurityContext |
+| `SecurityUtil.requireRoles()` | 3  | Kiểm tra user role với danh sách allowed roles       |
+| `@Valid` / Jakarta Validation | 4  | Validate input từ request body/param/query           |
+| Controller Handler        | 5      | Xử lý request và gọi service                         |
 | `@ControllerAdvice`       | -1     | Bắt tất cả exception, trả về JSON error              |
 
 ### 4.5 Seed Script
 
-Chạy qua Maven profile `seed`: `mvn spring-boot:run -Dspring-boot.run.profiles=seed`. `DataSeeder.java` (implements `CommandLineRunner`) tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, employee histories, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHXH 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, thuế TNCN lũy tiến 7 bậc, thưởng Tết/tháng). Seed xong tự thoát.
+Chạy qua Maven profile `seed`: `mvn spring-boot:run -Dspring-boot.run.profiles=seed`. `DataSeeder.java` (implements `CommandLineRunner`) tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHXH 8%, BHYT 1.5%, BHTN 1%, Công đoàn 1%, thuế TNCN lũy tiến 5 bậc, bonus = 0). Seed xong tự thoát.
 
 ```mermaid
 graph TB
@@ -542,8 +505,7 @@ graph TB
     end
     DEPTS --> EMPPROF[Tạo Employee Profiles]
     EMPPROF --> LB[Tạo Leave Balances]
-    LB --> HIST[Tạo Employee History]
-    HIST --> ATT[Attendance ~2 tháng]
+    LB --> ATT[Attendance ~2 tháng]
     ATT --> PAYROLL["Payroll (3 tháng + historical)"]
     PAYROLL --> LEAVES["Leaves (1-3/employee) + update balance"]
 ```
@@ -562,85 +524,64 @@ erDiagram
     Employee ||--o{ Leave : "requests"
     Employee ||--o{ Attendance : "has"
     Employee ||--o{ Payroll : "receives"
-    Employee ||--o{ EmployeeHistory : "has history"
-    Employee ||--o| LeaveBalance : "has balance"
+    Employee ||--o{ LeaveBalance : "has balance"
     User ||--o{ Notification : "receives"
-    JobPosting ||--o{ Candidate : "attracts"
-    Department ||--o{ JobPosting : "posts"
-    Employee ||--o{ PerformanceReview : "evaluated"
-    User ||--o{ PerformanceReview : "reviewer"
 ```
 
 ### 5.2 Chi tiết Schema
 
-(Xem chi tiết 12 schemas tại SRS.md Phần 4 - Mô hình dữ liệu)
+(Xem chi tiết các bảng tại SRS.md Phần 4 - Mô hình dữ liệu)
 
 **Quan hệ giữa các Model:**
 
 | Model              | Reference         | Type      | Ràng buộc              |
 |--------------------|-------------------|-----------|------------------------|
-| Employee.userId    | User._id          | 1-1       | Unique                 |
-| Employee.departmentId| Department._id | N-1       | Required               |
-| Leave.employeeId   | Employee._id      | N-1       | Required               |
-| Leave.approvedBy   | User._id          | N-1       | Optional               |
-| Attendance.employeeId| Employee._id    | N-1       | Required               |
-| Payroll.employeeId | Employee._id      | N-1       | Required               |
-| LeaveBalance.employeeId| Employee._id | 1-1       | Unique                 |
-| Notification.userId| User._id          | N-1       | Required               |
-| JobPosting.departmentId| Department._id| N-1     | Required               |
-| Candidate.jobPostingId| JobPosting._id | N-1     | Required               |
-| PerformanceReview.employeeId| Employee._id| N-1  | Required               |
-| PerformanceReview.reviewerId| User._id  | N-1       | Required               |
+| Employee.userId    | User.id           | 1-1       | Unique                 |
+| Employee.departmentId| Department.id  | N-1       | Required               |
+| Leave.employeeId   | Employee.id       | N-1       | Required               |
+| Leave.approvedBy   | User.id           | N-1       | Optional               |
+| Attendance.employeeId| Employee.id     | N-1       | Required               |
+| Payroll.employeeId | Employee.id       | N-1       | Required               |
+| LeaveBalance.employeeId| Employee.id  | 1-1       | Unique                 |
+| Notification.userId| User.id           | N-1       | Required               |
 
 ### 5.3 Chiến lược Index
 
-| Collection         | Index                             | Loại      | Mục đích                          |
+| Bảng               | Index                             | Loại      | Mục đích                          |
 |--------------------|-----------------------------------|-----------|-----------------------------------|
 | User               | `email`                           | Unique    | Login lookup                      |
 | Employee           | `departmentId`                    | Single    | Lọc nhân viên theo phòng          |
-| Employee           | `userId`                          | Unique    | Tìm employee từ JWT               |
+| Employee           | `userId`                          | Unique    | Tìm employee từ session userId    |
 | Leave              | `employeeId + status`             | Compound  | Lọc đơn theo NV + trạng thái      |
 | Leave              | `employeeId + startDate + endDate`| Compound  | Kiểm tra chồng chéo               |
 | Attendance         | `employeeId + date`               | Unique    | 1 bản ghi/ngày                    |
 | Payroll            | `employeeId + month + year`       | Unique    | Chống trùng lặp                   |
 | LeaveBalance       | `employeeId`                      | Unique    | 1 quỹ phép/NV                    |
-| EmployeeHistory    | `employeeId + effectiveDate`      | Compound  | Timeline giảm dần                 |
 | Notification       | `userId + isRead + createdAt`     | Compound  | Lấy thông báo chưa đọc            |
 | Department         | `name`                            | Unique    | Tên phòng không trùng             |
 
 ### 5.4 Chiến lược Embedding
 
+Hệ thống dùng MySQL 8 quan hệ (JPA/Hibernate): mọi quan hệ đều được thể hiện bằng khóa ngoại (foreign key), **không có embedded documents**. `Employee` không có trường `documents`; không có tính năng upload tài liệu.
+
 ```mermaid
 graph LR
-    subgraph "Embedded Documents"
-        EMP[Employee] --> DOC[documents: array]
-        DOC -->|name, url, type, uploadedAt| VALUES
-    end
-    subgraph "Referenced Documents (ObjectId)"
-        EMP -->|userId| USR[User]
-        EMP -->|departmentId| DEP[Department]
-        LEAVE[Leave] -->|employeeId| EMP
-        LEAVE -->|approvedBy| USR
-        ATT[Attendance] -->|employeeId| EMP
-        PAY[Payroll] -->|employeeId| EMP
-        LB[LeaveBalance] -->|employeeId| EMP
-        HIST[EmployeeHistory] -->|employeeId| EMP
-        NOTIF[Notification] -->|userId| USR
-        CAND[Candidate] -->|jobPostingId| JP[JobPosting]
-        JP -->|departmentId| DEP
-        PR[PerformanceReview] -->|employeeId| EMP
-        PR -->|reviewerId| USR
-    end
+    USR[User] -->|userId| EMP[Employee]
+    DEP[Department] -->|departmentId| EMP
+    EMP -->|employeeId| LEAVE[Leave]
+    USR -->|approvedBy| LEAVE
+    EMP -->|employeeId| ATT[Attendance]
+    EMP -->|employeeId| PAY[Payroll]
+    EMP -->|employeeId| LB[LeaveBalance]
+    USR -->|userId| NOTIF[Notification]
 ```
 
-**Quy tắc Embedding vs Reference:**
+**Quan hệ giữa các bảng:**
 
-| Tiêu chí              | Embedding                        | Reference                    |
-|-----------------------|----------------------------------|------------------------------|
-| Dữ liệu               | documents array trong Employee   | userId, departmentId         |
-| Tần suất đọc          | Luôn đọc cùng Employee           | Đọc riêng khi cần            |
-| Tần suất ghi          | Thấp (thêm/xóa tài liệu)         | Trung bình                   |
-| Kích thước            | Nhỏ (< 100 documents)            | Không giới hạn               |
+| Tiêu chí              | Cách thực hiện                                  |
+|-----------------------|--------------------------------------------------|
+| Quan hệ               | Khóa ngoại qua JPA `@ManyToOne` / `@OneToOne`    |
+| Đọc dữ liệu liên quan | Truy vấn qua entity mapping / repository query   |
 
 ---
 
@@ -648,38 +589,39 @@ graph LR
 
 ### 6.1 Thiết kế API REST
 
-Tất cả API có prefix `/api`, authentication qua `Authorization: Bearer <JWT>`.
+Tất cả API có prefix `/api`, xác thực bằng session (cookie JSESSIONID do Spring Session JDBC quản lý). CSRF được bật (header `X-XSRF-TOKEN`). Chỉ `POST /api/auth/login` và `POST /api/auth/register` là permitAll.
 
 #### 6.1.1 Auth
 
 | Method | Endpoint                     | Request Body                                    | Response               | Status  |
 |--------|------------------------------|-------------------------------------------------|------------------------|:-------:|
-| POST   | `/api/auth/register`         | `{ email, password }`                           | `{ token, user }`      | 201     |
-| POST   | `/api/auth/login`            | `{ email, password }`                           | `{ token, user }`      | 200     |
+| POST   | `/api/auth/register`         | `{ email, password }`                           | `{ user, token }`      | 200     |
+| POST   | `/api/auth/login`            | `{ email, password }`                           | `{ user, token }`      | 200     |
 | GET    | `/api/auth/me`               | -                                               | `{ user }`             | 200     |
 | PUT    | `/api/auth/profile`          | `{ name?, email? }`                             | `{ user }`             | 200     |
 | POST   | `/api/auth/change-password`  | `{ currentPassword, newPassword }`              | `{ message }`          | 200     |
+
+> **Ghi chú:** Sau khi login thành công, server lưu `userId` + `userRole` vào HttpSession và đặt cookie JSESSIONID (httpOnly). Trường `token` trong response là di sản (legacy), không được dùng để xác thực; mọi request xác thực qua session cookie.
 
 #### 6.1.2 Employees
 
 | Method | Endpoint                            | Query/Params                                     | Request Body                         | Status  |
 |--------|-------------------------------------|--------------------------------------------------|--------------------------------------|:-------:|
-| GET    | `/api/employees`                    | `?search=&department=&page=&limit=`              | -                                    | 200     |
+| GET    | `/api/employees`                    | `?search=&departmentId=&page=&limit=`            | -                                    | 200     |
+| GET    | `/api/employees/me`                 | -                                                | -                                    | 200     |
 | GET    | `/api/employees/export`             | -                                                | -                                    | 200     |
 | GET    | `/api/employees/:id`                | `:id`                                            | -                                    | 200     |
-| POST   | `/api/employees`                    | -                                                | CreateEmployeeDto                    | 201     |
-| PUT    | `/api/employees/:id`                | `:id`                                            | UpdateEmployeeDto                    | 200     |
-| DELETE | `/api/employees/:id`                | `:id`                                            | -                                    | 200     |
+| POST   | `/api/employees`                    | -                                                | CreateEmployeeRequest                | 200     |
+| PUT    | `/api/employees/:id`                | `:id`                                            | CreateEmployeeRequest                | 200     |
+| DELETE | `/api/employees/:id`                | `:id`                                            | -                                    | 204     |
 | POST   | `/api/employees/bulk-delete`        | -                                                | `{ ids: string[] }`                  | 200     |
-| POST   | `/api/employees/:id/documents`      | `:id`                                            | FormData (multipart)                 | 201     |
-| DELETE | `/api/employees/:id/documents/:docId`| `:id, :docId`                                  | -                                    | 200     |
 
 #### 6.1.3 Leaves
 
 | Method | Endpoint                      | Query/Params     | Request Body                               | Status  |
 |--------|-------------------------------|------------------|--------------------------------------------|:-------:|
-| GET    | `/api/leaves`                 | `?status=&type=` | -                                          | 200     |
-| POST   | `/api/leaves`                 | -                | `{ type, startDate, endDate, reason }`     | 201     |
+| GET    | `/api/leaves`                 | `?status=&employeeId=&type=&page=&limit=` | -                          | 200     |
+| POST   | `/api/leaves`                 | -                | `{ type, startDate, endDate, reason }`     | 200     |
 | GET    | `/api/leaves/:id`             | `:id`            | -                                          | 200     |
 | PATCH  | `/api/leaves/:id/status`      | `:id`            | `{ status, rejectionReason? }`             | 200     |
 
@@ -687,9 +629,43 @@ Tất cả API có prefix `/api`, authentication qua `Authorization: Bearer <JWT
 
 | Method | Endpoint                        | Query/Params     | Request Body    | Status  |
 |--------|---------------------------------|------------------|-----------------|:-------:|
-| GET    | `/api/attendance`               | `?employeeId=&date=` | -           | 200     |
-| POST   | `/api/attendance/check-in`      | -                | -               | 201     |
+| GET    | `/api/attendance`               | `?from=&to=&employeeId=&status=` | -       | 200     |
+| POST   | `/api/attendance/check-in`      | -                | -               | 200     |
 | PATCH  | `/api/attendance/:id/check-out` | `:id`            | -               | 200     |
+
+#### 6.1.5 Departments
+
+| Method | Endpoint                   | Query/Params                     | Request Body         | Status  |
+|--------|----------------------------|----------------------------------|----------------------|:-------:|
+| GET    | `/api/departments`         | `?search=&page=&limit=`          | -                    | 200     |
+| GET    | `/api/departments/:id`     | `:id`                            | -                    | 200     |
+| POST   | `/api/departments`         | -                                | CreateDepartmentRequest | 200   |
+| PUT    | `/api/departments/:id`     | `:id`                            | CreateDepartmentRequest | 200   |
+| DELETE | `/api/departments/:id`     | `:id`                            | -                    | 204     |
+
+#### 6.1.6 Leave Balance
+
+| Method | Endpoint                        | Query/Params | Request Body | Status  |
+|--------|---------------------------------|--------------|--------------|:-------:|
+| GET    | `/api/leave-balance/my`         | -            | -            | 200     |
+| GET    | `/api/leave-balance/:employeeId`| `:employeeId`| -            | 200     |
+
+#### 6.1.7 Notifications
+
+| Method | Endpoint                          | Query/Params | Request Body | Status  |
+|--------|-----------------------------------|--------------|--------------|:-------:|
+| GET    | `/api/notifications`              | -            | -            | 200     |
+| GET    | `/api/notifications/unread-count` | -            | -            | 200     |
+| PATCH  | `/api/notifications/read-all`     | -            | -            | 200     |
+| PATCH  | `/api/notifications/:id/read`     | `:id`        | -            | 200     |
+
+#### 6.1.8 Payroll
+
+| Method | Endpoint                 | Query/Params                          | Request Body             | Status  |
+|--------|--------------------------|---------------------------------------|--------------------------|:-------:|
+| GET    | `/api/payroll`           | `?month=&year=&employeeId=&status=&page=&limit=` | -          | 200     |
+| POST   | `/api/payroll/process`   | -                                     | `{ employeeIds, month, year }` | 200 |
+| PATCH  | `/api/payroll/:id/pay`   | `:id`                                 | -                        | 200     |
 
 ### 6.2 Định dạng Response
 
@@ -725,65 +701,64 @@ Tất cả API có prefix `/api`, authentication qua `Authorization: Bearer <JWT
 | 200 | OK                   | GET, PUT, PATCH, DELETE thành công                       |
 | 201 | Created              | POST thành công                                          |
 | 400 | Bad Request          | Validation lỗi, dữ liệu không hợp lệ                     |
-| 401 | Unauthorized         | JWT thiếu, hết hạn hoặc không hợp lệ                     |
+| 401 | Unauthorized         | Chưa đăng nhập hoặc session hết hạn/không hợp lệ              |
 | 403 | Forbidden            | User không có quyền truy cập resource                    |
 | 404 | Not Found            | Resource không tồn tại                                   |
 | 409 | Conflict             | Trùng lặp (email, tên phòng ban)                         |
-| 429 | Too Many Requests    | Vượt quá rate limit                                      |
 | 500 | Internal Server Error| Lỗi không xác định                                       |
 
 ---
 
 ## 7. Thiết kế Xác thực & Phân quyền
 
-### 7.1 Luồng JWT
+### 7.1 Luồng đăng nhập (Session)
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant LG as Login Page
     participant S as Server
+    participant SS as HttpSession (Spring Session JDBC)
     participant DB as MySQL
     C->>LG: Nhập email + password
     LG->>S: POST /api/auth/login
     S->>DB: Tìm user theo email
-    DB-->>S: User document
-    S->>S: bcrypt.compare(password, passwordHash)
+    DB-->>S: User
+    S->>S: bcrypt.matches(password, passwordHash)
     alt Mật khẩu đúng
-        S->>S: Tạo JWT: {sub, email, role, iat, exp}
-        S->>S: Ký với JWT_SECRET, expiresIn: '1d'
-        S-->>LG: 200 {token, user}
-        LG->>C: Lưu token vào localStorage
-        C->>C: Gắn Authorization header cho mọi request
+        S->>SS: Lưu userId + userRole, set maxInactiveInterval (mặc định 86400000ms)
+        S->>C: Đặt cookie JSESSIONID (httpOnly)
+        S-->>LG: 200 {user, token} (token không dùng để xác thực)
     else Mật khẩu sai
         S-->>LG: 401 Unauthorized
     end
+    Note over C: Mỗi request gửi kèm cookie JSESSIONID
+    Note over C: Khi có cookie JSESSIONID, client gọi GET /api/auth/me để khôi phục user
+    Note over C: Logout: client xóa cookie JSESSIONID (không có endpoint logout phía server)
 ```
 
-### 7.2 JWT Payload
+### 7.2 Dữ liệu lưu trong Session
 
-```json
-{
-  "sub": "507f1f77bcf86cd799439011",
-  "email": "admin@hr.com",
-  "role": "admin",
-  "iat": 1718611200,
-  "exp": 1718697600
-}
-```
+HttpSession (Spring Session JDBC, bảng `sessions`) chứa:
+
+| Attribute | Giá trị ví dụ                        | Mục đích              |
+|-----------|--------------------------------------|-----------------------|
+| `userId`  | UUID của user                        | Nhận diện người dùng  |
+| `userRole`| `admin` / `manager` / `employee`     | Phân quyền theo role  |
+
+- Session max-inactive-interval được lấy từ `jwt.expiration` (mặc định `86400000` ms = 1 ngày). Tên `jwt.secret`/`jwt.expiration` là di sản (legacy); `JWT_SECRET` vẫn bắt buộc khi khởi động server.
+- CSRF được bật: header `X-XSRF-TOKEN` (HttpSessionCsrfTokenRepository).
 
 ### 7.3 Logic Role Middleware
 
 ```mermaid
 flowchart TD
-    START[Request đến route] --> AUTH{JWT Middleware}
-    AUTH -->|Không có token| 401[401 Unauthorized]
-    AUTH -->|Token hợp lệ| ROLES{Role Middleware}
-    ROLES --> CHECK{Route có @Roles()?}
-    CHECK -->|Không| FORBIDDEN[403 Forbidden]
-    CHECK -->|Có| MATCH{Vai trò trong danh sách?}
-    MATCH -->|Có| ALLOW[200 OK]
-    MATCH -->|Không| 403[403 Forbidden]
+    START[Request đến route] --> AUTH{SessionAuthenticationFilter}
+    AUTH -->|Không có session hợp lệ| 401[401 Unauthorized]
+    AUTH -->|Đọc userId/userRole từ HttpSession, gán SecurityContext| ROLES{SecurityUtil.requireRoles / scope check}
+    ROLES --> CHECK{Role trong danh sách allowed?}
+    CHECK -->|Không| 403[403 Forbidden]
+    CHECK -->|Có| ALLOW[200 OK]
 ```
 
 ### 7.4 Scoped Data theo Role
@@ -802,63 +777,58 @@ graph TB
 
 ---
 
-## 8. Thiết kế Thông báo Thời gian thực
+## 8. Thiết kế Thông báo (API Polling)
 
-### 8.1 Kiến trúc Socket.IO
+### 8.1 Kiến trúc Polling
 
 ```mermaid
 graph TB
     subgraph "Server"
-        NS[NotificationsService]
-        GW[NotificationsGateway]
-        GW --> ROOM[user:{userId} room]
+        NS[NotificationService]
+        NR[NotificationRepository]
+        DB[(MySQL 8)]
     end
     subgraph "Client"
-        SC[Socket.IO Client]
-        SH[useSocket Hook]
         TQ[TanStack Query]
         TS[Toast]
     end
     subgraph "Trigger Events"
-        LV[Leave Service - approve/reject]
+        LV[LeaveService - approve/reject]
     end
-    LV -->|create notification| NS
-    NS -->|save to DB| DB[(MySQL)]
-    NS -->|emit event| GW
-    GW -->|sendNotification| ROOM
-    ROOM -->|notification event| SC
-    SC -->|nhận event| SH
-    SH -->|invalidate query| TQ
-    SH -->|show toast| TS
-    TQ -->|refetch| API[GET /api/notifications]
-    API -->|updated list| UI[Giao diện]
+    LV -->|NotificationService.create| NS
+    NS -->|save| NR --> DB
+    TQ -->|poll GET /api/notifications/unread-count (30s)| NS
+    TQ -->|poll GET /api/notifications (15s)| NS
+    TQ -->|thông báo mới| TS
 ```
 
-### 8.2 Vòng đời kết nối
+### 8.2 Vòng đời Polling
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant S as Socket Server
-    participant A as Auth
-    participant N as Notifications
+    participant S as Server
+    participant DB as MySQL
     Note over C: App khởi động
-    C->>C: Kiểm tra localStorage token
-    alt Có token
-        C->>S: Kết nối Socket.IO + auth: {token}
-        S->>S: Xác thực JWT
-        alt Hợp lệ
-            S-->>C: Kết nối thành công
-            S->>S: Join room user:{userId}
-        else Không hợp lệ
-            S-->>C: Kết nối thất bại
-        end
+    C->>C: Kiểm tra cookie JSESSIONID
+    alt Có cookie
+        C->>S: GET /api/auth/me
+        S-->>C: User info
     end
-    Note over A: Leave được duyệt
-    A->>N: Tạo notification
-    N->>S: Emit 'notification'
-    S->>C: Push đến room user:{userId}
-    C->>C: Show toast + invalidate queries
+    loop Mỗi 30s
+        C->>S: GET /api/notifications/unread-count
+        S->>DB: Count thông báo chưa đọc
+        DB-->>S: count
+        S-->>C: { count }
+        C->>C: Cập nhật badge + toast nếu tăng
+    end
+    loop Mỗi 15s
+        C->>S: GET /api/notifications
+        S-->>C: Danh sách thông báo
+    end
+    Note over C,DB: Leave được duyệt/từ chối
+    S->>DB: NotificationService.create() lưu thông báo
+    S-->>C: Client phát hiện qua lần poll kế tiếp
 ```
 
 ---
@@ -872,24 +842,21 @@ classDiagram
     class AuthService {
         +register(dto) AuthResponse
         +login(dto) AuthResponse
-        +getMe(userId) User
-        +updateProfile(userId, dto) User
-        +changePassword(userId, currentPassword, newPassword) void
-        -generateToken(user) string
+        +getMe(userId) Map
+        +updateProfile(userId, dto) Map
+        +changePassword(userId, currentPassword, newPassword) Map
     }
-    class EmployeesService {
-        +findAll(query, user) PaginatedResult
+    class EmployeeService {
+        +findAll(query, user) PaginatedResponse
         +findOne(id, user) Employee
         +create(dto) Employee
         +update(id, dto) Employee
         +remove(id) void
-        +bulkDelete(ids) void
-        +exportCsv(user) Buffer
-        +addDocument(id, file) Employee
-        +removeDocument(id, docId) Employee
-        +findByUserId(userId) Employee
+        +bulkDelete(ids) Map
+        +exportCsv(user) void
+        +getMyEmployee(userId) Employee
     }
-    class LeavesService {
+    class LeaveService {
         +findAll(query, user) Leave[]
         +findOne(id, user) Leave
         +create(dto, userId) Leave
@@ -901,20 +868,17 @@ classDiagram
         +findAll(query, user) Attendance[]
         +checkIn(userId) Attendance
         +checkOut(id, userId) Attendance
-        -determineStatus(checkInTime) string
     }
-    class DashboardService {
-        +getDashboard(user) object
-        -adminDashboard() object
-        -managerDashboard(userId) object
-        -employeeDashboard(userId) object
-    }
-    class NotificationsService {
-        +findByUser(userId, limit) Notification[]
+    class NotificationService {
+        +findByUser(userId) Notification[]
         +unreadCount(userId) number
         +markRead(id, userId) void
         +markAllRead(userId) void
-        +create(data) Notification
+        +create(userId, title, message, type, relatedId, relatedModel) void
+    }
+    class LeaveBalanceService {
+        +findByEmployee(employeeId) LeaveBalance
+        +deduct(employeeId, type, days) void
     }
     class PayrollService {
         +process(dto) Payroll[]
@@ -922,12 +886,14 @@ classDiagram
         +findAll(query, user) Payroll[]
     }
     AuthService --> User
-    EmployeesService --> Employee
-    LeavesService --> Leave
+    EmployeeService --> Employee
+    LeaveService --> Leave
     AttendanceService --> Attendance
-    DashboardService --> DashboardService
-    NotificationsService --> Notification
+    NotificationService --> Notification
+    LeaveBalanceService --> LeaveBalance
     PayrollService --> Payroll
+    LeaveService --> LeaveBalanceService
+    LeaveService --> NotificationService
 ```
 
 ### 9.2 Sequence Diagram - Xử lý đơn nghỉ phép
@@ -935,10 +901,10 @@ classDiagram
 ```mermaid
 sequenceDiagram
     participant E as Employee
-    participant C as LeavesController
-    participant S as LeavesService
+    participant C as LeaveController
+    participant S as LeaveService
     participant LB as LeaveBalanceService
-    participant N as NotificationsService
+    participant N as NotificationService
     participant DB as MySQL
 
     E->>C: POST /leaves {type, startDate, endDate, reason}
@@ -950,7 +916,7 @@ sequenceDiagram
     DB-->>S: Không overlap
     S->>DB: create leave {status:'pending'}
     DB-->>S: Leave created
-    S-->>C: 201 Created
+    S-->>C: 200 OK
     C-->>E: Thành công
 
     Note over E,DB: Khi Manager duyệt
@@ -967,7 +933,7 @@ sequenceDiagram
         S->>DB: Update leave status
         S->>N: create notification
         N->>DB: Save
-        N->>N: Emit Socket.IO
+        N-->>N: Client nhận qua API polling
         S-->>C: 200 OK
         C-->>Manager: Thành công
     end
@@ -980,20 +946,21 @@ sequenceDiagram
     participant A as Admin
     participant C as PayrollController
     participant S as PayrollService
-    participant ES as EmployeesService
+    participant ES as EmployeeRepository
     participant DB as MySQL
 
     A->>C: POST /payroll/process {employeeIds, month, year}
-    C->>S: process(dto)
+    C->>S: process(dto) (requireRoles admin)
     loop Mỗi employeeId
         S->>ES: Lấy employee info
         ES-->>S: Employee {salary}
-        S->>DB: Kiểm tra tồn tại?
+        S->>DB: Kiểm tra bản ghi month/year đã tồn tại?
         alt Đã tồn tại
             S->>S: Skip
         else Chưa tồn tại
-            S->>S: netPay = salary + bonus - deductions (BHXH+BHTN+BHTNLD+Công đoàn+PIT)
-            S->>S: netPay = max(0, netPay)
+            S->>S: Deductions = BHXH 8% + BHYT 1.5% + BHTN 1% + Công đoàn 1%
+            S->>S: PIT: 5 bậc lũy tiến (5/10/20/30/35%), giảm trừ gia cảnh 15.500.000 VND
+            S->>S: bonus = 0; netPay = basicSalary - totalDeductions
             S->>DB: create payroll {status:'draft'}
         end
     end
@@ -1016,7 +983,7 @@ sequenceDiagram
     participant E as Employee
     participant C as AttendanceController
     participant S as AttendanceService
-    participant ES as EmployeesService
+    participant ES as EmployeeRepository
     participant DB as MySQL
 
     E->>C: POST /attendance/check-in
@@ -1028,10 +995,10 @@ sequenceDiagram
         S-->>E: 400 Bad Request
     else Chưa
         S->>S: now = new Date()
-        S->>S: < 9AM => present, >= 9AM => late
+        S->>S: check-in sau 09:00 => late, ngược lại => present
         S->>DB: create attendance
         DB-->>S: Created
-        S-->>C: 201 Created
+        S-->>C: 200 OK
         C-->>E: Check-in thành công
     end
 
@@ -1039,6 +1006,7 @@ sequenceDiagram
     C->>S: checkOut(id, userId)
     S->>S: workedHours = checkOut - checkIn
     S->>S: < 4h => half-day
+    S->>S: late và workedHours >= 8h => present
     S->>DB: update checkOut, status
     DB-->>S: Updated
     S-->>C: 200 OK
@@ -1060,8 +1028,8 @@ graph TB
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
         end
         subgraph "Environment"
-            ENV["server/.env<br/>jwt.secret<br/>spring.datasource.url<br/>cors.origin<br/>server.port"]
-            CLT_ENV["client/.env<br/>VITE_API_URL"]
+            ENV["Root .env (spring.config.import)<br/>JWT_SECRET<br/>DB_URL / DB_USERNAME / DB_PASSWORD<br/>CORS_ORIGIN<br/>SERVER_PORT"]
+            CLT_ENV["VITE_API_URL"]
         end
     end
     BROWSER[Web Browser:5173] --> CLT
@@ -1103,14 +1071,14 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Lớp 1: Network"
-        CORS[CORS - chỉ origin cụ thể]
-        RATE[Rate Limiting - 60 req/phút]
+        CORS[CORS - chỉ origin cụ thể (cors.origin)]
     end
     subgraph "Lớp 2: HTTP"
-        HELMET[Helmet - Security Headers]
+        HEADERS[Spring Security - Security Headers]
     end
     subgraph "Lớp 3: Authentication"
-        JWT[JWT - JSON Web Token]
+        SESSION[Session - HttpSession + Spring Session JDBC]
+        CSRF[CSRF - X-XSRF-TOKEN header]
     end
     subgraph "Lớp 4: Authorization"
         RBAC[Role-Based Access Control]
@@ -1118,21 +1086,20 @@ graph TB
     subgraph "Lớp 5: Validation"
         DTO[DTOs + Jakarta Validation]
     end
-    subgraph "Lớp 6: Input Safety"
-        ESCAPE[Regex escape cho search]
-        SIZE[File upload max 5MB]
+    subgraph "Lớp 6: Session & Cookie"
+        COOKIE[httpOnly JSESSIONID cookie]
     end
     subgraph "Lớp 7: Data"
         BCRYPT[bcrypt - 10 rounds]
     end
-    CORS --> HELMET --> JWT --> RBAC --> DTO --> ESCAPE & SIZE --> BCRYPT
+    CORS --> HEADERS --> SESSION --> CSRF --> RBAC --> DTO --> COOKIE --> BCRYPT
 ```
 
 ### 11.2 Quy tắc xác thực mật khẩu
 
-- Regex validation: `/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/`
-- Độ dài: 8-128 ký tự
-- Ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
+- Độ dài: tối thiểu 8, tối đa 128 ký tự
+- Không yêu cầu độ phức tạp (không bắt buộc chữ hoa/thường/số/ký tự đặc biệt)
+- Mật khẩu được hash bằng bcrypt
 
 ---
 
@@ -1160,7 +1127,7 @@ flowchart TD
 | Class                       | HTTP Status | Khi nào dùng                                         |
 |-----------------------------|:-----------:|------------------------------------------------------|
 | `BadRequestException`       | 400         | Validation lỗi, dữ liệu không hợp lệ                 |
-| `UnauthorizedException`     | 401         | Token thiếu/hết hạn/sai                              |
+| `UnauthorizedException`     | 401         | Session thiếu/hết hạn/sai                              |
 | `ForbiddenException`        | 403         | Không có quyền                                       |
 | `NotFoundException`         | 404         | Resource không tồn tại                               |
 | `ConflictException`         | 409         | Trùng lặp dữ liệu                                    |
@@ -1170,7 +1137,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     API[API Call] --> AXI[Axios Interceptor]
-    AXI -->|401| CLEAR[Xóa token, redirect /login]
+    AXI -->|401| CLEAR[Xóa cookie JSESSIONID, redirect /login]
     AXI -->|400| SHOW[Hiển thị validation error]
     AXI -->|403| HIDE[Ẩn chức năng]
     AXI -->|Network Error| RETRY[TanStack Query retry 3 lần]
@@ -1188,25 +1155,23 @@ flowchart TD
 graph TB
     subgraph "Language Context"
         LANG[language-context.tsx]
-        LANG --> EN[English ~830 keys]
-        LANG --> VI[Vietnamese ~830 keys]
+        LANG --> VI[Vietnamese - locales/vi.ts ~430 keys]
         LANG --> T[t(key) function]
     end
     subgraph "Translation Keys"
         T --> COMMON[common.*] & NAV[nav.*] & ROLE[role.*]
-        T --> DASH[dashboard.*] & EMP[employees.*] & DEPT[departments.*]
+        T --> EMP[employees.*] & DEPT[departments.*]
         T --> LEAVE[leaves.*] & ATT[attendance.*] & PAY[payroll.*]
-        T --> REC[recruitment.*] & PR[performance_reviews.*]
         T --> NOTIF[notifications.*] & LOGIN[login.*]
         T --> PROF[profile.*] & SETT[settings.*] & STAT[status.*]
         T --> VAL[validation.*] & AUTH[auth.*]
-        T --> HIST[history.*] & ORG[org_chart.*]
+        T --> ORG[org_chart.*]
     end
-    COMP[React Components] -->|useLanguage()| LANG
+    COMP[React Components] -->|useTranslation()| LANG
     COMP -->|t('key')| T
 ```
 
-**Lưu trữ:** Lựa chọn ngôn ngữ được lưu trong `localStorage`, khôi phục khi reload.
+**Lưu trữ:** Hệ thống dùng một locale tiếng Việt duy nhất trong `client/src/locales/vi.ts`; không có chuyển đổi ngôn ngữ.
 
 ---
 
@@ -1229,8 +1194,8 @@ graph TB
 3. **Data volume**: Tổng số bản ghi < 1 triệu trong 2 năm đầu, không cần sharding
 4. **Browser**: Người dùng sử dụng trình duyệt hiện đại (Chrome/Firefox/Edge/Safari 2 phiên bản gần nhất)
 5. **Mobile**: Chỉ responsive web, không có native app
-6. **Auth**: JWT trong localStorage là đủ cho SPA nội bộ doanh nghiệp
-7. **File storage**: Local filesystem, không cần cloud storage (S3/GCS) ở phase đầu
+6. **Auth**: Xác thực bằng session (cookie JSESSIONID do Spring Session JDBC quản lý) là đủ cho SPA nội bộ doanh nghiệp
+7. **File storage**: Hiện không có tính năng upload/tài liệu (Employee không có trường documents)
 
 ---
 

@@ -9,7 +9,7 @@
 | 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai |
 
 > **Tuân theo:** Template User Story chuẩn (Role-Feature-Reason) với Acceptance Criteria, ước lượng Story Point (Fibonacci) và phân loại MoSCoW.
-> **Trạng thái triển khai:** US-001 đến US-062 đã triển khai. US-070, US-071 (Recruitment), US-080, US-081 (Performance Reviews), US-090 (Socket.IO real-time) chưa triển khai.
+> **Trạng thái triển khai:** Đã triển khai: US-001–US-004 (Auth/Profile), US-010, US-011, US-013 (Employees), US-020, US-021 (Departments/Org-chart), US-030–US-033 (Leaves/Leave Balance), US-040, US-041 (Attendance), US-050–US-052 (Payroll), US-091 (Notifications). Chưa triển khai: US-012 (phần tài liệu & lịch sử nhân viên), US-014 (Documents), US-060, US-061, US-062 (Dashboard), US-070, US-071 (Recruitment), US-080, US-081 (Performance Reviews), US-090 (Socket.IO real-time).
 
 ---
 
@@ -90,7 +90,8 @@ Mỗi user story tuân theo template chuẩn:
 - [ ] Hiển thị/hide mật khẩu
 - [ ] Validate: email không rỗng, password không rỗng
 - [ ] Gọi API POST /api/auth/login
-- [ ] Nếu thành công: lưu token, chuyển đến dashboard
+- [ ] Nếu thành công: tạo phiên đăng nhập (Spring Session JDBC, cookie JSESSIONID), chuyển đến /leaves (không có trang dashboard; `/` redirect về /leaves)
+- [ ] Khi có cookie JSESSIONID, client khôi phục phiên qua GET /api/auth/me
 - [ ] Nếu thất bại: hiển thị lỗi "Email hoặc mật khẩu không đúng"
 - [ ] Nút demo accounts (admin/manager/employee)
 
@@ -109,7 +110,7 @@ Mỗi user story tuân theo template chuẩn:
 **Acceptance Criteria**:
 - [ ] Form đăng ký với email + password + confirm password
 - [ ] Validate: email đúng định dạng
-- [ ] Validate: password >= 8 ký tự, có chữ hoa + thường + số
+- [ ] Validate: password từ 8 đến 128 ký tự, không yêu cầu độ phức tạp (chữ hoa/thường/số)
 - [ ] Gọi API POST /api/auth/register
 - [ ] Tự động đăng nhập sau khi đăng ký thành công
 
@@ -129,7 +130,7 @@ Mỗi user story tuân theo template chuẩn:
 - [ ] Trang Profile hiển thị: avatar (chữ cái đầu), name, email, role
 - [ ] Nút "Edit Profile" mở dialog với form name + email
 - [ ] Nút "Change Password" mở dialog với current + new + confirm
-- [ ] Validate đổi mật khẩu: mới >= 8 ký tự
+- [ ] Validate đổi mật khẩu: mật khẩu mới từ 8 đến 128 ký tự, không yêu cầu độ phức tạp
 - [ ] Gọi API PUT /api/auth/profile và POST /api/auth/change-password
 
 ---
@@ -147,7 +148,7 @@ Mỗi user story tuân theo template chuẩn:
 **Acceptance Criteria**:
 - [ ] Nút logout ở sidebar
 - [ ] Dialog xác nhận trước khi logout
-- [ ] Xóa token khỏi localStorage
+- [ ] Xóa cookie phiên (JSESSIONID) phía client — không có endpoint logout phía server
 - [ ] Chuyển hướng đến trang login
 
 ---
@@ -200,6 +201,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-012: Xem chi tiết nhân viên
 
+> **Trạng thái: đã triển khai một phần** — trang chi tiết nhân viên đã có; phần tài liệu và lịch sử nhân viên chưa triển khai.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Admin, Manager, Employee                      |
@@ -211,12 +214,12 @@ Mỗi user story tuân theo template chuẩn:
 **Acceptance Criteria**:
 - [ ] Header: ảnh đại diện (chữ cái), tên, vị trí
 - [ ] Card Personal: department, salary, hireDate, phone, email (từ User)
-- [ ] Card Contract: contractType, expiry, documents list
-- [ ] Card History: timeline các sự kiện raise/promotion/transfer
+- [ ] Card Contract: contractType, expiry (mục documents: chưa triển khai)
+- [ ] Card History: timeline các sự kiện raise/promotion/transfer (chưa triển khai — không có module employee history)
 - [ ] Nút Edit Employee (Admin)
-- [ ] Nút Upload Document (Admin)
-- [ ] Nút Delete Document (Admin)
-- [ ] Nút Add History (Admin/Manager)
+- [ ] Nút Upload Document (Admin) (chưa triển khai — không có module documents/upload)
+- [ ] Nút Delete Document (Admin) (chưa triển khai)
+- [ ] Nút Add History (Admin/Manager) (chưa triển khai)
 - [ ] Employee chỉ xem được thông tin của mình
 
 ---
@@ -240,6 +243,8 @@ Mỗi user story tuân theo template chuẩn:
 ---
 
 ### US-014: Quản lý tài liệu nhân viên
+
+> **Trạng thái: chưa triển khai** — không có module documents/upload.
 
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
@@ -292,7 +297,7 @@ Mỗi user story tuân theo template chuẩn:
 | **SP**     | 3                                             |
 
 **Acceptance Criteria**:
-- [ ] Gọi API GET /api/departments/org-chart
+- [ ] Không có endpoint org-chart — sơ đồ tổ chức render client-side từ API GET /api/departments
 - [ ] Hiển thị card cho mỗi phòng ban
 - [ ] Card: tên phòng, mô tả, trưởng phòng, danh sách nhân viên
 - [ ] Layout 2 cột grid
@@ -358,7 +363,7 @@ Mỗi user story tuân theo template chuẩn:
 - [ ] Nút Reject: nhập lý do, xác nhận, từ chối
 - [ ] Khi duyệt: tự động trừ quỹ phép
 - [ ] Nếu không đủ quỹ phép: báo lỗi
-- [ ] Gửi thông báo real-time cho employee
+- [ ] Gửi thông báo trong ứng dụng cho employee (API polling, không dùng Socket.IO)
 
 ---
 
@@ -441,7 +446,7 @@ Mỗi user story tuân theo template chuẩn:
 **Acceptance Criteria**:
 - [ ] Dialog: chọn month, year, employeeIds
 - [ ] Gọi API POST /api/payroll/process
-- [ ] Tự động tính netPay = basicSalary + bonus - deductions (BHXH 8%, BHTN 1%, BHTNLD 0.5%, Công đoàn 2.5%, PIT lũy tiến)
+- [ ] Tự động tính netPay = basicSalary − deductions (bonus luôn bằng 0). Các khoản khấu trừ: BHXH 8%, BHYT 1.5%, BHTN 1%, Công đoàn 1%, PIT lũy tiến 5 bậc (5/10/20/30/35%, giảm trừ cá nhân 15.500.000 VND)
 - [ ] Bỏ qua nếu đã tồn tại (employeeId + month + year)
 - [ ] Payroll tạo với status "draft"
 - [ ] Danh sách payroll: period, salary, bonus, deductions, netPay, status
@@ -491,6 +496,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-060: Dashboard Admin
 
+> **Trạng thái: chưa triển khai** — không có module/endpoint/UI Dashboard.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Admin                                         |
@@ -508,6 +515,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-061: Dashboard Manager
 
+> **Trạng thái: chưa triển khai** — không có module/endpoint/UI Dashboard.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Manager                                       |
@@ -523,6 +532,8 @@ Mỗi user story tuân theo template chuẩn:
 ---
 
 ### US-062: Dashboard Employee
+
+> **Trạng thái: chưa triển khai** — không có module/endpoint/UI Dashboard.
 
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
@@ -548,6 +559,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-070: Quản lý tin tuyển dụng
 
+> **Trạng thái: chưa triển khai** — không có module Recruitment.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Admin                                         |
@@ -565,6 +578,8 @@ Mỗi user story tuân theo template chuẩn:
 ---
 
 ### US-071: Quản lý ứng viên
+
+> **Trạng thái: chưa triển khai** — không có module Recruitment.
 
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
@@ -590,6 +605,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-080: Quản lý đánh giá hiệu suất
 
+> **Trạng thái: chưa triển khai** — không có module Performance Reviews.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Admin, Manager                                |
@@ -608,6 +625,8 @@ Mỗi user story tuân theo template chuẩn:
 
 ### US-081: Xem đánh giá của tôi
 
+> **Trạng thái: chưa triển khai** — không có module Performance Reviews.
+
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
 | **Vai trò**| Employee                                      |
@@ -624,11 +643,13 @@ Mỗi user story tuân theo template chuẩn:
 
 ## 11. Epic 10: Thông báo
 
-**Mô tả**: Thông báo trong ứng dụng, thời gian thực.
+**Mô tả**: Thông báo trong ứng dụng, giao qua API polling (không dùng Socket.IO).
 
 ---
 
 ### US-090: Nhận thông báo thời gian thực
+
+> **Trạng thái: chưa triển khai** — không dùng Socket.IO/WebSocket; thông báo hiện tại chạy bằng API polling.
 
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
@@ -660,7 +681,7 @@ Mỗi user story tuân theo template chuẩn:
 - [ ] Trang Notifications: danh sách 20 thông báo gần nhất
 - [ ] Click -> mark as read
 - [ ] Nút "Mark All Read"
-- [ ] Badge unread count cập nhật real-time
+- [ ] Badge unread count cập nhật qua API polling (unread-count mỗi 30s, danh sách mỗi 15s)
 
 ---
 
@@ -671,6 +692,8 @@ Mỗi user story tuân theo template chuẩn:
 ---
 
 ### US-100: Đa ngôn ngữ (EN/VI)
+
+> **Trạng thái: chưa triển khai** - giao diện hiện tại chỉ có tiếng Việt (một locale `vi.ts`), chưa có bộ ngôn ngữ EN và không có bộ chuyển đổi ngôn ngữ.
 
 | Trường     | Giá trị                                       |
 |------------|-----------------------------------------------|
@@ -716,7 +739,7 @@ Mỗi user story tuân theo template chuẩn:
 
 **Acceptance Criteria**:
 - [ ] `?` : mở dialog hướng dẫn phím tắt
-- [ ] `G + D` : Dashboard
+- [ ] `G + D` : Dashboard (chưa triển khai - không có trang Dashboard)
 - [ ] `G + E` : Employees
 - [ ] `G + L` : Leaves
 - [ ] `G + A` : Attendance

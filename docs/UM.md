@@ -9,7 +9,7 @@
 | 2.1       | 22/06/2026 | Dev Team   | Ghi chú trạng thái triển khai |
 
 > **Tuân theo:** ISO/IEC 26514 (Systems and software engineering — Requirements for designers and developers of user documentation) và Microsoft User Assistance Model.
-> **Trạng thái triển khai:** Các chức năng Auth, Employees, Departments, Leaves, Attendance, Payroll, Dashboard, Notifications, Profile đã có giao diện. Recruitment (Job Postings, Candidates), Performance Reviews chưa triển khai giao diện (đang kế hoạch). Socket.IO chưa triển khai.
+> **Trạng thái triển khai:** Các chức năng Auth, Employees, Departments, Leaves, Attendance, Payroll, Notifications, Profile đã có giao diện. **Dashboard không có trang riêng** — sau đăng nhập `/` chuyển hướng tới `/leaves`. Recruitment (Job Postings, Candidates), Performance Reviews chưa triển khai giao diện (đang kế hoạch). **Socket.IO chưa triển khai** — thông báo dùng API polling (badge mỗi 30s, danh sách mỗi 15s).
 
 ---
 
@@ -17,14 +17,14 @@
 
 1. [Giới thiệu hệ thống](#1-giới-thiệu-hệ-thống)
 2. [Bắt đầu](#2-bắt-đầu)
-3. [Dashboard](#3-dashboard)
+3. [Dashboard](#3-dashboard) — chưa triển khai
 4. [Quản lý Nhân viên](#4-quản-lý-nhân-viên)
 5. [Quản lý Phòng ban](#5-quản-lý-phòng-ban)
 6. [Quản lý Nghỉ phép](#6-quản-lý-nghỉ-phép)
 7. [Quản lý Chấm công](#7-quản-lý-chấm-công)
 8. [Quản lý Bảng lương](#8-quản-lý-bảng-lương)
-9. [Quản lý Tuyển dụng](#9-quản-lý-tuyển-dụng)
-10. [Đánh giá Hiệu suất](#10-đánh-giá-hiệu-suất)
+9. [Quản lý Tuyển dụng](#9-quản-lý-tuyển-dụng) — chưa triển khai
+10. [Đánh giá Hiệu suất](#10-đánh-giá-hiệu-suất) — chưa triển khai
 11. [Thông báo](#11-thông-báo)
 12. [Cài đặt cá nhân](#12-cài-đặt-cá-nhân)
 13. [Phím tắt](#13-phím-tắt)
@@ -42,8 +42,8 @@
 - Xử lý nghỉ phép nhanh chóng, minh bạch
 - Chấm công online, tự động tính toán
 - Tính lương hàng tháng tự động
-- Đăng tin tuyển dụng và theo dõi ứng viên
-- Đánh giá hiệu suất nhân viên
+- Đăng tin tuyển dụng và theo dõi ứng viên *(đang kế hoạch — chưa triển khai)*
+- Đánh giá hiệu suất nhân viên *(đang kế hoạch — chưa triển khai)*
 
 ### 1.2 Ai sử dụng hệ thống?
 
@@ -71,7 +71,7 @@ graph LR
     B --> C[Trang đăng nhập]
     C --> D[Nhập email + password]
     D --> E[Nhấn Login]
-    E --> F[Dashboard]
+    E --> F[Trang Leaves (/leaves)]
 ```
 
 1. Mở trình duyệt web
@@ -87,24 +87,27 @@ graph LR
 ### 2.2 Giao diện chính
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ [=] Sidebar (trái)        │ Nội dung chính          │
-│                           │                         │
-│  [Nguoi dung] John Doe   │  (Trang hiện tại)        │
-│  [Online] Employee        │                         │
-│  ───────────────────────  │                         │
-│  [Bieu do] Dashboard      │                         │
-│  [Nhom] Employees         │                         │
-│  [Toa nha] Departments    │                         │
-│  [Danh sach] Leaves       │                         │
-│  [Dong ho] Attendance     │                         │
-│  [Tien] Payroll           │                         │
-│  ───────────────────────  │                         │
-│  [Chuong] Notifications (3) │                       │
-│  [Ca nhan] Profile        │                         │
-│  [Cai dat] Settings       │                         │
-│  [Thoat] Logout           │                         │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ [=] Sidebar (trái)            │ Nội dung chính          │
+│                               │                         │
+│  [Nguoi dung] John Doe        │  (Trang hiện tại)       │
+│  [Online] Employee            │                         │
+│  ───────────────────────────  │                         │
+│  [Nhom] Employees             │                         │
+│  [Toa nha] Departments        │                         │
+│  [So do] Org Chart            │                         │
+│  [Danh sach] Leaves           │                         │
+│  [Phe duyet] Leave Approvals  │                         │
+│  [Dong ho] Attendance         │                         │
+│  [Bao cao] Attendance Report  │                         │
+│  [Tien] Payroll               │                         │
+│  [Quan ly] Payroll Management │                         │
+│  ───────────────────────────  │                         │
+│  [Chuong] Notifications (3)   │                         │
+│  [Cai dat] Settings           │                         │
+│  [Ca nhan] Profile            │                         │
+│  [Thoat] Logout               │                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 #### Các khu vực chính
@@ -127,46 +130,7 @@ graph LR
 
 ## 3. Dashboard
 
-### 3.1 Admin Dashboard
-
-Khi đăng nhập với vai trò **Admin**, bạn sẽ thấy:
-
-**Thẻ thống kê:**
-- **Tổng nhân viên**: Số lượng nhân viên trong hệ thống
-- **Đơn chờ duyệt**: Số đơn nghỉ phép đang chờ xử lý
-- **Có mặt hôm nay**: Số nhân viên đã check-in
-- **Tổng lương tháng**: Tổng lương của tháng hiện tại
-
-**Biểu đồ:**
-- **Nhân viên theo phòng ban**: Biểu đồ bar ngang
-
-**Danh sách gần đây:**
-- 5 đơn nghỉ phép gần nhất
-
-### 3.2 Manager Dashboard
-
-Khi đăng nhập với vai trò **Manager**, bạn sẽ thấy:
-
-- **Tên phòng ban**: Phòng bạn quản lý
-- **Số nhân viên**: Số lượng trong phòng
-- **Đơn chờ duyệt**: Đơn chờ của phòng bạn
-- **Có mặt hôm nay**: Nhân viên trong phòng đã check-in
-- **Quỹ lương phòng**: Tổng lương phòng ban
-
-### 3.3 Employee Dashboard
-
-Khi đăng nhập với vai trò **Employee**, bạn sẽ thấy:
-
-**Thẻ thống kê:**
-- Đơn nghỉ phép: pending / approved / rejected
-- Chấm công: present / late / absent / half-day
-
-**Biểu đồ:**
-- Phân bố nghỉ phép (pie chart)
-- Chấm công theo ngày (bar chart)
-
-**Sắp tới:**
-- 3 đơn nghỉ phép approved sắp đến
+> **KHÔNG TRIỂN KHAI.** Hệ thống không có trang Dashboard. Sau khi đăng nhập, URL gốc `/` tự chuyển hướng tới trang **Leaves** (`/leaves`) — đây cũng là trang mặc định cho mọi vai trò (Admin, Manager, Employee).
 
 ---
 
@@ -221,18 +185,14 @@ graph LR
 |-------------|-----------------------------------------------|
 | **Header**  | Avatar (chữ cái đầu), tên, vị trí             |
 | **Personal**| Phòng ban, lương, ngày vào, số điện thoại     |
-| **Contract**| Loại hợp đồng, ngày hết hạn, danh sách tài liệu |
-| **History** | Timeline lịch sử thay đổi                     |
+| **Contract**| Loại hợp đồng, ngày hết hạn                    |
+| **History** | Timeline lịch sử thay đổi — **chưa triển khai** |
 
 ### 4.4 Upload tài liệu
 
 **Vai trò**: Admin
 
-1. Vào Employee Detail
-2. Kéo xuống phần **Documents**
-3. Nhấn **Upload Document**
-4. Chọn file (yêu cầu: <= 5MB, JPEG/PNG/GIF/PDF/DOC/DOCX)
-5. Nhấn Upload
+> **CHƯA TRIỂN KHAI.** Chức năng tải tài liệu lên (Documents / Upload) chưa có giao diện và chưa có API.
 
 ### 4.5 Xuất CSV
 
@@ -409,8 +369,8 @@ graph TB
 3. Chọn: Tháng, Năm, Nhân viên
 4. Nhấn **Process**
 5. Hệ thống tự động tính:
-   - `netPay = basicSalary + bonus - deductions`
-   - Khấu trừ: BHXH (8%), BHTN (1%), BHTNLD (0.5%), Công đoàn (2.5%), Thuế TNCN lũy tiến
+   - `netPay = basicSalary - deductions` (bonus luôn bằng 0)
+   - Khấu trừ: BHXH (8%), BHYT (1.5%), BHTN (1%), Công đoàn (1%), Thuế TNCN lũy tiến 5 bậc (5/10/20/30/35%, giảm trừ gia cảnh 15.500.000 VND)
 6. Bảng lương được tạo với trạng thái **Draft**
 
 ### 8.3 Đánh dấu đã trả (Admin)
@@ -423,50 +383,13 @@ graph TB
 
 ## 9. Quản lý Tuyển dụng
 
-### 9.1 Tin tuyển dụng
-
-**Vai trò**: Admin
-
-1. Vào sidebar, chọn **Job Postings**
-2. **Thêm tin**: Nhấn "Create Job Posting"
-   - Nhập: Title, Department, Description, Requirements, Status, Openings
-3. **Sửa**: Nhấn Edit
-4. **Xóa**: Nhấn Delete (xác nhận)
-5. **Lọc**: Theo status (Open/Closed/Draft)
-
-### 9.2 Ứng viên
-
-**Vai trò**: Admin, Manager
-
-1. Vào sidebar, chọn **Candidates**
-2. **Thêm ứng viên**: Nhấn "Add Candidate"
-   - Nhập: First Name, Last Name, Email, Phone, Job Posting, Notes
-3. **Cập nhật trạng thái**: Sửa ứng viên, chọn status mới
-4. Quy trình tuyển dụng:
-
-```
-Applied -> Screening -> Interview -> Offered -> Hired
-                                           -> Rejected
-```
+> **CHƯA TRIỂN KHAI.** Chức năng Tuyển dụng (Job Postings, Candidates) chưa có giao diện và chưa có API. Sidebar không có mục **Job Postings** hay **Candidates**.
 
 ---
 
 ## 10. Đánh giá Hiệu suất
 
-### 10.1 Xem đánh giá của tôi (Employee)
-
-1. Vào sidebar, chọn **Performance Reviews**
-2. Danh sách các đánh giá của bạn
-3. Mỗi đánh giá: Period, Rating (thang 5), Comments, Goals, Status
-
-### 10.2 Quản lý đánh giá (Admin/Manager)
-
-1. Vào sidebar, chọn **Review Management**
-2. Thống kê: Total reviews, Average rating, Submitted count
-3. **Tạo đánh giá**: Nhấn "Create Review"
-   - Chọn: Employee, Period (e.g. "2024-Q1"), Rating (1-5), Comments, Goals
-4. **Sửa**: Nhấn Edit - cập nhật rating, comments, goals, status
-5. **Status flow**: Draft -> Submitted -> Acknowledged
+> **CHƯA TRIỂN KHAI.** Chức năng Đánh giá Hiệu suất (Performance Reviews) chưa có giao diện và chưa có API. Sidebar không có mục **Performance Reviews** hay **Review Management**.
 
 ---
 
@@ -486,7 +409,7 @@ Applied -> Screening -> Interview -> Offered -> Hired
 ### 11.3 Badge thông báo
 
 - Số thông báo chưa đọc hiển thị bên cạnh bieu tuong chuong
-- Cập nhật tự động, real-time
+- Cập nhật tự động bằng API polling: badge mỗi 30 giây, danh sách mỗi 15 giây (không dùng Socket.IO)
 
 ### 11.4 Các loại thông báo
 
@@ -513,7 +436,7 @@ Applied -> Screening -> Interview -> Offered -> Hired
 1. Vào Profile
 2. Nhấn **Change Password**
 3. Nhập: Mật khẩu hiện tại, Mật khẩu mới, Xác nhận
-4. Yêu cầu: >= 8 ký tự, có chữ hoa + thường + số
+4. Yêu cầu: từ 8 đến 128 ký tự (không yêu cầu độ phức tạp)
 5. Nhấn **Save**
 
 ### 12.3 Cài đặt giao diện
@@ -540,7 +463,6 @@ Cách bật/tắt dark mode:
 | Phím tắt    | Chức năng           |
 |-------------|---------------------|
 | `?`         | Mở hướng dẫn phím tắt |
-| `G` + `D`   | Dashboard           |
 | `G` + `E`   | Employees           |
 | `G` + `O`   | Org Chart           |
 | `G` + `L`   | Leaves              |
@@ -589,8 +511,8 @@ Cách bật/tắt dark mode:
 | Vấn đề                 | Cách xử lý                           |
 |------------------------|---------------------------------------|
 | Trang load chậm         | Kiểm tra kết nối mạng                |
-| Dashboard không hiện   | Refresh trang (F5)                   |
-| Thông báo không real-time | Kiểm tra kết nối socket (reconnect tự động) |
+| Sau đăng nhập vào thẳng /leaves | Đây là hành vi bình thường: `/` chuyển hướng tới `/leaves`, không có trang Dashboard |
+| Thông báo cập nhật chậm | Thông báo dùng API polling (badge mỗi 30s, danh sách mỗi 15s) — không dùng Socket.IO |
 
 ---
 

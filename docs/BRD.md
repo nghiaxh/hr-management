@@ -156,14 +156,14 @@ flowchart LR
     C --> D{Duyệt/Từ chối}
     D -->|Duyệt| E[Trừ tự động quỹ phép]
     D -->|Từ chối| F[Nhập lý do]
-    E --> G[Thông báo real-time]
+    E --> G[Thông báo trong ứng dụng]
     F --> G
 ```
 
 **Cải tiến:**
 - Toàn bộ quy trình mất < 5 phút
 - Tự động kiểm tra quỹ phép
-- Thông báo tức thời
+- Thông báo trong ứng dụng (API polling)
 - Không cần nhập liệu lại
 
 ### 5.2 Quy trình chấm công (mục tiêu)
@@ -206,8 +206,8 @@ flowchart LR
 |---------|---------------------------------------------------------------|:-------:|---------------|
 | BR-001  | Hệ thống cho phép lưu trữ đầy đủ thông tin nhân viên          | Cao     | -             |
 | BR-002  | Hỗ trợ tìm kiếm, lọc, phân trang danh sách nhân viên          | Cao     | BR-001        |
-| BR-003  | Cho phép upload tài liệu (hợp đồng, CV, bằng cấp)             | Trung bình | BR-001     |
-| BR-004  | Lưu trữ lịch sử thay đổi (lương, chức vụ, phòng ban)          | Cao     | BR-001        |
+| BR-003  | Cho phép upload tài liệu (hợp đồng, CV, bằng cấp) — chưa triển khai (kế hoạch) | Trung bình | BR-001     |
+| BR-004  | Lưu trữ lịch sử thay đổi (lương, chức vụ, phòng ban) — chưa triển khai (kế hoạch) | Cao     | BR-001        |
 | BR-005  | Xuất danh sách nhân viên ra file CSV                           | Thấp    | BR-001        |
 | BR-006  | Cho phép xóa hàng loạt nhân viên                               | Thấp    | BR-001        |
 
@@ -227,7 +227,7 @@ flowchart LR
 | BR-021  | Hệ thống tự động kiểm tra chồng chéo và giới hạn 30 ngày       | Cao     | BR-020        |
 | BR-022  | Trưởng phòng/admin duyệt hoặc từ chối đơn                      | Cao     | BR-020        |
 | BR-023  | Tự động trừ quỹ phép khi duyệt                                 | Cao     | BR-022        |
-| BR-024  | Gửi thông báo real-time cho nhân viên                          | Trung bình | BR-022    |
+| BR-024  | Gửi thông báo trong ứng dụng cho nhân viên (API polling)       | Trung bình | BR-022    |
 | BR-025  | Tra cứu quỹ phép còn lại                                       | Trung bình | BR-023    |
 
 ### 6.4 Quản lý chấm công
@@ -243,7 +243,7 @@ flowchart LR
 | ID      | Yêu cầu                                                       | Ưu tiên | Phụ thuộc     |
 |---------|---------------------------------------------------------------|:-------:|---------------|
 | BR-040  | Admin xử lý lương theo tháng/năm cho từng nhân viên           | Cao     | BR-001        |
-| BR-041  | Tự động tính netPay = lương + thưởng - khấu trừ (BHSS, BHTN, BHTNLD, Công đoàn, PIT lũy tiến) | Cao     | BR-040        |
+| BR-041  | Tự động tính netPay = lương cơ bản - khấu trừ (BHXH 8%, BHYT 1,5%, BHTN 1%, Công đoàn 1%, PIT 5 bậc 5/10/20/30/35% với giảm trừ gia cảnh 15.500.000 VND); thưởng = 0 | Cao     | BR-040 |
 | BR-042  | Chống tạo trùng lặp bảng lương                                | Cao     | BR-040        |
 | BR-043  | Đánh dấu trạng thái đã thanh toán                             | Trung bình | BR-041    |
 
@@ -251,29 +251,29 @@ flowchart LR
 
 | ID      | Yêu cầu                                                       | Ưu tiên |
 |---------|---------------------------------------------------------------|:-------:|
-| BR-050  | Đăng tin tuyển dụng với thông tin chi tiết                    | Trung bình |
-| BR-051  | Quản lý ứng viên và theo dõi trạng thái                       | Trung bình |
+| BR-050  | Đăng tin tuyển dụng với thông tin chi tiết — chưa triển khai (kế hoạch) | Trung bình |
+| BR-051  | Quản lý ứng viên và theo dõi trạng thái — chưa triển khai (kế hoạch) | Trung bình |
 
 ### 6.7 Đánh giá hiệu suất
 
 | ID      | Yêu cầu                                                       | Ưu tiên |
 |---------|---------------------------------------------------------------|:-------:|
-| BR-060  | Tạo đánh giá hiệu suất cho nhân viên theo kỳ                  | Trung bình |
-| BR-061  | Nhân viên xem đánh giá của mình                               | Thấp    |
+| BR-060  | Tạo đánh giá hiệu suất cho nhân viên theo kỳ — chưa triển khai (kế hoạch) | Trung bình |
+| BR-061  | Nhân viên xem đánh giá của mình — chưa triển khai (kế hoạch) | Thấp    |
 
 ### 6.8 Dashboard & Báo cáo
 
 | ID      | Yêu cầu                                                       | Ưu tiên |
 |---------|---------------------------------------------------------------|:-------:|
-| BR-070  | Dashboard với thống kê khác nhau theo từng vai trò             | Cao     |
-| BR-071  | Hiển thị biểu đồ trực quan (pie chart, bar chart)             | Trung bình |
+| BR-070  | Dashboard với thống kê khác nhau theo từng vai trò — chưa triển khai (kế hoạch) | Cao     |
+| BR-071  | Hiển thị biểu đồ trực quan (pie chart, bar chart) — chưa triển khai (kế hoạch) | Trung bình |
 
 ### 6.9 Thông báo
 
 | ID      | Yêu cầu                                                       | Ưu tiên |
 |---------|---------------------------------------------------------------|:-------:|
 | BR-080  | Thông báo trong ứng dụng khi có sự kiện quan trọng            | Cao     |
-| BR-081  | Thông báo thời gian thực qua WebSocket                        | Trung bình |
+| BR-081  | Thông báo trong ứng dụng qua API polling (danh sách mỗi 15s, số chưa đọc mỗi 30s) | Trung bình |
 
 ### 6.10 Giao diện & Trải nghiệm
 
@@ -292,16 +292,16 @@ flowchart LR
 
 | Module                    | Mô tả ngắn                                     |
 |---------------------------|------------------------------------------------|
-| Xác thực & Phân quyền     | Đăng nhập, JWT, RBAC 3 vai trò                 |
-| Quản lý Nhân viên         | CRUD, tìm kiếm, lọc, documents, history        |
+| Xác thực & Phân quyền     | Đăng nhập, phiên đăng nhập (session) + CSRF, RBAC 3 vai trò |
+| Quản lý Nhân viên         | CRUD, tìm kiếm, lọc, xuất CSV, xóa hàng loạt            |
 | Quản lý Phòng ban         | CRUD, sơ đồ tổ chức, gán manager               |
 | Quản lý Nghỉ phép         | Tạo đơn, duyệt, quỹ phép, thông báo            |
 | Quản lý Chấm công         | Check-in/out, tự động phân loại                |
 | Quản lý Lương             | Tính lương hàng tháng, đánh dấu đã trả         |
-| Tuyển dụng                | Tin tuyển dụng + quản lý ứng viên              |
-| Đánh giá Hiệu suất        | Đánh giá định kỳ                               |
-| Dashboard                 | Thống kê theo vai trò                          |
-| Thông báo                 | In-app + Socket.IO real-time                   |
+| Tuyển dụng                | Tin tuyển dụng + quản lý ứng viên *(chưa triển khai - kế hoạch)* |
+| Đánh giá Hiệu suất        | Đánh giá định kỳ *(chưa triển khai - kế hoạch)* |
+| Dashboard                 | Thống kê theo vai trò *(chưa triển khai - kế hoạch)* |
+| Thông báo                 | In-app (API polling, không dùng Socket.IO/WebSocket) |
 | Đa ngôn ngữ               | EN + VI                                        |
 | Dark mode                 | Chuyển đổi sáng/tối                            |
 
@@ -319,7 +319,7 @@ flowchart LR
 
 1. 100% chức năng trong scope hoạt động đúng theo SRS
 2. Thời gian phản hồi API < 500ms
-3. Bảo mật: JWT, bcrypt, Helmet, rate limiting
+3. Bảo mật: session-based auth, bcrypt, CSRF (X-XSRF-TOKEN)
 4. Hỗ trợ đồng thời 100+ người dùng
 5. Tài liệu đầy đủ: SRS, SDD, UM
 
@@ -363,7 +363,7 @@ flowchart LR
 | R-002 | Mất dữ liệu khi migration                   | Thấp     | Rất cao  | Backup dữ liệu, migration từ từ             |
 | R-003 | Yêu cầu thay đổi nghiệp vụ phát sinh        | Cao      | Trung bình| Agile development, sprint review hàng tuần |
 | R-004 | Hiệu năng khi quá nhiều người dùng          | Thấp     | Cao      | Load testing, tối ưu query, indexing        |
-| R-005 | Bảo mật thông tin nhân viên                 | Thấp     | Rất cao  | JWT, mã hóa, audit log, phân quyền chặt     |
+| R-005 | Bảo mật thông tin nhân viên                 | Thấp     | Rất cao  | Phiên đăng nhập (session) + CSRF, mã hóa bcrypt, audit log, phân quyền chặt |
 | R-006 | Nhân sự phát triển không đủ năng lực         | Trung bình | Cao    | Training, code review, technical spec       |
 | R-007 | Thiết bị người dùng không đáp ứng            | Thấp     | Trung bình| Yêu cầu cấu hình tối thiểu, test đa trình duyệt |
 

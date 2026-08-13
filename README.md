@@ -55,10 +55,9 @@ Cấu hình tập trung trong file `.env` ở thư mục gốc. Copy mẫu `/.en
 | `MYSQL_ROOT_PASSWORD` | `root` | Mật khẩu root MySQL |
 | `DB_URL` | `jdbc:mysql://localhost:3306/hr_management?...` | Chuỗi kết nối MySQL |
 | `DB_USERNAME` | `root` | Tên đăng nhập DB |
-| `DB_PASSWORD` | `root` | Mật khẩu DB |
 | `SERVER_PORT` | `3001` | Cổng API |
-| `JWT_SECRET` | bắt buộc | Khóa bí mật JWT, tối thiểu 32 ký tự |
-| `JWT_EXPIRATION` | `86400000` | Thời hạn token (ms) |
+| `JWT_SECRET` | bắt buộc | Bí mật đăng nhập; khởi tạo `jwt.secret`, `jwt.expiration` dùng làm thời hạn session |
+| `JWT_EXPIRATION` | `86400000` | Thời hạn session (ms) |
 | `CORS_ORIGIN` | `http://localhost:5173` | Nguồn CORS được phép |
 | `VITE_API_URL` | `http://localhost:3001/api` | URL gốc API (nạp khi build client) |
 
@@ -74,14 +73,13 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 
 ## Tính năng
 
-- **Xác thực và phân quyền**: JWT, 3 vai trò admin, quản lý, nhân viên. Kiểm tra vai trò ở service layer và route phía client
-- **Dashboard**: thống kê theo vai trò. Admin xem toàn hệ thống, quản lý xem phòng ban mình, nhân viên xem dữ liệu bản thân
-- **Nhân viên**: CRUD, tìm kiếm, lọc theo phòng ban, quản lý hợp đồng và tài liệu, lịch sử lương và thăng chức
-- **Phòng ban**: CRUD, gán quản lý, sơ đồ tổ chức
+- **Xác thực và phân quyền**: session-based (Spring Session JDBC), 3 vai trò admin, quản lý, nhân viên. Kiểm tra vai trò ở service layer và route phía client
+- **Nhân viên**: CRUD, tìm kiếm, lọc theo phòng ban, xuất CSV, xóa hàng loạt, quản lý hợp đồng
+- **Phòng ban**: CRUD, gán quản lý, sơ đồ tổ chức (dựng phía client từ API phòng ban)
 - **Nghỉ phép**: tạo đơn, duyệt hoặc từ chối, kiểm tra trùng lịch, tự trừ ngày phép khi duyệt
-- **Chấm công**: chấm công vào và ra hàng ngày, tự tính trạng thái. Vào sau 9h là đi muộn, làm dưới 4h là nửa ngày
-- **Bảng lương**: xử lý hàng loạt theo tháng, tính khấu trừ BHXH, BHTN, BHTNLD, Công đoàn, thuế TNCN lũy tiến, thưởng Tết và thưởng hiệu suất
-- **Thông báo**: gửi trong ứng dụng khi đơn nghỉ phép được duyệt hoặc từ chối
+- **Chấm công**: chấm công vào và ra hàng ngày, tự tính trạng thái. Vào sau 9h là đi muộn, làm dưới 4h là nửa ngày, muộn nhưng đủ 8h tính là có mặt
+- **Bảng lương**: xử lý hàng loạt theo tháng, tính khấu trừ BHXH, BHYT, BHTN, Công đoàn và thuế TNCN lũy tiến
+- **Thông báo**: gửi trong ứng dụng khi đơn nghỉ phép được duyệt hoặc từ chối, cập nhật qua API polling
 
 ## API Endpoints
 
@@ -89,7 +87,7 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
 | POST | /api/auth/register | Không | Đăng ký, luôn tạo vai trò employee |
-| POST | /api/auth/login | Không | Đăng nhập |
+| POST | /api/auth/login | Không | Đăng nhập, tạo session |
 | GET | /api/auth/me | Có | Thông tin người dùng hiện tại |
 | PUT | /api/auth/profile | Có | Cập nhật hồ sơ |
 | POST | /api/auth/change-password | Có | Đổi mật khẩu |
@@ -98,20 +96,18 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 | Method | Path | Vai trò | Mô tả |
 |--------|------|---------|-------|
 | GET | /api/employees | admin, manager | Danh sách |
+| GET | /api/employees/me | tất cả | Thông tin hồ sơ nhân viên của tôi |
 | GET | /api/employees/export | admin, manager | Xuất CSV |
 | GET | /api/employees/:id | tất cả | Chi tiết |
 | POST | /api/employees | admin | Tạo |
 | PUT | /api/employees/:id | admin | Cập nhật |
 | DELETE | /api/employees/:id | admin | Xóa |
 | POST | /api/employees/bulk-delete | admin | Xóa hàng loạt |
-| POST | /api/employees/:id/documents | admin | Tải tài liệu |
-| DELETE | /api/employees/:id/documents/:docId | admin | Xóa tài liệu |
 
 ### Departments
 | Method | Path | Vai trò | Mô tả |
 |--------|------|---------|-------|
 | GET | /api/departments | admin, manager | Danh sách |
-| GET | /api/departments/org-chart | admin, manager | Sơ đồ tổ chức |
 | GET | /api/departments/:id | admin, manager | Chi tiết |
 | POST | /api/departments | admin | Tạo |
 | PUT | /api/departments/:id | admin | Cập nhật |
@@ -130,12 +126,6 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 |--------|------|---------|-------|
 | GET | /api/leave-balance/my | tất cả | Ngày phép của tôi |
 | GET | /api/leave-balance/:employeeId | admin, manager | Ngày phép nhân viên |
-
-### Employee History
-| Method | Path | Vai trò | Mô tả |
-|--------|------|---------|-------|
-| GET | /api/employees/:id/history | tất cả | Lịch sử nhân viên |
-| POST | /api/employees/:id/history | admin, manager | Thêm sự kiện |
 
 ### Notifications
 | Method | Path | Vai trò | Mô tả |
@@ -159,11 +149,6 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 | POST | /api/payroll/process | admin | Xử lý hàng loạt |
 | PATCH | /api/payroll/:id/pay | admin | Đánh dấu đã trả |
 
-### Dashboard
-| Method | Path | Vai trò | Mô tả |
-|--------|------|---------|-------|
-| GET | /api/dashboard | tất cả | Thống kê theo vai trò |
-
 ## Kiểm thử
 
 | Package | Framework | Số lượng | Chạy |
@@ -181,7 +166,7 @@ CI tự động qua GitHub Actions, chạy server tests, client tests và client
 | UI | HeroUI v3, Tailwind CSS |
 | Backend | Spring Boot 4.1, Java 25 |
 | Database | MySQL 8+, JPA/Hibernate |
-| Auth | JWT (jjwt 0.12.6), bcrypt, Spring Security |
+| Auth | Spring Session JDBC, bcrypt, Spring Security |
 | Client State | TanStack React Query |
 | Icons | @phosphor-icons/react |
 | Dates | date-fns |
