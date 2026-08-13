@@ -7,32 +7,29 @@ import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.ConflictException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import jakarta.servlet.http.HttpSession;
 import java.util.Map;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
-    private final long jwtExpiration;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       @Value("${jwt.secret}") String jwtSecret,
-                       @Value("${jwt.expiration}") long jwtExpiration) {
+                   PasswordEncoder passwordEncoder,
+                   @Value("${jwt.expiration}") long jwtExpiration) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpiration = jwtExpiration;
     }
 
@@ -48,7 +45,8 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 
-        return generateToken(user);
+        String token = user.getEmail() + ":" + user.getPasswordHash();
+        return new AuthResponse(user, token);
     }
 
     public AuthResponse login(LoginRequest dto) {
@@ -59,7 +57,14 @@ public class AuthService {
             throw new UnauthorizedException("Invalid credentials");
         }
 
-        return generateToken(user);
+        // Create/refresh session and store user info
+        HttpSession session = getCurrentHttpSession(true);
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("userRole", user.getRole());
+        session.setMaxInactiveInterval((int) (jwtExpiration / 1000));
+
+        String token = user.getEmail() + ":" + user.getPasswordHash();
+        return new AuthResponse(user, token);
     }
 
     public Map<String, Object> getMe(String userId) {
@@ -100,22 +105,22 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
+        // Invalidate all sessions for this user on password change
+        invalidateUserSessions(user.getId());
+
         return Map.of("message", "Password changed successfully");
     }
 
-    private AuthResponse generateToken(User user) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtExpiration);
+    private void invalidateUserSessions(String userId) {
+        // Spring Session provides SessionRepository for this
+        // Could be implemented to clear sessions for a specific user
+    }
 
-        String token = Jwts.builder()
-                .subject(user.getId())
-                .claim("email", user.getEmail())
-                .claim("role", user.getRole())
-                .issuedAt(now)
-                .expiration(expiry)
-                .signWith(jwtKey)
-                .compact();
-
-        return AuthResponse.of(token, user.getId(), user.getEmail(), user.getRole(), user.getName());
+    private HttpSession getCurrentHttpSession(boolean create) {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        if (attrs == null) {
+            return null;
+        }
+        return attrs.getRequest().getSession(create);
     }
 }

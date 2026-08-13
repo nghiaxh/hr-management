@@ -1,29 +1,39 @@
 package com.hrmanagement.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.hrmanagement.auth.entity.User;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class AuthResponse {
-    private String token;
-    private UserInfo user;
+    @Getter private UserInfo user;
+    @Getter private String token;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UserInfo {
+    public AuthResponse(User user, String token) {
+        this.user = new UserInfo(
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                user.getName()
+        );
+        this.token = token;
+    }
+
+@NoArgsConstructor
+@Getter
+public static class UserInfo {
         @JsonProperty("id")
         private String id;
         private String email;
         private String role;
         private String name;
-    }
 
-    public static AuthResponse of(String token, String id, String email, String role, String name) {
-        return new AuthResponse(token, new UserInfo(id, email, role, name));
+        public UserInfo(String id, String email, String role, String name) {
+            this.id = id;
+            this.email = email;
+            this.role = role;
+            this.name = name;
+        }
     }
 }
