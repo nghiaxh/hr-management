@@ -59,9 +59,11 @@ public class AuthService {
 
         // Create/refresh session and store user info
         HttpSession session = getCurrentHttpSession(true);
-        session.setAttribute("userId", user.getId());
-        session.setAttribute("userRole", user.getRole());
-        session.setMaxInactiveInterval((int) (jwtExpiration / 1000));
+        if (session != null) {
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userRole", user.getRole());
+            session.setMaxInactiveInterval((int) (jwtExpiration / 1000));
+        }
 
         String token = user.getEmail() + ":" + user.getPasswordHash();
         return new AuthResponse(user, token);

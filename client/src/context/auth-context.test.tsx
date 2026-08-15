@@ -16,7 +16,7 @@ function TestComponent() {
   return (
     <div>
       <span data-testid="loading">{loading ? 'loading' : 'loaded'}</span>
-      <span data-testid="user">{user ? user.email : 'no-user'}</span}
+      <span data-testid="user">{user ? user.email : 'no-user'}</span>
       <span data-testid="jsessionid">{token ?? 'no-cookie'}</span>
       <button data-testid="login-btn" onClick={() => login('a@b.com', 'pwd')}>Login</button>
       <button data-testid="logout-btn" onClick={logout}>Logout</button>

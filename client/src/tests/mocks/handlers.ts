@@ -5,7 +5,7 @@ const API_BASE = 'http://localhost:3001/api';
 const mockUser = {
   id: 'user-1',
   email: 'admin@example.com',
-  role: 'admin' as const,
+  role: 'employee' as const,
   name: 'Admin User',
 };
 
