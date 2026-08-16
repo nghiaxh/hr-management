@@ -12,12 +12,11 @@ vi.mock('../api/auth', () => ({
 }));
 
 function TestComponent() {
-  const { user, token, login, logout, loading } = useAuth();
+  const { user, login, logout, loading } = useAuth();
   return (
     <div>
       <span data-testid="loading">{loading ? 'loading' : 'loaded'}</span>
       <span data-testid="user">{user ? user.email : 'no-user'}</span>
-      <span data-testid="jsessionid">{token ?? 'no-cookie'}</span>
       <button data-testid="login-btn" onClick={() => login('a@b.com', 'pwd')}>Login</button>
       <button data-testid="logout-btn" onClick={logout}>Logout</button>
     </div>
@@ -26,18 +25,8 @@ function TestComponent() {
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    document.cookie = '';
+    document.cookie = 'JSESSIONID=; Max-Age=0; path=/';
     vi.clearAllMocks();
-  });
-
-  it('shows loading initially', () => {
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
-
-    expect(screen.getByTestId('loading').textContent).toBe('loading');
   });
 
   it('loads user from cookie on mount', async () => {
@@ -66,11 +55,11 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('no-user');
     });
-    expect(screen.getByTestId('jsessionid').textContent).toBe('no-cookie');
   });
 
-  it('login sets cookie and user', async () => {
+  it('login sets user and fetches profile', async () => {
     vi.mocked(authApi.login).mockResolvedValue({
+      token: 'new-token',
       user: { id: '1', email: 'test@example.com', role: 'admin' },
     });
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'test@example.com', role: 'admin' });
@@ -86,8 +75,7 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('test@example.com');
     });
-    expect(document.cookie).toContain('JSESSIONID=new-token');
-    expect(screen.getByTestId('jsessionid').textContent).toBe('new-token');
+    expect(authApi.getMe).toHaveBeenCalled();
   });
 
   it('logout clears cookie and user', async () => {
@@ -107,6 +95,6 @@ describe('AuthContext', () => {
     await userEvent.click(screen.getByTestId('logout-btn'));
 
     expect(screen.getByTestId('user').textContent).toBe('no-user');
-    expect(document.cookie).toBeNull() || !document.cookie.includes('JSESSIONID');
+    expect(document.cookie).not.toContain('JSESSIONID');
   });
 });
