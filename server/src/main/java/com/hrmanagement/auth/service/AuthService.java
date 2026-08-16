@@ -119,10 +119,9 @@ public class AuthService {
     }
 
     private HttpSession getCurrentHttpSession(boolean create) {
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-        if (attrs == null) {
-            return null;
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
+            return attrs.getRequest().getSession(create);
         }
-        return attrs.getRequest().getSession(create);
+        return null;
     }
 }
