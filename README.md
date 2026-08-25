@@ -1,5 +1,11 @@
 # Hệ thống Quản lý Nhân sự
 
+![Java](https://img.shields.io/badge/Java-25-007396?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)
+
 Hệ thống quản lý nhân sự với phân quyền RBAC, xây dựng bằng Spring Boot, MySQL 8, React và HeroUI.
 
 ## Yêu cầu
