@@ -14,7 +14,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    restart: unless-stopped
+    restart: no
 
   server:
     build: ./server
@@ -31,7 +31,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    restart: unless-stopped
+    restart: no
 
   client:
     build:
@@ -43,7 +43,7 @@ services:
       - "5173:80"
     depends_on:
       - server
-    restart: unless-stopped
+    restart: no
 
 volumes:
   database_data:
