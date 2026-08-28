@@ -16,39 +16,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const cookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('JSESSIONID='));
-    
-    if (cookie) {
-      const token = cookie.split('=')[1];
-      authApi.getMe()
-        .then((u) => setUser(u))
-        .catch(() => { setToken(null); })
-        .finally(() => setLoading(false));
-    } else setLoading(false);
+    authApi.getMe()
+      .then((u) => setUser(u))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
-
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (token) {
-      authApi.getMe()
-        .then((u) => setUser(u))
-        .catch(() => { setToken(null); })
-        .finally(() => setLoading(false));
-    } else setLoading(false);
-  }, [token]);
 
   const login = async (email: string, password: string) => {
     const res = await authApi.login(email, password);
-    setToken(res.token);
     setUser(res.user);
   };
 
   const logout = () => {
     document.cookie = 'JSESSIONID=; Max-Age=0; path=/';
-    setToken(null);
+    document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
     setUser(null);
   };
 

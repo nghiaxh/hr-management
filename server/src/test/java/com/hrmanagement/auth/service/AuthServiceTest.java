@@ -52,6 +52,7 @@ class AuthServiceTest {
 
         assertNotNull(result);
         assertNotNull(result.getToken());
+        assertFalse(result.getToken().contains("encoded"), "token must not leak the password hash");
         assertEquals("test@example.com", result.getUser().getEmail());
         assertEquals("employee", result.getUser().getRole());
         verify(userRepository).save(any(User.class));
@@ -76,6 +77,7 @@ class AuthServiceTest {
 
         assertNotNull(result);
         assertEquals("a@b.com", result.getUser().getEmail());
+        assertFalse(result.getToken().contains("encoded"), "token must not leak the password hash");
     }
 
     @Test
@@ -123,6 +125,17 @@ class AuthServiceTest {
         var result = authService.updateProfile("u1", new ProfileUpdateRequest("New Name", null));
 
         assertEquals("New Name", result.get("name"));
+    }
+
+    @Test
+    void updateProfile_throwsOnDuplicateEmail() {
+        User user = User.builder().id("u1").email("old@b.com").role("employee").build();
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("taken@b.com")).thenReturn(true);
+
+        assertThrows(ConflictException.class,
+                () -> authService.updateProfile("u1", new ProfileUpdateRequest(null, "taken@b.com")));
+        verify(userRepository, never()).save(any());
     }
 
     @Test

@@ -45,8 +45,7 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 
-        String token = user.getEmail() + ":" + user.getPasswordHash();
-        return new AuthResponse(user, token);
+        return new AuthResponse(user, buildSessionToken(user));
     }
 
     public AuthResponse login(LoginRequest dto) {
@@ -65,7 +64,7 @@ public class AuthService {
             session.setMaxInactiveInterval((int) (jwtExpiration / 1000));
         }
 
-        String token = user.getEmail() + ":" + user.getPasswordHash();
+        String token = buildSessionToken(user);
         return new AuthResponse(user, token);
     }
 
@@ -83,6 +82,12 @@ public class AuthService {
     public Map<String, Object> updateProfile(String userId, ProfileUpdateRequest dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new ConflictException("Email already exists");
+            }
+        }
 
         if (dto.getName() != null) user.setName(dto.getName());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
@@ -116,6 +121,10 @@ public class AuthService {
     private void invalidateUserSessions(String userId) {
         // Spring Session provides SessionRepository for this
         // Could be implemented to clear sessions for a specific user
+    }
+
+    private String buildSessionToken(User user) {
+        return "session:" + user.getId();
     }
 
     private HttpSession getCurrentHttpSession(boolean create) {

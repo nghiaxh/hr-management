@@ -26,11 +26,12 @@ function TestComponent() {
 describe('AuthContext', () => {
   beforeEach(() => {
     document.cookie = 'JSESSIONID=; Max-Age=0; path=/';
+    document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
     vi.clearAllMocks();
+    vi.mocked(authApi.getMe).mockRejectedValue(new Error('no session'));
   });
 
-  it('loads user from cookie on mount', async () => {
-    document.cookie = 'JSESSIONID=existing-token';
+  it('loads user from session on mount', async () => {
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(
@@ -45,7 +46,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('loading').textContent).toBe('loaded');
   });
 
-  it('shows no user when no cookie', async () => {
+  it('shows no user when session restore fails', async () => {
     render(
       <AuthProvider>
         <TestComponent />
@@ -55,14 +56,14 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('no-user');
     });
+    expect(authApi.getMe).toHaveBeenCalled();
   });
 
-  it('login sets user and fetches profile', async () => {
+  it('login sets user from the response without an extra profile fetch', async () => {
     vi.mocked(authApi.login).mockResolvedValue({
       token: 'new-token',
       user: { id: '1', email: 'test@example.com', role: 'admin' },
     });
-    vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'test@example.com', role: 'admin' });
 
     render(
       <AuthProvider>
@@ -75,11 +76,9 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('test@example.com');
     });
-    expect(authApi.getMe).toHaveBeenCalled();
   });
 
   it('logout clears cookie and user', async () => {
-    document.cookie = 'JSESSIONID=existing-token';
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(
@@ -96,5 +95,6 @@ describe('AuthContext', () => {
 
     expect(screen.getByTestId('user').textContent).toBe('no-user');
     expect(document.cookie).not.toContain('JSESSIONID');
+    expect(document.cookie).not.toContain('XSRF-TOKEN');
   });
 });
