@@ -56,7 +56,7 @@ Config lives in a single root `.env` (copy from `.env.example`). The server impo
    └───────┘                    └────────────┘
 ```
 
-- **Server** (`server/src/...`): Spring Boot 4.1, global prefix `/api`, CORS from env `cors.origin` (credentials allowed). Config from `server/src/main/resources/application.properties` — values are `${VAR:default}` placeholders resolved from the root `.env` or env vars. Uses Maven + Java 25.
+- **Server** (`server/src/...`): Spring Boot 4.1, per-controller `@RequestMapping("/api")` (no `server.servlet.context-path`), CORS from env `cors.origin` (credentials allowed). Config from `server/src/main/resources/application.properties` — values are `${VAR:default}` placeholders resolved from the root `.env` or env vars. Uses Maven + Java 25.
 - **Client** (`client/src/main.tsx`): Vite dev server, HeroUI v3 (CSS-only) + Tailwind CSS. Axios at `VITE_API_URL` env var (default `http://localhost:3001/api`), session restored via `GET /api/auth/me` when a `JSESSIONID` cookie exists. Path alias `@/` → `./src/*`.
 
 ### How Auth Works
@@ -64,7 +64,7 @@ Config lives in a single root `.env` (copy from `.env.example`). The server impo
 1. User enters email + password on the login page
 2. Server validates credentials via bcrypt, stores `userId` + `userRole` in the `HttpSession` and sets the `JSESSIONID` cookie (Spring Session JDBC persists sessions in a `sessions` table)
 3. Server's `SessionAuthenticationFilter` (`server/src/.../auth/filter/SessionAuthenticationFilter.java`) reads `userId`/`userRole` from the session on each request and populates the `SecurityContext`
-4. `SecurityConfig` permits `/api/auth/login` and `/api/auth/register`; all other routes require authentication. CSRF is enabled with the `X-XSRF-TOKEN` header (`HttpSessionCsrfTokenRepository`)
+4. `SecurityConfig` permits `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`; all other routes require authentication. CSRF is enabled with the `X-XSRF-TOKEN` header (`HttpSessionCsrfTokenRepository`)
 5. The client restores the logged-in user on page load via `GET /api/auth/me` whenever a `JSESSIONID` cookie exists; logout clears the cookie client-side
 6. Role-based access is enforced at the **service layer** — `admin` sees all, `manager` scoped to their department, `employee` sees own data only
 
@@ -72,7 +72,7 @@ Auth details:
 - Session-based (Spring Session JDBC) + bcrypt + Spring Security. Session max-inactive-interval is set from `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup — set via `JWT_SECRET` in the root `.env`.
 - CSRF enabled (`X-XSRF-TOKEN` header). No logout endpoint — the client deletes the session cookie.
 - Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
-- Passwords: min 8, max 128 chars (no complexity requirement).
+- Passwords: min 8, max 128 chars (no complexity requirement); registration also validates `@Email` format.
 
 ---
 
@@ -97,7 +97,7 @@ LeaveController — calls LeaveService
 LeaveService.create(dto, userId)
   ├── Finds Employee profile by userId
   ├── Validates: endDate >= startDate, max 30 days
-  ├── Checks for overlapping approved leaves
+  ├── Checks for overlapping pending or approved leaves
   └── Creates leave record with status "pending"
        │
        ▼
@@ -105,7 +105,7 @@ Response 201: { id, type, startDate, endDate, status: "pending", ... }
        │
        ▼
 When admin/manager approves via PATCH /api/leaves/:id/status
-  ├── LeaveBalanceService.deduct() — subtracts days from balance
+  ├── LeaveBalanceService.deduct() — subtracts days from balance (rolls back to pending on insufficient balance)
   └── NotificationService.create() — sends in-app notification to employee
 ```
 
@@ -115,56 +115,60 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ### User (authentication)
 ```
-{ id (UUID), email, passwordHash, role: "admin"|"manager"|"employee", isActive, name? }
+{ id (UUID), email (unique), passwordHash, role: "admin"|"manager"|"employee", name?, createdAt, updatedAt }
 ```
 - Separated from Employee profile for security (auth vs HR data)
 
 ### Employee (HR profile)
 ```
-{ id (UUID), userId→User, departmentId→Department, firstName, lastName,
-  position, salary, contractType, contractExpiry, hireDate, phone }
+{ id (UUID), userId→User (unique), departmentId→Department (required), firstName, lastName,
+  position, salary (BigDecimal), contractType, contractExpiry, hireDate, phone, createdAt, updatedAt }
 ```
 - Every User may have zero or one Employee record
 - Created with an existing `userId` (an account must exist first)
 
 ### Department
 ```
-{ id (UUID), name, description, managerId→User }
+{ id (UUID), name (unique), description, managerId→User? (nullable), createdAt, updatedAt }
 ```
 
 ### Leave
 ```
 { id (UUID), employeeId→Employee, type: "annual"|"sick"|"personal",
-  startDate, endDate, status: "pending"|"approved"|"rejected",
-  approvedBy→User?, rejectionReason? }
+  startDate, endDate, reason, status: "pending"|"approved"|"rejected",
+  approvedBy→User?, rejectionReason?, createdAt, updatedAt }
 ```
 
 ### Attendance
 ```
-{ id (UUID), employeeId→Employee, date, checkIn, checkOut,
-  status: "present"|"late"|"half-day"|"absent" }
+{ id (UUID), employeeId→Employee, date, checkIn (LocalDateTime), checkOut (LocalDateTime),
+  status: "present"|"late"|"half-day"|"absent", note?, createdAt, updatedAt }
+  unique(employeeId, date)
 ```
 - Auto-calculated: check-in after 9AM → `late`; worked < 4h → `half-day`; late but ≥ 8h worked → upgraded to `present`
+- `absent` is never auto-set by `AttendanceService` — reserved for manual entry
 
 ### Payroll
 ```
-{ id (UUID), employeeId→Employee, month, year, basicSalary, bonus,
-  deductions, netPay, status: "draft"|"paid", paidAt? }
+{ id (UUID), employeeId→Employee, month, year, basicSalary, bonus (=0),
+  socialInsurance (8%), healthInsurance (1.5%), unemploymentInsurance (1%), unionDues (1%),
+  pit, totalDeductions, netPay, status: "draft"|"paid", paidAt?, createdAt, updatedAt }
+  unique(employeeId, month, year)
 ```
-- Deductions: BHXH (8%), BHYT (1.5%), BHTN (1%), Công đoàn (1%), PIT (5 progressive brackets, personal deduction 15,500,000 VND)
+- PIT: 5 progressive brackets (5% / 10% / 20% / 30% / 35%), personal deduction 15,500,000 VND
 - Bonus is always 0 in the current calculation
 
 ### LeaveBalance
 ```
-{ id (UUID), employeeId→Employee, annualTotal, annualUsed,
-  sickTotal, sickUsed, personalTotal, personalUsed }
+{ id (UUID), employeeId→Employee (OneToOne, unique), annualTotal (12), annualUsed,
+  sickTotal (30), sickUsed, personalTotal (3), personalUsed, createdAt, updatedAt }
 ```
-- Auto-created when first queried; deducted on leave approval
+- Auto-created with defaults (12/30/3) when first queried; deducted on leave approval
 
 ### Notification
 ```
 { id (UUID), userId→User, title, message, type, relatedId?,
-  relatedModel?, isRead: false, createdAt }
+  relatedModel?, isRead: false, createdAt, updatedAt }
 ```
 - Created on leave approval/rejection; delivered via API polling (the client polls unread-count every 30s, list every 15s)
 
@@ -172,7 +176,7 @@ When admin/manager approves via PATCH /api/leaves/:id/status
 
 ## Server Feature Modules
 
-All modules follow the Spring Boot convention: `controller/` → `service/` → `repository/` + `entity/`.
+Domain modules follow `controller/` → `service/` → `repository/` + `entity/`; `common/` and `config/` are cross-cutting.
 
 | Module           | Entry file                        | Notes                              |
 |------------------|-----------------------------------|------------------------------------|
@@ -185,8 +189,10 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 | LeaveBalance     | `server/src/.../leavebalance/` | Auto-create + deduct on approval |
 | Notifications    | `server/src/.../notification/` | In-app notifications (API polling) |
 | Seed            | `server/src/.../seed/` | `DataSeeder` (reset when `seed` profile active) + `FirstRunSeeder` (auto-seeds when DB empty) |
+| Common           | `server/src/.../common/` | `PaginatedResponse`, `GlobalExceptionHandler`, `SecurityUtil` + typed exceptions |
+| Config           | `server/src/.../config/` | `CorsConfig`, `SecurityConfig` (CORS/CSRF/session policy) |
 
-> Dashboard, Employee History, Recruitment, and Performance Reviews are **not implemented** (no modules, endpoints, or UI).
+> Root `AppApplication.java` bootstraps the app. Dashboard, Employee History, Recruitment, and Performance Reviews are **not implemented** (no modules, endpoints, or UI).
 
 ---
 
@@ -199,7 +205,7 @@ All modules follow the Spring Boot convention: `controller/` → `service/` → 
 | **employee** | Self only | View own profile/leaves/attendance/payroll, create leave requests, check in/out |
 
 Enforcement happens at two layers:
-- **Server**: `SecurityUtil` + `requireRoles()` at the service layer on every route (except `/api/auth/login` and `/api/auth/register`)
+- **Server**: `SecurityUtil` + `requireRoles()` at the service layer on every route (except `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`). Read-own-data endpoints (e.g. `GET /api/employees/me`, `GET /api/leave-balance/my`) allow all roles and filter by current user instead.
 - **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links; the home route redirects to `/leaves`
 
 ---
@@ -213,7 +219,7 @@ Employee submits → status: "pending"
        ▼
 Manager sees in approval queue
        │
-       ├── Approve → deduct from leave balance → notify employee
+       ├── Approve → deduct from leave balance (rollback to pending if insufficient) → notify employee
        └── Reject  → set rejection reason → notify employee
 ```
 
@@ -227,9 +233,9 @@ Monthly attendance report aggregates all days
 ### Payroll Processing Flow
 ```
 Admin selects month/year
-Server calculates per employee: netPay = basicSalary - deductions
+Server calculates per employee: netPay = basicSalary - totalDeductions
 Deductions: BHXH (8%), BHYT (1.5%), BHTN (1%), Công đoàn (1%), PIT (5 progressive brackets, 15,500,000 VND personal deduction)
-Creates payroll records (skips if already exists for that month)
+Creates payroll records (skips if already exists for that month/year)
 Admin marks each as "paid" when disbursed
 ```
 
@@ -281,7 +287,7 @@ Client shows toast + increments badge count
 - Org chart is rendered client-side from the departments API (no org-chart endpoint)
 - Sidebar items are filtered by role (employees don't see admin links)
 - Mobile: sidebar hidden behind hamburger menu
-- Content area: max-width 1280px, responsive padding
+- Content area: max-width 1280px (`max-w-7xl`), responsive padding
 
 ---
 
@@ -302,13 +308,13 @@ Client shows toast + increments badge count
 ## Key Facts
 
 - **Server tests**: 85 unit tests (16 test classes, including `AppApplicationTests`) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
-- **Client tests**: 61 tests (17 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
-- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components (Button, Badge, Select, etc.) live in `client/src/components/ui/`. Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use. UI text uses a single Vietnamese locale in `client/src/locales/vi.ts` via `t()`.
-- **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs server compile + tests (MySQL 8 container, Java 25), client tests, and client build (Node 24) on push.
-- Both packages use ES modules (`"type": "module"`). Client uses Vite 8 + TypeScript.
-- All API routes are protected by Spring Security + `SessionAuthenticationFilter` (except `/api/auth/login` and `/api/auth/register`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
-- `server/.env` is NOT tracked in git — already exists with dev defaults.
-- All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` (mysql:8.0) + `server/Dockerfile` + `client/Dockerfile` (nginx).
+- **Client tests**: 60 tests (17 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
+- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components live in `client/src/components/ui/` (`button`, `badge`, `card`, `dialog`, `input`, `select`, `table`, `data-table`, `skeleton-list`, `toaster`, `tooltip`, etc.). Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use. UI text uses a single Vietnamese locale in `client/src/locales/vi.ts` via `t()`.
+- **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs 4 jobs — `server-build` (compile), `server-tests` (MySQL 8 service, Java 25), `client-tests`, and `client-build` (Node 24) — on push and pull_request to `main`/`master`/`develop`.
+- Client uses ES modules (`"type": "module"`) with Vite 8 + TypeScript; server is Maven + Java 25 (Spring Boot 4.1).
+- All API routes are protected by Spring Security + `SessionAuthenticationFilter` (except `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
+- Root `.env` is gitignored (template `.env.example` is committed); `server/.env` fallback is also ignored if created.
+- All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` (mysql:8.0, maven:3.9-eclipse-temurin-25, node:24-alpine, nginx:1.27-alpine) + `server/Dockerfile` + `client/Dockerfile` (nginx).
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.
 - **Security**: session-based auth (Spring Session JDBC) via `SessionAuthenticationFilter`, BCrypt password encoding, CSRF enabled (`X-XSRF-TOKEN` header), CORS configured via `cors.origin` property with credentials. Passwords require min 8 chars (max 128), no complexity requirement.
 
