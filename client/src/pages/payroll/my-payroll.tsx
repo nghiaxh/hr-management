@@ -55,7 +55,7 @@ export default function MyPayrollPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('payroll.title')} description={t('payroll.period')} />
+      <PageHeader title={t('payroll.title')} description={t('payroll.description')} />
 
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

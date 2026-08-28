@@ -65,7 +65,7 @@ export default function OrgChartPage() {
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted pt-1">
                       <Users className="h-3 w-3" />
-                      <span>{dept.employeeCount || 0} nhân viên</span>
+                      <span>{dept.employeeCount || 0} {t('org_chart.employee_count')}</span>
                     </div>
                   </div>
                   <Link

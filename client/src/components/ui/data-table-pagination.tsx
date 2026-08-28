@@ -26,7 +26,7 @@ export function DataTablePagination<TData>({
           <CaretLeft weight="bold" className="h-3.5 w-3.5" />
         </Button>
         <span className="text-sm text-muted px-2 tabular-nums">
-          {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+          {table.getState().pagination.pageIndex + 1} / {Math.max(table.getPageCount(), 1)}
         </span>
         <Button variant="outline" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} aria-label="Next page">
           <CaretRight weight="bold" className="h-3.5 w-3.5" />

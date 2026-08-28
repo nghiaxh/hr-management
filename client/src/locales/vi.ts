@@ -405,6 +405,7 @@ const vi: Record<string, string> = {
   'sort.oldest': 'Cũ nhất',
   'org_chart.title': 'Sơ đồ tổ chức',
   'org_chart.description': 'Xem cấu trúc tổ chức của bạn',
+  'org_chart.employee_count': 'nhân viên',
   'employees.list': 'Danh sách nhân viên',
   'employees.employee_info': 'Thông tin nhân viên',
   'employees.filter_dept': 'Tất cả phòng ban',

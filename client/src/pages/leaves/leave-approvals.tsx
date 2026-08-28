@@ -126,7 +126,7 @@ export default function LeaveApprovalsPage() {
             <p className="text-sm text-muted">{t('auth.confirm_reject_leave_desc')}</p>
             <div>
               <Label>{t('leaves.rejection_reason')}</Label>
-              <Input value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} placeholder={t('leaves.rejection_reason_placeholder')} />
+              <Input value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} placeholder={t('leaves.rejection_placeholder')} />
             </div>
           </div>
         }
