@@ -17,19 +17,27 @@ interface MenuItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: string[];
+  section: 'people' | 'time_off' | 'attendance' | 'finance';
   end?: boolean;
 }
 
+const sections: { key: MenuItem['section']; labelKey: string }[] = [
+  { key: 'people', labelKey: 'nav.section_people' },
+  { key: 'time_off', labelKey: 'nav.section_time_off' },
+  { key: 'attendance', labelKey: 'nav.section_attendance' },
+  { key: 'finance', labelKey: 'nav.section_finance' },
+];
+
 const menuItems: MenuItem[] = [
-  { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'] },
-  { path: '/departments', label: 'nav.departments', icon: Buildings, roles: ['admin', 'manager'] },
-  { path: '/org-chart', label: 'org_chart.title', icon: GitFork, roles: ['admin', 'manager'] },
-  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardText, roles: ['admin', 'manager'] },
-  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/attendance/report', label: 'nav.attendance_report', icon: ChartBar, roles: ['admin', 'manager'] },
-  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], end: true },
-  { path: '/payroll/manage', label: 'nav.payroll_management', icon: Money, roles: ['admin'] },
+  { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'], section: 'people' },
+  { path: '/departments', label: 'nav.departments', icon: Buildings, roles: ['admin', 'manager'], section: 'people' },
+  { path: '/org-chart', label: 'org_chart.title', icon: GitFork, roles: ['admin', 'manager'], section: 'people' },
+  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'], section: 'time_off', end: true },
+  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardText, roles: ['admin', 'manager'], section: 'time_off' },
+  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'], section: 'attendance', end: true },
+  { path: '/attendance/report', label: 'nav.attendance_report', icon: ChartBar, roles: ['admin', 'manager'], section: 'attendance' },
+  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], section: 'finance', end: true },
+  { path: '/payroll/manage', label: 'nav.payroll_management', icon: Money, roles: ['admin'], section: 'finance' },
 ];
 
 function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
@@ -45,7 +53,7 @@ function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolea
           'flex items-center px-2 py-1.5 rounded-lg text-sm transition-colors',
           collapsed ? 'justify-start pl-2.5' : 'gap-2',
           isActive
-            ? 'bg-surface-tertiary text-foreground font-medium'
+            ? 'bg-accent-soft text-accent font-medium'
             : 'text-muted hover:text-foreground hover:bg-surface-secondary'
         )
       }
@@ -133,7 +141,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         'flex items-center gap-2 px-2 py-2 rounded-xl text-sm hover:bg-surface-secondary transition-all w-full group',
         collapsed && 'justify-start pl-2.5'
       )}>
-        <div className="h-7 w-7 rounded-full bg-surface-tertiary text-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+        <div className="h-7 w-7 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-semibold shrink-0">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         {!collapsed && (
@@ -141,10 +149,23 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         )}
       </NavLink>
 
-      <nav className="flex-1 overflow-y-auto space-y-0.5 mt-1 mb-1">
-        {visibleItems.map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
-        ))}
+      <nav className="flex-1 overflow-y-auto mt-1 mb-1">
+        {sections.map((section) => {
+          const items = visibleItems.filter((item) => item.section === section.key);
+          if (items.length === 0) return null;
+          return (
+            <div key={section.key} className={cn('space-y-0.5', !collapsed && 'mt-4 first:mt-0')}>
+              {!collapsed && (
+                <p className="px-2 mb-1 text-[11px] font-medium uppercase tracking-wider text-muted/80">
+                  {t(section.labelKey)}
+                </p>
+              )}
+              {items.map((item) => (
+                <NavItem key={item.path} item={item} collapsed={collapsed} onNav={closeMobile} />
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="space-y-0.5 pt-1 border-t border-separator">
@@ -213,7 +234,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         'bg-background border-r border-separator h-screen py-3 px-2 flex flex-col transition-all duration-300 ease-in-out',
         'md:sticky md:top-0 md:translate-x-0 md:z-auto fixed z-40 top-0 left-0',
         collapsed ? 'w-14' : 'w-56',
-        mobileOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
+        mobileOpen ? 'translate-x-0 shadow-soft-lg' : '-translate-x-full',
       )}>
         {sidebar}
       </aside>

@@ -61,7 +61,7 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
       <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 text-sm text-muted flex-1 min-w-0">
         {breadcrumbs.map((item, i) => (
           <span key={i} className="flex items-center gap-1 min-w-0">
-            <CaretRight className="h-3.5 w-3.5 shrink-0" />
+            {i > 0 && <CaretRight className="h-3.5 w-3.5 shrink-0" />}
             {item.href ? (
               <Link to={item.href} className="hover:text-foreground transition-colors truncate">{item.label}</Link>
             ) : (

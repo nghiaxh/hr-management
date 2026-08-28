@@ -43,8 +43,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background relative">
       <div className="w-full max-w-md mx-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <Card>
-          <CardHeader className="text-center pb-4">
-            <p className="text-sm text-muted mt-1">{t('login.sign_in_to_account')}</p>
+          <CardHeader className="text-center pb-4 flex flex-col items-center gap-2">
+            <img src="/favicon.svg" alt="" className="h-12 w-12 rounded-2xl shadow-soft" />
+            <div className="space-y-1">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('app.name')}</h1>
+              <p className="text-sm text-muted">{t('login.sign_in_to_account')}</p>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

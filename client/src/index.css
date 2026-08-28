@@ -2,87 +2,94 @@
 @import "@heroui/styles";
 
 /* ---------------------------------------------------------------------------
- * HR Management — "Warm Editorial Monochrome" design tokens
- * Overrides HeroUI v3 theme variables for the light & dark palettes.
+ * HR Management — "Clean Blue Minimal" design tokens
+ * White canvas, cool hairlines, a single trustworthy blue accent.
  * ------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
 
   /* Surfaces */
-  --background: #F5F4F0;
-  --foreground: #221F1B;
+  --background: #FFFFFF;
+  --foreground: #0F172A;
 
   --surface: #FFFFFF;
-  --surface-foreground: #221F1B;
-  --surface-secondary: #F1EFEA;
-  --surface-tertiary: #EAE7E0;
+  --surface-foreground: #0F172A;
+  --surface-secondary: #F8FAFC;
+  --surface-tertiary: #F1F5F9;
 
   --overlay: #FFFFFF;
-  --overlay-foreground: #221F1B;
+  --overlay-foreground: #0F172A;
 
-  --muted: #716C63;
+  --muted: #5B6B82;
 
-  --default: #E9E6DF;
-  --default-foreground: #221F1B;
+  --default: #EDF1F6;
+  --default-foreground: #0F172A;
 
-  /* Single accent — dusty blue, used sparingly */
-  --accent: #2F5B8C;
+  /* Single accent — blue, used for actions & focus only */
+  --accent: #2563EB;
   --accent-foreground: #FFFFFF;
 
   /* Hairlines & structure */
-  --border: #E3E0D8;
-  --separator: #E9E6DF;
+  --border: #E4E9F1;
+  --separator: #EDF1F6;
   --focus: var(--accent);
-  --link: var(--foreground);
+  --link: #2563EB;
 
   /* Form fields */
   --field-background: #FFFFFF;
-  --field-border: #D9D5CB;
-  --field-border-hover: #B8B2A6;
+  --field-border: #CBD5E1;
+  --field-border-hover: #94A3B8;
   --field-border-focus: var(--accent);
 
-  /* Status — desaturated, editorial */
-  --success: #2F6B3D;
-  --warning: #A8781E;
-  --danger: #B03A38;
+  /* Status — clean, friendly */
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-soft-lg: 0 2px 4px rgb(15 23 42 / 0.04), 0 16px 40px -16px rgb(15 23 42 / 0.18);
 }
 
 .dark {
   color-scheme: dark;
 
   /* Surfaces */
-  --background: #191713;
-  --foreground: #EAE7E0;
+  --background: #0B1220;
+  --foreground: #E6EDF7;
 
-  --surface: #211E1A;
-  --surface-foreground: #EAE7E0;
-  --surface-secondary: #26231D;
-  --surface-tertiary: #2C2922;
+  --surface: #111926;
+  --surface-foreground: #E6EDF7;
+  --surface-secondary: #16202F;
+  --surface-tertiary: #1C2839;
 
-  --overlay: #211E1A;
-  --overlay-foreground: #EAE7E0;
+  --overlay: #111926;
+  --overlay-foreground: #E6EDF7;
 
-  --muted: #9A958B;
+  --muted: #8FA3BB;
 
-  --default: #332F28;
-  --default-foreground: #EAE7E0;
+  --default: #243147;
+  --default-foreground: #E6EDF7;
 
-  --accent: #8CA8CC;
-  --accent-foreground: #13161A;
+  --accent: #60A5FA;
+  --accent-foreground: #0B1220;
 
-  --border: #3B372F;
-  --separator: #322E27;
+  --border: #223048;
+  --separator: #1C2838;
+  --link: #60A5FA;
 
-  --field-background: #211E1A;
-  --field-border: #4A443A;
-  --field-border-hover: #5C554A;
+  --field-background: #111926;
+  --field-border: #2A3A52;
+  --field-border-hover: #3A4C68;
   --field-border-focus: var(--accent);
 
-  --success: #5C9A6A;
-  --warning: #C79A4E;
-  --danger: #D06A68;
+  --success: #4ADE80;
+  --warning: #FBBF24;
+  --danger: #F87171;
+
+  --shadow-soft: 0 1px 2px rgb(226 232 240 / 0.05), 0 8px 24px -12px rgb(0 0 0 / 0.4);
+  --shadow-soft-lg: 0 2px 4px rgb(226 232 240 / 0.05), 0 16px 40px -16px rgb(0 0 0 / 0.55);
 }
 
 /* ---------------------------------------------------------------------------
@@ -92,11 +99,16 @@
   --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-ink-faint: #A39E94;
-  --color-surface-muted: #F1EFEA;
+  --color-ink-faint: #7A8799;
+  --color-surface-muted: #F1F5F9;
+  --color-accent-soft: color-mix(in oklab, var(--accent) 9%, var(--surface));
+  --color-danger-soft: color-mix(in oklab, var(--danger) 8%, var(--surface));
 
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-soft-lg: 0 2px 4px rgb(15 23 42 / 0.04), 0 16px 40px -16px rgb(15 23 42 / 0.18);
 }
 
 /* ---------------------------------------------------------------------------
@@ -146,33 +158,33 @@ th[class*="text-right"] {
 }
 
 /* ---------------------------------------------------------------------------
- * HeroUI component overrides — editorial geometry
+ * HeroUI component overrides — clean geometry
  * ------------------------------------------------------------------------- */
 @layer components {
-  /* Kill the pill default; use the token radius */
   .button {
     border-radius: var(--radius);
   }
 
-  /* Primary action = ink (inverted), not accent */
+  /* Primary action = the blue accent */
   .button--primary {
-    --button-bg: var(--foreground);
-    --button-bg-hover: color-mix(in oklab, var(--foreground) 85%, var(--background) 15%);
-    --button-bg-pressed: color-mix(in oklab, var(--foreground) 72%, var(--background) 28%);
-    --button-fg: var(--background);
+    --button-bg: var(--accent);
+    --button-bg-hover: color-mix(in oklab, var(--accent) 88%, var(--foreground) 12%);
+    --button-bg-pressed: color-mix(in oklab, var(--accent) 80%, var(--foreground) 20%);
+    --button-fg: var(--accent-foreground);
   }
 
-  /* Cards: hairline border, flat surface, square-ish corners */
+  /* Cards: hairline border, flat surface */
   .card {
     border: 1px solid var(--border);
     box-shadow: none;
     border-radius: var(--radius);
   }
 
-  /* Dialogs: match card geometry */
+  /* Dialogs: hairline + a soft lift off the scrim */
   .modal__dialog {
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-soft-lg);
   }
 }
 

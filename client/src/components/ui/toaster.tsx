@@ -18,7 +18,7 @@ export function Toaster() {
           key={t.id}
           className={cn(
             'pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 text-sm animate-in slide-in-from-right-full fade-in duration-300',
-            'bg-surface border-border text-foreground shadow-lg',
+            'bg-surface border-border text-foreground shadow-soft',
             t.variant === 'destructive' && 'border-danger/40 bg-danger-soft',
           )}
         >
