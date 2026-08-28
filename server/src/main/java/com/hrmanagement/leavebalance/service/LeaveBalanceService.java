@@ -39,7 +39,11 @@ public class LeaveBalanceService {
     @Transactional
     public void deduct(String employeeId, String type, long days) {
         LeaveBalance balance = leaveBalanceRepository.findByEmployeeId(employeeId)
-                .orElseThrow(() -> new NotFoundException("Leave balance not found"));
+                .orElseGet(() -> {
+                    Employee emp = employeeRepository.findById(employeeId)
+                            .orElseThrow(() -> new NotFoundException("Employee not found"));
+                    return leaveBalanceRepository.save(LeaveBalance.builder().employee(emp).build());
+                });
 
         switch (type) {
             case "annual" -> {

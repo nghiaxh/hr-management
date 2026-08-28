@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -45,7 +46,14 @@ public class EmployeeService {
         Page<Employee> empPage;
         String effectiveDeptId = departmentId;
 
-        if ("manager".equals(userRole)) {
+        if ("employee".equals(userRole)) {
+            Optional<Employee> self = employeeRepository.findByUserId(userId);
+            if (self.isEmpty()) {
+                return PaginatedResponse.of(List.of(), page, limit, 0);
+            }
+            var responses = List.of(toResponse(self.get()));
+            return PaginatedResponse.of(responses, page, limit, 1);
+        } else if ("manager".equals(userRole)) {
             var mgrEmp = employeeRepository.findByUserId(userId);
             if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
                 effectiveDeptId = mgrEmp.get().getDepartment().getId();
@@ -72,6 +80,13 @@ public class EmployeeService {
 
         if ("employee".equals(userRole)) {
             if (emp.getUser() == null || !emp.getUser().getId().equals(userId)) {
+                throw new NotFoundException("Employee not found");
+            }
+        } else if ("manager".equals(userRole)) {
+            var mgrEmp = employeeRepository.findByUserId(userId);
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null ||
+                    emp.getDepartment() == null ||
+                    !emp.getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
                 throw new NotFoundException("Employee not found");
             }
         }
@@ -161,6 +176,7 @@ public class EmployeeService {
     }
 
     public void exportCsv(String userRole, String userId, HttpServletResponse response) throws IOException {
+        SecurityUtil.requireRoles("admin", "manager");
         String effectiveDeptId = null;
         if ("manager".equals(userRole)) {
             var mgrEmp = employeeRepository.findByUserId(userId);

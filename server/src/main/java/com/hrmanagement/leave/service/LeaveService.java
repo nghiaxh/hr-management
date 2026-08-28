@@ -163,6 +163,16 @@ public class LeaveService {
             throw new BadRequestException("Can only update pending leaves");
         }
 
+        if ("manager".equals(SecurityUtil.getCurrentUserRole())) {
+            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
+            Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployee().getId());
+            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null ||
+                    leaveEmp.isEmpty() || leaveEmp.get().getDepartment() == null ||
+                    !leaveEmp.get().getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
+                throw new NotFoundException("Leave not found");
+            }
+        }
+
         Employee emp = employeeRepository.findById(leave.getEmployee().getId())
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 

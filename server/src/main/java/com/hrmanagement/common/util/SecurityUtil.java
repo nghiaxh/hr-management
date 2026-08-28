@@ -31,6 +31,10 @@ public class SecurityUtil {
     }
 
     public static String getCurrentUserRole() {
+        String[] tr = testRoles.get();
+        if (tr != null) {
+            return tr.length > 0 ? tr[0] : null;
+        }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {
             return auth.getAuthorities().stream()
