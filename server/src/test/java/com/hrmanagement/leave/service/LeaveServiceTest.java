@@ -48,13 +48,14 @@ class LeaveServiceTest {
     private Employee emp;
     private Leave leave;
     private User approver;
+    private Department dept;
 
     @BeforeEach
     void setUp() {
         leaveService = new LeaveService(leaveRepository, employeeRepository,
                 leaveBalanceService, notificationService, userRepository);
 
-        Department dept = new Department();
+        dept = new Department();
         dept.setId("dept-1");
 
         User user = User.builder().id("user-1").build();
@@ -72,6 +73,11 @@ class LeaveServiceTest {
                 .endDate(LocalDate.of(2025, 7, 3))
                 .status("pending")
                 .build();
+    }
+
+    private void stubSameDeptManager() {
+        Employee mgrEmp = Employee.builder().id("mgr-emp").user(approver).department(dept).build();
+        when(employeeRepository.findByUserId("approver-1")).thenReturn(Optional.of(mgrEmp));
     }
 
     @Test
@@ -123,6 +129,7 @@ class LeaveServiceTest {
     @Test
     void updateStatus_approvesAndDeductsBalance() {
         SecurityUtil.setTestRoles("manager");
+        stubSameDeptManager();
         when(leaveRepository.findById("leave-1")).thenReturn(Optional.of(leave));
         when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
         when(userRepository.findById("approver-1")).thenReturn(Optional.of(approver));
@@ -141,6 +148,7 @@ class LeaveServiceTest {
     @Test
     void updateStatus_rejectsAndNotifies() {
         SecurityUtil.setTestRoles("manager");
+        stubSameDeptManager();
         when(leaveRepository.findById("leave-1")).thenReturn(Optional.of(leave));
         when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
         when(userRepository.findById("approver-1")).thenReturn(Optional.of(approver));
@@ -152,6 +160,38 @@ class LeaveServiceTest {
         assertEquals("rejected", result.getStatus());
         assertEquals("Not enough reason", result.getRejectionReason());
         verify(notificationService).create(anyString(), anyString(), anyString(), eq("leave_rejected"), anyString(), anyString());
+        SecurityUtil.clearTestRoles();
+    }
+
+    @Test
+    void updateStatus_managerCannotApproveOtherDept() {
+        SecurityUtil.setTestRoles("manager");
+        Department otherDept = new Department();
+        otherDept.setId("dept-other");
+        Employee mgrEmp = Employee.builder().id("mgr-emp").user(approver).department(otherDept).build();
+        when(employeeRepository.findByUserId("approver-1")).thenReturn(Optional.of(mgrEmp));
+        when(leaveRepository.findById("leave-1")).thenReturn(Optional.of(leave));
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+
+        assertThrows(NotFoundException.class,
+                () -> leaveService.updateStatus("leave-1",
+                        new UpdateLeaveStatusRequest("approved", null), "approver-1"));
+        SecurityUtil.clearTestRoles();
+    }
+
+    @Test
+    void updateStatus_adminApprovesAnyDept() {
+        SecurityUtil.setTestRoles("admin");
+        when(leaveRepository.findById("leave-1")).thenReturn(Optional.of(leave));
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+        when(userRepository.findById("approver-1")).thenReturn(Optional.of(approver));
+        when(leaveRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        doNothing().when(leaveBalanceService).deduct(anyString(), anyString(), anyLong());
+
+        LeaveResponse result = leaveService.updateStatus("leave-1",
+                new UpdateLeaveStatusRequest("approved", null), "approver-1");
+
+        assertEquals("approved", result.getStatus());
         SecurityUtil.clearTestRoles();
     }
 

@@ -145,6 +145,59 @@ class EmployeeServiceTest {
     }
 
     @Test
+    void findOne_managerSeesDeptEmployee() {
+        Employee mgrEmp = Employee.builder().id("mgr-emp").department(dept).build();
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+        when(employeeRepository.findByUserId("mgr-user")).thenReturn(Optional.of(mgrEmp));
+
+        EmployeeResponse result = employeeService.findOne("emp-1", "manager", "mgr-user");
+
+        assertEquals("John", result.getFirstName());
+    }
+
+    @Test
+    void findOne_managerCannotSeeOtherDeptEmployee() {
+        Department otherDept = new Department();
+        otherDept.setId("dept-other");
+        Employee mgrEmp = Employee.builder().id("mgr-emp").department(otherDept).build();
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+        when(employeeRepository.findByUserId("mgr-user")).thenReturn(Optional.of(mgrEmp));
+
+        assertThrows(NotFoundException.class,
+                () -> employeeService.findOne("emp-1", "manager", "mgr-user"));
+    }
+
+    @Test
+    void findAll_employeeSeesOnlySelf() {
+        when(employeeRepository.findByUserId("user-1")).thenReturn(Optional.of(emp));
+
+        PaginatedResponse<EmployeeResponse> result = employeeService.findAll(null, null, 1, 10, "employee", "user-1");
+
+        assertEquals(1, result.getData().size());
+        assertEquals(emp.getId(), result.getData().get(0).getId());
+        verify(employeeRepository, never()).findAll(any(PageRequest.class));
+    }
+
+    @Test
+    void findAll_employeeWithoutProfileReturnsEmpty() {
+        when(employeeRepository.findByUserId("user-1")).thenReturn(Optional.empty());
+
+        PaginatedResponse<EmployeeResponse> result = employeeService.findAll(null, null, 1, 10, "employee", "user-1");
+
+        assertEquals(0, result.getData().size());
+    }
+
+    @Test
+    void exportCsv_forbidsEmployeeRole() {
+        SecurityUtil.setTestRoles("employee");
+
+        assertThrows(com.hrmanagement.common.exception.UnauthorizedException.class,
+                () -> employeeService.exportCsv("employee", "user-1", null));
+
+        SecurityUtil.clearTestRoles();
+    }
+
+    @Test
     void findAll_managerSeesDeptEmployees() {
         when(employeeRepository.findByUserId("mgr-user")).thenReturn(Optional.of(emp));
         Page<Employee> page = new PageImpl<>(List.of(emp));

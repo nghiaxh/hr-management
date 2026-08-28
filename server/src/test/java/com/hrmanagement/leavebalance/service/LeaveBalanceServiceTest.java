@@ -97,6 +97,17 @@ class LeaveBalanceServiceTest {
     }
 
     @Test
+    void deduct_autoCreatesBalanceWhenMissing() {
+        when(leaveBalanceRepository.findByEmployeeId("emp-1")).thenReturn(Optional.empty());
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+        when(leaveBalanceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        leaveBalanceService.deduct("emp-1", "annual", 1);
+
+        verify(leaveBalanceRepository).save(any(LeaveBalance.class));
+    }
+
+    @Test
     void findByEmployee_returnsExisting() {
         when(leaveBalanceRepository.findByEmployeeId("emp-1")).thenReturn(Optional.of(balance));
 
