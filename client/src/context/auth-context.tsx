@@ -11,11 +11,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
+function hasSessionCookie(): boolean {
+  return document.cookie.split('; ').some((row) => row.startsWith('JSESSIONID='));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasSessionCookie()) {
+      setLoading(false);
+      return;
+    }
     authApi.getMe()
       .then((u) => setUser(u))
       .catch(() => {})

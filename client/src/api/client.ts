@@ -20,4 +20,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function clearSessionCookies() {
+  document.cookie = 'JSESSIONID=; Max-Age=0; path=/';
+  document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      clearSessionCookies();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

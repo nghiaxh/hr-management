@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/auth-context';
-import { LanguageProvider } from './context/language-context';
 import { AppLayout } from './components/layout/app-layout';
 import { ProtectedRoute } from './components/layout/protected-route';
 import { ErrorBoundary } from './components/shared/error-boundary';
@@ -22,10 +21,8 @@ const AttendanceReportPage = lazy(() => import('./pages/attendance/attendance-re
 const MyPayrollPage = lazy(() => import('./pages/payroll/my-payroll'));
 const PayrollManagementPage = lazy(() => import('./pages/payroll/payroll-management'));
 const NotificationsListPage = lazy(() => import('./pages/notifications-list'));
-const OrgChartPage = lazy(() => import('./pages/org-chart'));
-const SettingsPage = lazy(() => import('./pages/settings'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function Suspended({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -48,8 +45,6 @@ function AppContent() {
             <Route path="/attendance/report" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><AttendanceReportPage /></Suspended></ProtectedRoute>} />
             <Route path="/payroll" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><MyPayrollPage /></Suspended></ProtectedRoute>} />
             <Route path="/payroll/manage" element={<ProtectedRoute roles={['admin']}><Suspended><PayrollManagementPage /></Suspended></ProtectedRoute>} />
-            <Route path="/org-chart" element={<ProtectedRoute roles={['admin', 'manager']}><Suspended><OrgChartPage /></Suspended></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><SettingsPage /></Suspended></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute roles={['admin', 'manager', 'employee']}><Suspended><NotificationsListPage /></Suspended></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/leaves" replace />} />
             <Route path="*" element={<NotFoundPage />} />
@@ -65,9 +60,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <LanguageProvider>
-            <AppContent />
-          </LanguageProvider>
+          <AppContent />
         </AuthProvider>
         <Toaster />
       </BrowserRouter>

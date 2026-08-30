@@ -111,7 +111,7 @@ export default function DepartmentsListPage() {
 
   return (
     <div>
-      <PageHeader title={t('departments.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('departments.add')}</Button>} />
+      <PageHeader action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('departments.add')}</Button>} />
       <DataTable
         columns={columns}
         data={data?.data || []}

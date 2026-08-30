@@ -1,5 +1,5 @@
 import api from './client';
 
 export const leaveBalanceApi = {
-  getByEmployee: (employeeId: string) => api.get(`/leave-balance/${employeeId}`).then(r => r.data),
+  getMy: () => api.get('/leave-balance/my').then(r => r.data),
 };

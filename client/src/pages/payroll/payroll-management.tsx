@@ -28,7 +28,7 @@ export default function PayrollManagementPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
-  const { data: employees } = useQuery({ queryKey: ['employees'], queryFn: () => employeesApi.getAll() });
+  const { data: employees } = useQuery({ queryKey: ['employees', 'all'], queryFn: () => employeesApi.getAll({ page: 1, limit: 1000 }) });
 
   const processMutation = useMutation({
     mutationFn: (d: any) => payrollApi.process(d),
@@ -106,7 +106,6 @@ export default function PayrollManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={t('payroll.management')}
         action={
           <Button onClick={() => setOpen(true)}>
             <Play className="h-4 w-4 mr-1.5" />{t('payroll.process')}

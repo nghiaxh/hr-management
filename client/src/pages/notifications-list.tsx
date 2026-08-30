@@ -7,6 +7,7 @@ import { formatDate } from '../lib/utils';
 import { toast } from '../hooks/use-toast';
 import { Bell, Check, Envelope, EnvelopeOpen } from '@phosphor-icons/react';
 import { cn } from '../lib/utils';
+import type { Notification } from '../types';
 
 export default function NotificationsListPage() {
   const { t } = useTranslation();
@@ -31,18 +32,16 @@ export default function NotificationsListPage() {
   });
 
   if (isError) {
-    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-danger">{(queryError as any)?.response?.data?.message || t('notifications.load_failed')}</p></div>;
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-danger">{(queryError as { response?: { data?: { message?: string } } })?.response?.data?.message || t('notifications.load_failed')}</p></div>;
   }
 
   if (isLoading) return <div className="text-center py-8 text-muted">{t('common.loading')}</div>;
 
-  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+  const unreadCount = (notifications as Notification[]).filter((n) => !n.isRead).length;
 
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title={t('nav.notifications')}
-        description={unreadCount > 0 ? `${unreadCount} ${t('notifications.unread')}` : t('notifications.all_caught_up')}
         action={
           unreadCount > 0 ? (
             <Button variant="outline" size="sm" onClick={() => markAllReadMutation.mutate()}>
@@ -62,7 +61,7 @@ export default function NotificationsListPage() {
         </div>
       ) : (
         <div className="space-y-1">
-          {notifications.map((n: any) => (
+          {notifications.map((n: Notification) => (
             <div
               key={n.id}
               onClick={() => !n.isRead && markReadMutation.mutate(n.id)}

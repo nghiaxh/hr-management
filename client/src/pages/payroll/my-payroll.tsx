@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 import { payrollApi } from '../../api/payroll';
-import { PageHeader } from '../../components/shared/page-header';
 import { Card, CardContent } from '../../components/ui/card';
 import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
@@ -17,10 +16,10 @@ export default function MyPayrollPage() {
   const { t } = useTranslation();
   const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['payroll'], queryFn: () => payrollApi.getAll() });
 
-  const records = data?.data || [];
-  const totalPaid = records.filter((r: any) => r.status === 'paid').reduce((s: number, r: any) => s + r.netPay, 0);
-  const paidCount = records.filter((r: any) => r.status === 'paid').length;
-  const draftCount = records.filter((r: any) => r.status === 'draft').length;
+  const records: Payroll[] = data?.data || [];
+  const totalPaid = records.filter((r) => r.status === 'paid').reduce((s, r) => s + r.netPay, 0);
+  const paidCount = records.filter((r) => r.status === 'paid').length;
+  const draftCount = records.filter((r) => r.status === 'draft').length;
 
   const columns = [
     columnHelper.accessor((row) => `${row.month}/${row.year}`, {
@@ -55,8 +54,6 @@ export default function MyPayrollPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('payroll.title')} description={t('payroll.description')} />
-
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
@@ -98,7 +95,7 @@ export default function MyPayrollPage() {
         columns={columns}
         data={records}
         isLoading={isLoading}
-        error={isError ? (queryError as any)?.response?.data?.message || t('payroll.load_failed') : undefined}
+        error={isError ? (queryError as { response?: { data?: { message?: string } } })?.response?.data?.message || t('payroll.load_failed') : undefined}
         emptyMessage={t('payroll.no_records')}
         getRowId={(row) => row.id}
       />

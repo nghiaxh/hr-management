@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const THEME_KEY = 'app-theme';
-const LEGACY_THEME_KEY = 'daisyui-theme';
 
 function getStoredTheme(): string {
   if (typeof window === 'undefined') return 'light';
-  return localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY) || 'light';
+  return localStorage.getItem(THEME_KEY) || 'light';
 }
 
 function applyDocumentTheme(theme: string) {
@@ -35,5 +34,5 @@ export function useTheme() {
 
   const isDark = theme === 'dark';
 
-  return { theme, setTheme, toggleTheme, resolvedTheme: theme, isDark };
+  return { theme, setTheme, toggleTheme, isDark };
 }

@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 import { attendanceApi } from '../../api/attendance';
-import { PageHeader } from '../../components/shared/page-header';
 import { Card, CardContent } from '../../components/ui/card';
 import { DataTable } from '../../components/ui/data-table';
 import { DataTableColumnHeader } from '../../components/ui/data-table-column-header';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { useTranslation } from '../../context/language-context';
 import { formatDate } from '../../lib/utils';
-import { Attendance } from '../../types';
+import { Attendance, Employee } from '../../types';
 
 const columnHelper = createColumnHelper<Attendance>();
 
@@ -23,9 +22,9 @@ export default function AttendanceReportPage() {
   const { t } = useTranslation();
   const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceApi.getAll() });
 
-  const records = Array.isArray(data) ? data : data?.data || [];
+  const records: Attendance[] = (Array.isArray(data) ? data : data?.data) ?? [];
 
-  const stats: Record<string, number> = records.reduce((acc: any, a: any) => {
+  const stats: Record<string, number> = records.reduce<Record<string, number>>((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
   }, {});
@@ -33,7 +32,7 @@ export default function AttendanceReportPage() {
   const total = records.length;
 
   const columns = [
-    columnHelper.accessor((row) => `${(row.employeeId as any)?.firstName || ''} ${(row.employeeId as any)?.lastName || ''}`.trim() || '-', {
+    columnHelper.accessor((row) => { const emp = row.employeeId as Employee; return emp?.firstName || emp?.lastName ? `${emp.firstName} ${emp.lastName}`.trim() : '-'; }, {
       id: 'employee',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('attendance.employee')} />,
     }),
@@ -56,13 +55,11 @@ export default function AttendanceReportPage() {
   ];
 
   if (isError) {
-    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-danger">{(queryError as any)?.response?.data?.message || t('attendance.load_failed')}</p></div>;
+    return <div className="flex flex-col items-center justify-center min-h-64 gap-2 text-center p-8"><p className="text-sm text-danger">{(queryError as { response?: { data?: { message?: string } } })?.response?.data?.message || t('attendance.load_failed')}</p></div>;
   }
 
   return (
     <div>
-      <PageHeader title={t('attendance.report')} />
-
       {total > 0 && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -120,7 +117,7 @@ export default function AttendanceReportPage() {
         columns={columns}
         data={records}
         isLoading={isLoading}
-        error={isError ? (queryError as any)?.response?.data?.message || t('attendance.load_failed') : undefined}
+        error={isError ? (queryError as { response?: { data?: { message?: string } } })?.response?.data?.message || t('attendance.load_failed') : undefined}
         emptyMessage={t('attendance.no_records')}
         getRowId={(row) => row.id}
       />

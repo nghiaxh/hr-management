@@ -19,7 +19,6 @@ import { StatusBadge } from '../../components/shared/status-badge';
 import { SkeletonCard } from '../../components/shared/skeleton';
 import { useTranslation } from '../../context/language-context';
 import { useAuth } from '../../context/auth-context';
-import { employeesApi } from '../../api/employees';
 import { toast } from '../../hooks/use-toast';
 import { Plus } from '@phosphor-icons/react';
 import { formatDate } from '../../lib/utils';
@@ -53,21 +52,16 @@ export default function MyLeavesPage() {
 type LeaveForm = z.infer<typeof leaveSchema>;
 
   const { user } = useAuth();
+  const hasProfile = user?.hasEmployeeProfile ?? true;
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error: queryError } = useQuery({ queryKey: ['leaves'], queryFn: () => leavesApi.getAll() });
 
-  const { data: employee } = useQuery({
-    queryKey: ['my-employee'],
-    queryFn: () => employeesApi.getMe(),
-    enabled: !!user?.id,
-  });
-
   const { data: balance } = useQuery({
-    queryKey: ['leave-balance', employee?.id],
-    queryFn: () => leaveBalanceApi.getByEmployee(employee!.id),
-    enabled: !!employee?.id,
+    queryKey: ['leave-balance', 'my'],
+    queryFn: () => leaveBalanceApi.getMy(),
+    enabled: !!user?.id && hasProfile,
   });
 
   const createMutation = useMutation({
@@ -119,7 +113,9 @@ type LeaveForm = z.infer<typeof leaveSchema>;
 
   return (
     <div>
-      <PageHeader title={t('leaves.title')} action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('leaves.request')}</Button>} />
+      {hasProfile && (
+        <PageHeader action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />{t('leaves.request')}</Button>} />
+      )}
 
       {balanceItems.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3 mb-6">

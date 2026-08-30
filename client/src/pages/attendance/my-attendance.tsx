@@ -64,7 +64,7 @@ export default function MyAttendancePage() {
 
   return (
     <div>
-      <PageHeader title={t('attendance.title')} action={
+      <PageHeader action={
         !todayRecord?.checkIn ? (
           <Button onClick={() => checkInMutation.mutate()} disabled={checkInMutation.isPending}><SignIn className="h-4 w-4 mr-2" />{t('attendance.check_in')}</Button>
         ) : !todayRecord.checkOut ? (

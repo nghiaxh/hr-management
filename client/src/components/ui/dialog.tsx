@@ -46,12 +46,4 @@ function DialogDescription({ className, children }: { className?: string; childr
   return <p className={cn('text-sm text-muted', className)}>{children}</p>;
 }
 
-function DialogTrigger({ children }: { children: React.ReactNode }) {
-  return <Modal.Trigger>{children}</Modal.Trigger>;
-}
-
-function DialogClose({ children }: { children: React.ReactNode }) {
-  return <Modal.CloseTrigger>{children}</Modal.CloseTrigger>;
-}
-
-export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogDescription };
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription };

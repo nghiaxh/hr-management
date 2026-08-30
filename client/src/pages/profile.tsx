@@ -79,7 +79,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-md mx-auto pt-8">
       <div className="flex flex-col items-center mb-8">
-        <div className="h-24 w-24 rounded-full bg-foreground flex items-center justify-center text-background text-3xl font-bold mb-4">
+        <div className="h-24 w-24 rounded-full bg-accent flex items-center justify-center text-accent-foreground text-3xl font-bold mb-4">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
         </div>
         <h1 className="text-2xl font-bold">{user?.name || user?.email}</h1>

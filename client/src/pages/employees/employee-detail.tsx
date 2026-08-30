@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { employeesApi } from '../../api/employees';
 import { departmentsApi } from '../../api/departments';
+import { employeeEditSchema, type EmployeeEditFormValues } from '../../lib/schemas';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
@@ -23,24 +23,13 @@ import {
 
 export default function EmployeeDetailPage() {
   const { t } = useTranslation();
-  const editSchema = z.object({
-    firstName: z.string().min(1, t('validation.first_name_required')),
-    lastName: z.string().min(1, t('validation.last_name_required')),
-    position: z.string().min(1, t('validation.position_required')),
-    salary: z.coerce.number().min(0, t('validation.salary_positive')),
-    departmentId: z.string().min(1, t('validation.department_required')),
-    hireDate: z.string().min(1, t('validation.hire_date_required')),
-    phone: z.string().optional(),
-    contractType: z.string().optional(),
-    contractExpiry: z.string().optional(),
-  });
-
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
 
-  const editForm = useForm<z.infer<typeof editSchema>>({
+  const editSchema = employeeEditSchema(t);
+  const editForm = useForm<EmployeeEditFormValues>({
     resolver: zodResolver(editSchema),
     defaultValues: {
       firstName: '', lastName: '', position: '', salary: 0,
@@ -124,11 +113,11 @@ export default function EmployeeDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <InfoRow icon={Buildings} label={t('employees.department')} value={emp.departmentId?.name || t('performance_reviews.na')} />
+            <InfoRow icon={Buildings} label={t('employees.department')} value={emp.departmentId?.name || t('common.na')} />
             <InfoRow icon={Money} label={t('employees.salary')} value={formatCurrency(emp.salary)} />
             <InfoRow icon={CalendarBlank} label={t('employees.hire_date')} value={formatDate(emp.hireDate)} />
-            <InfoRow icon={Phone} label={t('employees.phone')} value={emp.phone || t('performance_reviews.na')} />
-            <InfoRow icon={Envelope} label={t('user.email')} value={emp.userId?.email || t('performance_reviews.na')} />
+            <InfoRow icon={Phone} label={t('employees.phone')} value={emp.phone || t('common.na')} />
+            <InfoRow icon={Envelope} label={t('user.email')} value={emp.userId?.email || t('common.na')} />
           </CardContent>
         </Card>
 
@@ -140,8 +129,8 @@ export default function EmployeeDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <InfoRow icon={FileText} label={t('employees.contract_type')} value={t(`employees.contract_${emp.contractType}`) || emp.contractType || t('performance_reviews.na')} />
-            <InfoRow icon={CalendarBlank} label={t('employees.contract_expiry')} value={emp.contractExpiry ? formatDate(emp.contractExpiry) : t('performance_reviews.na')} />
+            <InfoRow icon={FileText} label={t('employees.contract_type')} value={t(`employees.contract_${emp.contractType}`) || emp.contractType || t('common.na')} />
+            <InfoRow icon={CalendarBlank} label={t('employees.contract_expiry')} value={emp.contractExpiry ? formatDate(emp.contractExpiry) : t('common.na')} />
           </CardContent>
         </Card>
       </div>

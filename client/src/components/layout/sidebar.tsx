@@ -6,41 +6,10 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { notificationsApi } from '../../api/notifications';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Users, Buildings, CalendarCheck, ClipboardText,
-  Clock, ChartBar, Wallet, Money, SignOut,
-  X, Bell, CaretLeft, GitFork, GearSix,
-} from '@phosphor-icons/react';
+import { SignOut, X, Bell, CaretLeft } from '@phosphor-icons/react';
+import { menuItems, navSections, type NavItem as NavItemType } from '../../lib/nav';
 
-interface MenuItem {
-  path: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  roles: string[];
-  section: 'people' | 'time_off' | 'attendance' | 'finance';
-  end?: boolean;
-}
-
-const sections: { key: MenuItem['section']; labelKey: string }[] = [
-  { key: 'people', labelKey: 'nav.section_people' },
-  { key: 'time_off', labelKey: 'nav.section_time_off' },
-  { key: 'attendance', labelKey: 'nav.section_attendance' },
-  { key: 'finance', labelKey: 'nav.section_finance' },
-];
-
-const menuItems: MenuItem[] = [
-  { path: '/employees', label: 'nav.employees', icon: Users, roles: ['admin', 'manager'], section: 'people' },
-  { path: '/departments', label: 'nav.departments', icon: Buildings, roles: ['admin', 'manager'], section: 'people' },
-  { path: '/org-chart', label: 'org_chart.title', icon: GitFork, roles: ['admin', 'manager'], section: 'people' },
-  { path: '/leaves', label: 'nav.leaves', icon: CalendarCheck, roles: ['admin', 'manager', 'employee'], section: 'time_off', end: true },
-  { path: '/leaves/approvals', label: 'nav.leave_approvals', icon: ClipboardText, roles: ['admin', 'manager'], section: 'time_off' },
-  { path: '/attendance', label: 'nav.attendance', icon: Clock, roles: ['admin', 'manager', 'employee'], section: 'attendance', end: true },
-  { path: '/attendance/report', label: 'nav.attendance_report', icon: ChartBar, roles: ['admin', 'manager'], section: 'attendance' },
-  { path: '/payroll', label: 'nav.payroll', icon: Wallet, roles: ['admin', 'manager', 'employee'], section: 'finance', end: true },
-  { path: '/payroll/manage', label: 'nav.payroll_management', icon: Money, roles: ['admin'], section: 'finance' },
-];
-
-function NavItem({ item, collapsed, onNav }: { item: MenuItem; collapsed: boolean; onNav: () => void }) {
+function NavItem({ item, collapsed, onNav }: { item: NavItemType; collapsed: boolean; onNav: () => void }) {
   const { t } = useTranslation();
   return (
     <NavLink
@@ -139,7 +108,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 
       <NavLink to="/profile" onClick={closeMobile} title={collapsed ? (user?.name || user?.email) : undefined} className={cn(
         'flex items-center gap-2 px-2 py-2 rounded-xl text-sm hover:bg-surface-secondary transition-all w-full group',
-        collapsed && 'justify-start pl-2.5'
+        collapsed && 'justify-center px-0'
       )}>
         <div className="h-7 w-7 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-semibold shrink-0">
           {(user?.name?.[0] || user?.email?.[0] || '?').toUpperCase()}
@@ -150,7 +119,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       </NavLink>
 
       <nav className="flex-1 overflow-y-auto mt-1 mb-1">
-        {sections.map((section) => {
+        {navSections.map((section) => {
           const items = visibleItems.filter((item) => item.section === section.key);
           if (items.length === 0) return null;
           return (
@@ -182,14 +151,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             </span>
           )}
         </BottomLink>
-
-        <BottomLink
-          to="/settings"
-          icon={GearSix}
-          label="settings"
-          collapsed={collapsed}
-          onClick={closeMobile}
-        />
 
         <BottomLink
           icon={SignOut}
