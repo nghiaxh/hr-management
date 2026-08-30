@@ -27,6 +27,8 @@
 
   /* Single accent — blue, used for actions & focus only */
   --accent: #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-pressed: #1E40AF;
   --accent-foreground: #FFFFFF;
 
   /* Hairlines & structure */
@@ -73,6 +75,8 @@
   --default-foreground: #E6EDF7;
 
   --accent: #60A5FA;
+  --accent-hover: #93C5FD;
+  --accent-pressed: #7CC0F7;
   --accent-foreground: #0B1220;
 
   --border: #223048;
@@ -96,7 +100,7 @@
  * Tailwind theme additions
  * ------------------------------------------------------------------------- */
 @theme {
-  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-ink-faint: #7A8799;
@@ -168,8 +172,8 @@ th[class*="text-right"] {
   /* Primary action = the blue accent */
   .button--primary {
     --button-bg: var(--accent);
-    --button-bg-hover: color-mix(in oklab, var(--accent) 88%, var(--foreground) 12%);
-    --button-bg-pressed: color-mix(in oklab, var(--accent) 80%, var(--foreground) 20%);
+    --button-bg-hover: var(--accent-hover);
+    --button-bg-pressed: var(--accent-pressed);
     --button-fg: var(--accent-foreground);
   }
 
