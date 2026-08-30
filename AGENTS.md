@@ -13,7 +13,7 @@ Two independent packages: `server/` (Spring Boot + MySQL) and `client/` (React +
 ### Docker (recommended)
 
 ```powershell
-Copy-Item .env.example .env          # root .env drives everything; set JWT_SECRET
+Copy-Item .env.example .env          # root .env drives everything
 docker compose up -d --build         # builds + starts mysql, server, client
 ```
 
@@ -37,11 +37,13 @@ npm run dev            # Vite
 npm run build          # tsc && vite build
 ```
 
-Config lives in a single root `.env` (copy from `.env.example`). The server imports it via `spring.config.import=optional:file:../.env[.properties],optional:file:.env[.properties]`; Vite reads it via `envDir: '..'`. `JWT_SECRET` is still required at startup (it seeds `jwt.secret`, whose `jwt.expiration` is reused as the session timeout) — the app will not start without it.
+Config lives in a single root `.env` (copy from `.env.example`). The server imports it via `spring.config.import=optional:file:../.env[.properties],optional:file:.env[.properties]`; Vite reads it via `envDir: '..'`. Session timeout is set from `session.expiration` (default 1 day). No required secrets at startup.
 
 ---
 
 ## System Architecture
+
+> Full system reference: see `ARCHITECTURE.md`.
 
 ```
 ┌─────────────┐    HTTP/REST    ┌─────────────┐   JPA/Hibernate ┌──────────┐
@@ -64,15 +66,16 @@ Config lives in a single root `.env` (copy from `.env.example`). The server impo
 1. User enters email + password on the login page
 2. Server validates credentials via bcrypt, stores `userId` + `userRole` in the `HttpSession` and sets the `JSESSIONID` cookie (Spring Session JDBC persists sessions in a `sessions` table)
 3. Server's `SessionAuthenticationFilter` (`server/src/.../auth/filter/SessionAuthenticationFilter.java`) reads `userId`/`userRole` from the session on each request and populates the `SecurityContext`
-4. `SecurityConfig` permits `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`; all other routes require authentication. CSRF is enabled with the `X-XSRF-TOKEN` header (`HttpSessionCsrfTokenRepository`)
-5. The client restores the logged-in user on page load via `GET /api/auth/me` whenever a `JSESSIONID` cookie exists; logout clears the cookie client-side
+4. `SecurityConfig` permits `/api/auth/login` and `OPTIONS /**`; all other routes require authentication. CSRF is enabled with the `X-XSRF-TOKEN` header (`HttpSessionCsrfTokenRepository`)
+5. The client restores the logged-in user on page load via `GET /api/auth/me` **only when a `JSESSIONID` cookie exists** (no cookie → no request, so logged-out users don't hit a 403); logout clears the cookie client-side, and the Axios layer (`api/client.ts`) also drops `JSESSIONID`/`XSRF-TOKEN` cookies on 401/403 responses
 6. Role-based access is enforced at the **service layer** — `admin` sees all, `manager` scoped to their department, `employee` sees own data only
 
 Auth details:
-- Session-based (Spring Session JDBC) + bcrypt + Spring Security. Session max-inactive-interval is set from `jwt.expiration` (default `86400000ms` = 1 day). `jwt.secret` is **required** at startup — set via `JWT_SECRET` in the root `.env`.
+- Session-based (Spring Session JDBC) + bcrypt + Spring Security. Session max-inactive-interval is set from `session.expiration` (default `86400000ms` = 1 day).
 - CSRF enabled (`X-XSRF-TOKEN` header). No logout endpoint — the client deletes the session cookie.
-- Registration always creates `employee` role — admin/manager roles are set via seed or direct DB update.
-- Passwords: min 8, max 128 chars (no complexity requirement); registration also validates `@Email` format.
+- Admin/manager roles are set via seed or direct DB update.
+- Passwords: min 8, max 128 chars (no complexity requirement).
+- Login/`/me`/profile responses include `hasEmployeeProfile` (whether the user has an Employee record — derived from `EmployeeRepository.existsByUserId`). The client's `/leaves` page hides the balance cards and "Create Leave" button when it's false, since `/api/leave-balance/my` 404s for accounts without a profile.
 
 ---
 
@@ -188,7 +191,7 @@ Domain modules follow `controller/` → `service/` → `repository/` + `entity/`
 | Payroll          | `server/src/.../payroll/` | Monthly batch processing |
 | LeaveBalance     | `server/src/.../leavebalance/` | Auto-create + deduct on approval |
 | Notifications    | `server/src/.../notification/` | In-app notifications (API polling) |
-| Seed            | `server/src/.../seed/` | `DataSeeder` (reset when `seed` profile active) + `FirstRunSeeder` (auto-seeds when DB empty) |
+| Seed            | `server/src/.../seed/` | `DataSeeder` (reset when `seed` profile active) + `FirstRunSeeder` (auto-seeds when DB empty). Seeds 3 departments, 9 users, 8 employee profiles (admin + manager included), leave balances with usage, ~2 months attendance, leaves for every employee, previous-month payroll (all employees), notifications for every user |
 | Common           | `server/src/.../common/` | `PaginatedResponse`, `GlobalExceptionHandler`, `SecurityUtil` + typed exceptions |
 | Config           | `server/src/.../config/` | `CorsConfig`, `SecurityConfig` (CORS/CSRF/session policy) |
 
@@ -205,7 +208,7 @@ Domain modules follow `controller/` → `service/` → `repository/` + `entity/`
 | **employee** | Self only | View own profile/leaves/attendance/payroll, create leave requests, check in/out |
 
 Enforcement happens at two layers:
-- **Server**: `SecurityUtil` + `requireRoles()` at the service layer on every route (except `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`). Read-own-data endpoints (e.g. `GET /api/employees/me`, `GET /api/leave-balance/my`) allow all roles and filter by current user instead.
+- **Server**: `SecurityUtil` + `requireRoles()` at the service layer on every route (except `/api/auth/login` and `OPTIONS /**`). Read-own-data endpoints (e.g. `GET /api/employees/me`, `GET /api/leave-balance/my`) allow all roles and filter by current user instead.
 - **Client**: `ProtectedRoute` component wraps every route with role check; sidebar hides inaccessible links; the home route redirects to `/leaves`
 
 ---
@@ -268,7 +271,6 @@ Client shows toast + increments badge count
 │  ├─────────────────────┤  │   React Router  │
 │  │ Employees           │  │   Outlet)       │
 │  │ Departments         │  │                 │
-│  │ Org Chart           │  │                 │
 │  │ Leaves              │  │                 │
 │  │ Leave Approvals     │  │                 │
 │  │ Attendance          │  │                 │
@@ -277,14 +279,13 @@ Client shows toast + increments badge count
 │  │ Payroll Management  │  │                 │
 │  ├─────────────────────┤  │                 │
 │  │ Notifications       │  │                 │
-│  │ Settings            │  │                 │
 │  │ Profile / Logout    │  │                 │
 │  └─────────────────────┘  │                 │
 └─────────────────────────────┘
 ```
 
-- Routes: `/login`, `/employees`, `/employees/:id`, `/departments`, `/org-chart`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/settings`, `/profile`; `/` redirects to `/leaves`
-- Org chart is rendered client-side from the departments API (no org-chart endpoint)
+- Routes: `/login`, `/employees`, `/employees/:id`, `/departments`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/profile`; `/` redirects to `/leaves`
+- Theme toggle lives in `TopHeader` (via `use-theme.ts`); sidebar/profile-alt, collapse persisted to `localStorage`
 - Sidebar items are filtered by role (employees don't see admin links)
 - Mobile: sidebar hidden behind hamburger menu
 - Content area: max-width 1280px (`max-w-7xl`), responsive padding
@@ -298,21 +299,22 @@ Client shows toast + increments badge count
 | **Spring Boot** over Express | Opinionated DI, Spring Security, mature JPA/Hibernate integration |
 | **MySQL 8** over PostgreSQL | Standard choice, zero PG-specific features needed, wide hosting support |
 | **Separate User/Employee** | Auth credentials isolated from HR profile data |
-| **Session-based auth** over JWT | httpOnly session cookie managed by Spring Session JDBC; `jwt.expiration` reused for session timeout |
+| **Session-based auth** over JWT | httpOnly session cookie managed by Spring Session JDBC; `session.expiration` sets the timeout |
 | **API polling for notifications** | Simple push-less delivery; no WebSocket infrastructure yet |
 | **HeroUI v3** | CSS-only (no Provider), design tokens in `index.css`, Tailwind 4 integration |
 | **TanStack Query** | Automatic caching, refetching, optimistic updates for API data |
+| **Primary blue accent** | Single blue (`#2563EB` light / `#60A5FA` dark) for actions, active nav, focus; muted status colors |
 
 ---
 
 ## Key Facts
+- **Server tests**: 91 unit tests (16 test classes, including `AppApplicationTests`) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
 
-- **Server tests**: 85 unit tests (16 test classes, including `AppApplicationTests`) across all modules using JUnit 5 + Mockito + `@ActiveProfiles("test")`. Run with `mvn test`.
-- **Client tests**: 60 tests (17 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
-- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components live in `client/src/components/ui/` (`button`, `badge`, `card`, `dialog`, `input`, `select`, `table`, `data-table`, `skeleton-list`, `toaster`, `tooltip`, etc.). Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use. UI text uses a single Vietnamese locale in `client/src/locales/vi.ts` via `t()`.
+- **Client tests**: 55 tests (16 files) via Vitest + Testing Library + MSW. Run with `npm test`. Build with `npm run build` (tsc && vite build).
+- **Client UI conventions**: HeroUI v3 is imported CSS-only (`client/src/index.css`) — no `<HeroUIProvider>` wrapper. Custom design tokens (bone/ink/accent/status colors) live at the `:root` in `index.css` with `.dark` overrides; dark mode is toggled by `use-theme.ts` (`data-theme` attr + `.dark` class on `<html>`). Wrapper components live in `client/src/components/ui/` (`button`, `badge`, `card`, `dialog`, `input`, `select`, `table`, `data-table`, `skeleton-list`, `toaster`, `tooltip`, etc.); `components/shared/page-header` renders **actions only** — pages have no title/description header. Icons come from `@phosphor-icons/react` only — export names are case-sensitive (e.g. `tag`, not `Tag`) and must be verified against the package before use. UI text uses a single Vietnamese locale in `client/src/locales/vi.ts` via `t()`. Fonts: `Inter` (sans) + `JetBrains Mono` (mono) loaded via Google Fonts in `index.html`, wired to `--font-sans`/`--font-mono`.
 - **CI**: GitHub Actions workflow (`.github/workflows/test.yml`) runs 4 jobs — `server-build` (compile), `server-tests` (MySQL 8 service, Java 25), `client-tests`, and `client-build` (Node 24) — on push and pull_request to `main`/`master`/`develop`.
 - Client uses ES modules (`"type": "module"`) with Vite 8 + TypeScript; server is Maven + Java 25 (Spring Boot 4.1).
-- All API routes are protected by Spring Security + `SessionAuthenticationFilter` (except `/api/auth/login`, `/api/auth/register`, and `OPTIONS /**`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
+- All API routes are protected by Spring Security + `SessionAuthenticationFilter` (except `/api/auth/login` and `OPTIONS /**`). Role enforcement at the service layer via `SecurityUtil` + `requireRoles()` pattern.
 - Root `.env` is gitignored (template `.env.example` is committed); `server/.env` fallback is also ignored if created.
 - All configuration is env-driven from the single root `.env` (template `.env.example` is committed; real `.env` is gitignored). Docker runs via `docker-compose.yml` (mysql:8.0, maven:3.9-eclipse-temurin-25, node:24-alpine, nginx:1.27-alpine) + `server/Dockerfile` + `client/Dockerfile` (nginx).
 - `employee` role users access their own data enforced server-side; `manager` role is scoped to their department.

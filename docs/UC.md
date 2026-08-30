@@ -228,53 +228,11 @@ sequenceDiagram
 ### 2.6 Yêu cầu đặc biệt
 
 - Mật khẩu được mã hóa bằng bcrypt trước khi lưu
-- Session hết hạn sau 1 ngày không hoạt động (max-inactive-interval lấy từ `jwt.expiration`, mặc định 86400000ms)
+- Session hết hạn sau 1 ngày không hoạt động (max-inactive-interval lấy từ `session.expiration`, mặc định 86400000ms)
 
 ---
 
-## 3. UC-02: Đăng ký
-
-| Trường         | Giá trị                                       |
-|----------------|-----------------------------------------------|
-| **Mã UC**      | UC-02                                         |
-| **Tên**        | Đăng ký                                       |
-| **Actor**      | Guest                                         |
-| **Mô tả**      | Người dùng mới đăng ký tài khoản với role Employee |
-| **Kích hoạt**  | Người dùng truy cập trang đăng ký             |
-| **Kiểu**       | Cơ bản                                        |
-
-### Preconditions
-- Email chưa tồn tại trong hệ thống
-
-### Postconditions
-- Tài khoản mới được tạo với role `employee`
-- Người dùng đăng nhập sau khi đăng ký (đăng ký không tự động tạo session)
-
-### Basic Flow
-
-```mermaid
-sequenceDiagram
-    participant U as Guest
-    participant UI as Form Đăng ký
-    participant API as Auth API
-
-    U->>UI: Nhập email, mật khẩu, xác nhận mật khẩu
-    UI->>UI: Validate: email hợp lệ, mật khẩu 8-128 ký tự
-    UI->>API: POST /api/auth/register {email, password}
-    API->>API: Kiểm tra email đã tồn tại?
-    API->>API: Hash password (bcrypt)
-    API->>API: Tạo user với role='employee'
-    API-->>UI: 200 OK {user}
-    UI-->>U: Đăng ký thành công, chuyển hướng đến trang đăng nhập
-```
-
-### Validation Rules
-- Email: đúng định dạng email
-- Mật khẩu: từ 8 đến 128 ký tự, không yêu cầu độ phức tạp (chữ hoa/thường/số)
-
----
-
-## 4. UC-03: Quản lý hồ sơ cá nhân
+## 3. UC-03: Quản lý hồ sơ cá nhân
 
 | Trường         | Giá trị                                       |
 |----------------|-----------------------------------------------|

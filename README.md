@@ -20,7 +20,6 @@ Hệ thống quản lý nhân sự với phân quyền RBAC, xây dựng bằng 
 
 ```powershell
 Copy-Item .env.example .env
-# Sửa .env, đặt JWT_SECRET bằng giá trị mạnh
 docker compose up -d --build
 ```
 
@@ -62,12 +61,11 @@ Cấu hình tập trung trong file `.env` ở thư mục gốc. Copy mẫu `/.en
 | `DB_URL` | `jdbc:mysql://localhost:3306/hr_management?...` | Chuỗi kết nối MySQL |
 | `DB_USERNAME` | `root` | Tên đăng nhập DB |
 | `SERVER_PORT` | `3001` | Cổng API |
-| `JWT_SECRET` | bắt buộc | Bí mật đăng nhập; khởi tạo `jwt.secret`, `jwt.expiration` dùng làm thời hạn session |
-| `JWT_EXPIRATION` | `86400000` | Thời hạn session (ms) |
+| `SESSION_EXPIRATION` | `86400000` | Thời hạn session (ms) |
 | `CORS_ORIGIN` | `http://localhost:5173` | Nguồn CORS được phép |
 | `VITE_API_URL` | `http://localhost:3001/api` | URL gốc API (nạp khi build client) |
 
-Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
+Mọi biến có mặc định đều có thể bỏ trống.
 
 ## Tài khoản dùng thử
 
@@ -77,22 +75,28 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 | Quản lý | eng.manager@hr.com | manager123 |
 | Nhân viên | emp01@hr.com | employee123 |
 
+Mọi tài khoản demo đều có dữ liệu mẫu sau khi chạy seed: hồ sơ nhân viên (kể cả admin — phòng HR), quỹ phép, đơn nghỉ phép (kể cả manager), chấm công ~2 tháng, bảng lương tháng trước (trạng thái draft/paid) và thông báo.
+
 ## Tính năng
 
 - **Xác thực và phân quyền**: session-based (Spring Session JDBC), 3 vai trò admin, quản lý, nhân viên. Kiểm tra vai trò ở service layer và route phía client
 - **Nhân viên**: CRUD, tìm kiếm, lọc theo phòng ban, xuất CSV, xóa hàng loạt, quản lý hợp đồng
-- **Phòng ban**: CRUD, gán quản lý, sơ đồ tổ chức (dựng phía client từ API phòng ban)
+- **Phòng ban**: CRUD, gán quản lý
 - **Nghỉ phép**: tạo đơn, duyệt hoặc từ chối, kiểm tra trùng lịch, tự trừ ngày phép khi duyệt
 - **Chấm công**: chấm công vào và ra hàng ngày, tự tính trạng thái. Vào sau 9h là đi muộn, làm dưới 4h là nửa ngày, muộn nhưng đủ 8h tính là có mặt
 - **Bảng lương**: xử lý hàng loạt theo tháng, tính khấu trừ BHXH, BHYT, BHTN, Công đoàn và thuế TNCN lũy tiến
 - **Thông báo**: gửi trong ứng dụng khi đơn nghỉ phép được duyệt hoặc từ chối, cập nhật qua API polling
+
+## Phân trang màn hình (UI)
+
+- `/login`, `/employees`, `/employees/:id`, `/departments`, `/leaves`, `/leaves/approvals`, `/attendance`, `/attendance/report`, `/payroll`, `/payroll/manage`, `/notifications`, `/profile`; `/` chuyển về `/leaves`
+- Màu chủ đạo xanh dương duy nhất (`#2563EB` sáng / `#60A5FA` tối), dùng cho action, thanh điều hướng đang chọn và focus
 
 ## API Endpoints
 
 ### Auth
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
-| POST | /api/auth/register | Không | Đăng ký, luôn tạo vai trò employee |
 | POST | /api/auth/login | Không | Đăng nhập, tạo session |
 | GET | /api/auth/me | Có | Thông tin người dùng hiện tại |
 | PUT | /api/auth/profile | Có | Cập nhật hồ sơ |
@@ -159,8 +163,8 @@ Server sẽ không khởi động nếu thiếu `JWT_SECRET`.
 
 | Package | Framework | Số lượng | Chạy |
 |---------|-----------|----------|------|
-| Server | JUnit 5 + Mockito | 85 tests, 16 class | `mvn test` |
-| Client | Vitest + Testing Library + MSW | 61 tests, 17 files | `npm test` |
+| Server | JUnit 5 + Mockito | 91 tests, 16 class | `mvn test` |
+| Client | Vitest + Testing Library + MSW | 55 tests, 16 files | `npm test` |
 
 CI tự động qua GitHub Actions, chạy server tests, client tests và client build khi push.
 

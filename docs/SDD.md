@@ -6,6 +6,7 @@
 |-----------|------------|------------|------------------------------|
 | 1.0       | 17/06/2026 | HR Team    | Phiên bản đầu tiên           |
 | 2.0       | 22/06/2026 | HR Team    | Cập nhật theo IEEE 1016       |
+| 2.1       | 30/08/2026 | Dev Team   | Cập nhật mô tả seed data khớp với `DataSeeder` thực tế |
 
 > **Trạng thái triển khai:** Auth, Employees, Departments, Leaves, Attendance, Payroll, LeaveBalance, Notifications đã triển khai (Spring Boot + MySQL). Dashboard, EmployeeHistory, Recruitment, Performance Reviews, Socket.IO chưa triển khai (đang kế hoạch).
 >
@@ -419,7 +420,7 @@ classDiagram
 
 | Module                 | Controller                                 | Routes                                      |
 |------------------------|--------------------------------------------|---------------------------------------------|
-| Auth                   | `auth/controller/AuthController.java`      | POST register/login, GET me, PUT profile, POST change-password |
+| Auth                   | `auth/controller/AuthController.java`      | POST login, GET me, PUT profile, POST change-password |
 | Employees              | `employee/controller/EmployeeController.java` | GET, GET me, GET export, GET /{id}, POST, POST bulk-delete, PUT /{id}, DELETE /{id} |
 | Departments            | `department/controller/DepartmentController.java` | CRUD (GET, GET /{id}, POST, PUT /{id}, DELETE /{id}) |
 | Leaves                 | `leave/controller/LeaveController.java`    | GET, POST, GET /{id}, PATCH /{id}/status    |
@@ -434,7 +435,6 @@ classDiagram
 
 | Method                          | Tham số                                  | Trả về        | Mô tả                      |
 |---------------------------------|------------------------------------------|---------------|----------------------------|
-| `register(dto)`                 | `{ email, password }`                    | `AuthResponse` | Đăng ký, hash password, luôn tạo role `employee` |
 | `login(dto)`                    | `{ email, password }`                    | `AuthResponse` | Xác thực bcrypt, lưu `userId`/`userRole` vào HttpSession, set maxInactiveInterval, đặt cookie JSESSIONID |
 | `getMe(userId)`                 | `userId: string`                         | `Map`          | Lấy thông tin user        |
 | `updateProfile(userId, dto)`    | `userId, { name?, email? }`              | `Map`          | Cập nhật profile          |
@@ -492,22 +492,30 @@ graph LR
 
 ### 4.5 Seed Script
 
-Chạy qua Maven profile `seed`: `mvn spring-boot:run -Dspring-boot.run.profiles=seed`. `DataSeeder.java` (implements `CommandLineRunner`) tạo dữ liệu mẫu: 1 admin, 6 managers, ~50 employees, 6 departments, leave balances, realistic attendance (2 tháng, hồ sơ punctuality theo nhân viên), và bảng lương thực tế (BHXH 8%, BHYT 1.5%, BHTN 1%, Công đoàn 1%, thuế TNCN lũy tiến 5 bậc, bonus = 0). Seed xong tự thoát.
+Chạy qua Maven profile `seed`: `mvn spring-boot:run -Dspring-boot.run.profiles=seed` (hoặc `docker compose run --rm -e SPRING_PROFILES_ACTIVE=seed server`). `DataSeeder.java` (implements `CommandLineRunner`) xóa hết dữ liệu cũ (theo thứ tự FK) rồi tạo dữ liệu mẫu cho mọi tài khoản demo:
+
+- **3 departments**: Engineering (manager = Minh Tuấn), Design, HR.
+- **9 users**: `admin@hr.com`, `eng.manager@hr.com`, `emp01@hr.com`–`emp07@hr.com`.
+- **8 employee profiles** — gồm cả **admin** (phòng HR, "Quản trị hệ thống", 45.000.000 VND) và manager (VP of Engineering, 50.000.000 VND); emp01–emp07 chia theo phòng: Engineering (3), Design (2), HR (2).
+- **Leave balances**: cho từng nhân viên, có mức đã dùng minh họa (annual/personal/sick).
+- **Attendance**: ~2 tháng cho mọi nhân viên với trạng thái thực tế (present/late/half-day).
+- **Leaves**: mọi nhân viên đều có đơn — admin (approved), manager (pending), emp01 (approved), emp02/emp03 (pending), emp05 (rejected), còn lại ngẫu nhiên.
+- **Payroll**: một kỳ lương **tháng trước** cho mọi nhân viên, tính theo đúng công thức service (BHXH 8%, BHYT 1.5%, BHTN 1%, Công đoàn 1%, thuế TNCN lũy tiến 5 bậc, bonus = 0); trạng thái xen kẽ draft/paid.
+- **Notifications**: 1 thông báo cho mỗi người dùng (tiếng Việt, isRead xen kẽ).
+
+Seed xong tự thoát.
 
 ```mermaid
 graph TB
     SEED[Seed Profile: DataSeeder.run] --> DROP[Delete all tables in FK order]
-    DROP --> USERS[Tạo Users: 1 Admin + 6 Managers + ~50 Employees]
-    USERS --> DEPTS[Tạo 6 Departments]
-    subgraph Departments
-        D1[Engineering] & D2[HR] & D3[Sales]
-        D4[Marketing] & D5[Finance] & D6[BA]
-    end
-    DEPTS --> EMPPROF[Tạo Employee Profiles]
-    EMPPROF --> LB[Tạo Leave Balances]
-    LB --> ATT[Attendance ~2 tháng]
-    ATT --> PAYROLL["Payroll (3 tháng + historical)"]
-    PAYROLL --> LEAVES["Leaves (1-3/employee) + update balance"]
+    DROP --> USERS[Tạo Users: admin + manager + emp01-emp07]
+    USERS --> DEPTS[Tạo 3 Departments: Engineering, Design, HR]
+    DEPTS --> EMPPROF[Tạo 8 Employee Profiles, gồm admin + manager]
+    EMPPROF --> LB[Tạo Leave Balances + usage]
+    LB --> ATT[Attendance ~2 tháng cho mọi NV]
+    ATT --> PAYROLL["Payroll 1 kỳ tháng trước cho mọi NV"]
+    PAYROLL --> LEAVES[Leaves cho mọi NV + update balance]
+    LEAVES --> NOTIF[Notifications cho mọi user]
 ```
 
 ---
@@ -589,19 +597,18 @@ graph LR
 
 ### 6.1 Thiết kế API REST
 
-Tất cả API có prefix `/api`, xác thực bằng session (cookie JSESSIONID do Spring Session JDBC quản lý). CSRF được bật (header `X-XSRF-TOKEN`). Chỉ `POST /api/auth/login` và `POST /api/auth/register` là permitAll.
+Tất cả API có prefix `/api`, xác thực bằng session (cookie JSESSIONID do Spring Session JDBC quản lý). CSRF được bật (header `X-XSRF-TOKEN`). Chỉ `POST /api/auth/login` là permitAll.
 
 #### 6.1.1 Auth
 
 | Method | Endpoint                     | Request Body                                    | Response               | Status  |
 |--------|------------------------------|-------------------------------------------------|------------------------|:-------:|
-| POST   | `/api/auth/register`         | `{ email, password }`                           | `{ user, token }`      | 200     |
-| POST   | `/api/auth/login`            | `{ email, password }`                           | `{ user, token }`      | 200     |
+| POST   | `/api/auth/login`            | `{ email, password }`                           | `{ user }`             | 200     |
 | GET    | `/api/auth/me`               | -                                               | `{ user }`             | 200     |
 | PUT    | `/api/auth/profile`          | `{ name?, email? }`                             | `{ user }`             | 200     |
 | POST   | `/api/auth/change-password`  | `{ currentPassword, newPassword }`              | `{ message }`          | 200     |
 
-> **Ghi chú:** Sau khi login thành công, server lưu `userId` + `userRole` vào HttpSession và đặt cookie JSESSIONID (httpOnly). Trường `token` trong response là di sản (legacy), không được dùng để xác thực; mọi request xác thực qua session cookie.
+> **Ghi chú:** Sau khi login thành công, server lưu `userId` + `userRole` vào HttpSession và đặt cookie JSESSIONID (httpOnly). Mọi request xác thực qua session cookie.
 
 #### 6.1.2 Employees
 
@@ -746,7 +753,7 @@ HttpSession (Spring Session JDBC, bảng `sessions`) chứa:
 | `userId`  | UUID của user                        | Nhận diện người dùng  |
 | `userRole`| `admin` / `manager` / `employee`     | Phân quyền theo role  |
 
-- Session max-inactive-interval được lấy từ `jwt.expiration` (mặc định `86400000` ms = 1 ngày). Tên `jwt.secret`/`jwt.expiration` là di sản (legacy); `JWT_SECRET` vẫn bắt buộc khi khởi động server.
+- Session max-inactive-interval được lấy từ `session.expiration` (mặc định `86400000` ms = 1 ngày).
 - CSRF được bật: header `X-XSRF-TOKEN` (HttpSessionCsrfTokenRepository).
 
 ### 7.3 Logic Role Middleware
@@ -840,7 +847,6 @@ sequenceDiagram
 ```mermaid
 classDiagram
     class AuthService {
-        +register(dto) AuthResponse
         +login(dto) AuthResponse
         +getMe(userId) Map
         +updateProfile(userId, dto) Map
@@ -1028,7 +1034,7 @@ graph TB
             CLT["Vite Dev Server<br/>Port 5173<br/>npm run dev"]
         end
         subgraph "Environment"
-            ENV["Root .env (spring.config.import)<br/>JWT_SECRET<br/>DB_URL / DB_USERNAME / DB_PASSWORD<br/>CORS_ORIGIN<br/>SERVER_PORT"]
+            ENV["Root .env (spring.config.import)<br/>DB_URL / DB_USERNAME / DB_PASSWORD<br/>CORS_ORIGIN<br/>SERVER_PORT<br/>SESSION_EXPIRATION"]
             CLT_ENV["VITE_API_URL"]
         end
     end

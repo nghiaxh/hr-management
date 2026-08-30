@@ -169,7 +169,7 @@ Hệ thống cung cấp các chức năng chính sau (các phân hệ chưa tri�
 
 | Mã     | Ràng buộc                                                      | Loại       |
 | ------ | -------------------------------------------------------------- | ---------- |
-| CON-01 | Server yêu cầu `JWT_SECRET` trong biến môi trường để khởi động | Kỹ thuật   |
+| CON-01 | Server khởi động không cần secret bắt buộc; session timeout lấy từ `SESSION_EXPIRATION` (mặc định `86400000` ms) | Kỹ thuật   |
 | CON-02 | Mật khẩu tối thiểu 8 ký tự, tối đa 128 ký tự, không yêu cầu độ phức tạp | Bảo mật    |
 | CON-03 | File upload tối đa 5MB, chỉ JPEG/PNG/GIF/PDF/DOC/DOCX (chưa triển khai - kế hoạch) | Kỹ thuật   |
 | CON-04 | API giới hạn 60 request/phút/IP                                | Hiệu năng  |
@@ -270,13 +270,12 @@ Chưa triển khai (kế hoạch). Hiện tại thông báo được giao qua AP
 
 | Mã         | Yêu cầu                  | Mô tả                                                             | Mức ưu tiên |
 | ---------- | ------------------------ | ----------------------------------------------------------------- | :---------: |
-| FR-AUTH-01 | Đăng ký tài khoản        | Người dùng đăng ký với email và mật khẩu. Role mặc định: employee |    Could    |
 | FR-AUTH-02 | Đăng nhập                | Email + mật khẩu, server tạo phiên và đặt cookie JSESSIONID            |    Must     |
 | FR-AUTH-03 | Xem thông tin cá nhân    | GET /api/auth/me, trả về thông tin user từ phiên (session)              |    Must     |
 | FR-AUTH-04 | Cập nhật profile         | PUT /api/auth/profile: cập nhật name, email                       |    Must     |
 | FR-AUTH-05 | Đổi mật khẩu             | POST /api/auth/change-password, yêu cầu xác thực mật khẩu cũ      |    Must     |
 | FR-AUTH-06 | Đăng xuất                | Xóa cookie phiên phía client (không có endpoint logout phía server)     |    Must     |
-| FR-AUTH-07 | Bảo vệ API bằng phiên    | Tất cả API (trừ register, login) yêu cầu phiên hợp lệ                    |    Must     |
+| FR-AUTH-07 | Bảo vệ API bằng phiên    | Tất cả API (trừ login) yêu cầu phiên hợp lệ                              |    Must     |
 | FR-AUTH-08 | Phân quyền API theo role | SecurityUtil + requireRoles() kiểm tra role trước khi cho phép truy cập |    Must     |
 | FR-AUTH-09 | Demo accounts            | Nút demo tự động điền thông tin admin/manager/employee            |   Should    |
 
@@ -432,7 +431,7 @@ Chưa triển khai (kế hoạch). Hiện tại thông báo được giao qua AP
 | Mã         | Yêu cầu                          | Chỉ tiêu                                      | Mức ưu tiên |
 | ---------- | -------------------------------- | --------------------------------------------- | :---------: |
 | NFR-SEC-01 | Mã hóa mật khẩu                  | bcrypt với 10 salt rounds                     |    Must     |
-| NFR-SEC-02 | Thời gian phiên                  | Session hết hạn sau 1 ngày (jwt.expiration mặc định 86400000ms, tên cũ kế thừa) |    Must     |
+| NFR-SEC-02 | Thời gian phiên                  | Session hết hạn sau 1 ngày (session.expiration mặc định 86400000ms) |    Must     |
 | NFR-SEC-03 | Rate limiting                    | Tối đa 60 request/phút/IP *(chưa triển khai - kế hoạch)*                     |    Must     |
 | NFR-SEC-04 | HTTP security headers            | Spring Security headers: X-Frame-Options, CSP, etc |    Must     |
 | NFR-SEC-05 | Input validation                 | Bean Validation (Jakarta Validation) + Spring validation |    Must     |
@@ -563,7 +562,12 @@ Hệ thống sử dụng MySQL 8. Dưới đây là cấu trúc chi tiết (UUID
 | year          | SMALLINT      | NOT NULL                   |
 | basic_salary  | DECIMAL(12,0) | NOT NULL                   |
 | bonus         | DECIMAL(12,0) | DEFAULT 0                  |
-| deductions    | DECIMAL(12,0) | DEFAULT 0                  |
+| social_insurance | DECIMAL(12,0) | NOT NULL (8%)           |
+| health_insurance | DECIMAL(12,0) | NOT NULL (1.5%)         |
+| unemployment_insurance | DECIMAL(12,0) | NOT NULL (1%)       |
+| union_dues    | DECIMAL(12,0) | NOT NULL (1%)              |
+| pit           | DECIMAL(12,0) | NOT NULL                   |
+| total_deductions | DECIMAL(12,0) | NOT NULL                |
 | net_pay       | DECIMAL(12,0) | NOT NULL                   |
 | status        | ENUM('draft','paid') | DEFAULT 'draft'      |
 | paid_at       | DATETIME      | NULLABLE                   |
@@ -609,7 +613,7 @@ Hệ thống sử dụng MySQL 8. Dưới đây là cấu trúc chi tiết (UUID
 | user_id       | UUID (BINARY)| FK → users(id)             |
 | title         | VARCHAR(255)  | NOT NULL                   |
 | message       | TEXT          | NULLABLE                   |
-| type          | ENUM('leave_request','leave_approved','leave_rejected','payroll_ready','system') | NOT NULL |
+| type          | VARCHAR(50)   | NOT NULL (giá trị thực tế: `leave_approved`, `leave_rejected`, `leave`, `system`) |
 | related_id    | VARCHAR(36)   | NULLABLE                   |
 | related_model | VARCHAR(50)   | NULLABLE                   |
 | is_read       | BOOLEAN       | DEFAULT FALSE              |
@@ -909,7 +913,6 @@ sequenceDiagram
 
 | Method | Endpoint                    | Mô tả             | Auth  |
 | ------ | --------------------------- | ----------------- | :---: |
-| POST   | `/api/auth/register`        | Đăng ký tài khoản | Không |
 | POST   | `/api/auth/login`           | Đăng nhập         | Không |
 | GET    | `/api/auth/me`              | Xem profile       | Phiên |
 | PUT    | `/api/auth/profile`         | Cập nhật profile  | Phiên |
@@ -1087,7 +1090,6 @@ sequenceDiagram
 
 | Yêu cầu SRS | BRD    | Use Case | API Endpoint                        |
 | ----------- | ------ | -------- | ----------------------------------- |
-| FR-AUTH-01  | BR-001 | UC-02    | POST /api/auth/register             |
 | FR-AUTH-02  | BR-001 | UC-01    | POST /api/auth/login                |
 | FR-AUTH-03  | BR-001 | UC-03    | GET /api/auth/me                    |
 | FR-AUTH-04  | BR-001 | UC-03    | PUT /api/auth/profile               |

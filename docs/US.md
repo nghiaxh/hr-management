@@ -111,7 +111,7 @@ Mỗi user story tuân theo template chuẩn:
 - [ ] Form đăng ký với email + password + confirm password
 - [ ] Validate: email đúng định dạng
 - [ ] Validate: password từ 8 đến 128 ký tự, không yêu cầu độ phức tạp (chữ hoa/thường/số)
-- [ ] Gọi API POST /api/auth/register
+- [ ] Gọi API POST /api/auth/login
 - [ ] Tự động đăng nhập sau khi đăng ký thành công
 
 ---
