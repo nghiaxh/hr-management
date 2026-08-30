@@ -25,8 +25,7 @@ services:
       SPRING_DATASOURCE_URL: "jdbc:mysql://database:3306/${MYSQL_DATABASE:-hr_management}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci"
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SESSION_EXPIRATION: ${SESSION_EXPIRATION:-86400000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     depends_on:
       database:
