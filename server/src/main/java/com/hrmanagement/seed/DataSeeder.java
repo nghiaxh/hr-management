@@ -12,6 +12,10 @@ import com.hrmanagement.leave.entity.Leave;
 import com.hrmanagement.leave.repository.LeaveRepository;
 import com.hrmanagement.leavebalance.entity.LeaveBalance;
 import com.hrmanagement.leavebalance.repository.LeaveBalanceRepository;
+import com.hrmanagement.notification.entity.Notification;
+import com.hrmanagement.notification.repository.NotificationRepository;
+import com.hrmanagement.payroll.entity.Payroll;
+import com.hrmanagement.payroll.repository.PayrollRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +29,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -42,6 +48,8 @@ public class DataSeeder implements CommandLineRunner {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final AttendanceRepository attendanceRepository;
     private final LeaveRepository leaveRepository;
+    private final PayrollRepository payrollRepository;
+    private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
@@ -54,6 +62,8 @@ public class DataSeeder implements CommandLineRunner {
                       LeaveBalanceRepository leaveBalanceRepository,
                       AttendanceRepository attendanceRepository,
                       LeaveRepository leaveRepository,
+                      PayrollRepository payrollRepository,
+                      NotificationRepository notificationRepository,
                       PasswordEncoder passwordEncoder,
                       Environment environment) {
         this.userRepository = userRepository;
@@ -62,6 +72,8 @@ public class DataSeeder implements CommandLineRunner {
         this.leaveBalanceRepository = leaveBalanceRepository;
         this.attendanceRepository = attendanceRepository;
         this.leaveRepository = leaveRepository;
+        this.payrollRepository = payrollRepository;
+        this.notificationRepository = notificationRepository;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -72,7 +84,6 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
         seed();
-        System.exit(0);
     }
 
     @Transactional
@@ -90,7 +101,7 @@ public class DataSeeder implements CommandLineRunner {
         jdbcTemplate.execute("TRUNCATE TABLE users");
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1");
 
-        createUser("admin@hr.com", "admin123", "admin", "Admin");
+        User adminUser = createUser("admin@hr.com", "admin123", "admin", "Admin");
 
         Department engDept = Department.builder()
                 .name("Engineering")
@@ -114,6 +125,19 @@ public class DataSeeder implements CommandLineRunner {
         engDept.setManager(mgrUser);
         departmentRepository.save(engDept);
 
+        Employee adminEmp = Employee.builder()
+                .user(adminUser)
+                .department(hrDept)
+                .firstName("Admin")
+                .lastName("Hệ thống")
+                .position("Quản trị hệ thống")
+                .salary(BigDecimal.valueOf(45000000))
+                .hireDate(LocalDate.of(2020, 6, 1))
+                .contractType("permanent")
+                .phone("0988888000")
+                .build();
+        employeeRepository.save(adminEmp);
+
         Employee mgrEmp = Employee.builder()
                 .user(mgrUser)
                 .department(engDept)
@@ -127,7 +151,7 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         employeeRepository.save(mgrEmp);
 
-        List<Employee> allEmployees = new ArrayList<>(List.of(mgrEmp));
+        List<Employee> allEmployees = new ArrayList<>(List.of(adminEmp, mgrEmp));
         AtomicInteger empIndex = new AtomicInteger(1);
 
         Object[][] empData = {
@@ -165,16 +189,26 @@ public class DataSeeder implements CommandLineRunner {
             allEmployees.add(emp);
         }
 
-        for (Employee emp : allEmployees) {
-            leaveBalanceRepository.save(LeaveBalance.builder().employee(emp).build());
+        for (int i = 0; i < allEmployees.size(); i++) {
+            Employee emp = allEmployees.get(i);
+            LeaveBalance balance = LeaveBalance.builder().employee(emp).build();
+            switch (i % 4) {
+                case 0 -> balance.setAnnualUsed(2);
+                case 1 -> { balance.setAnnualUsed(1); balance.setPersonalUsed(1); }
+                case 2 -> balance.setSickUsed(1);
+                default -> {}
+            }
+            leaveBalanceRepository.save(balance);
         }
 
         seedAttendance(allEmployees);
-        seedLeaves(allEmployees);
+        List<Leave> leaves = seedLeaves(allEmployees);
+        seedPayrolls(allEmployees);
+        seedNotifications(allEmployees, leaves);
 
-        log.info("Created {} users, {} departments, {} employees, {} attendances, {} leaves",
+        log.info("Created {} users, {} departments, {} employees, {} attendances, {} leaves, {} payrolls",
                 userRepository.count(), departmentRepository.count(), employeeRepository.count(),
-                attendanceRepository.count(), leaveRepository.count());
+                attendanceRepository.count(), leaveRepository.count(), payrollRepository.count());
         log.info("Admin: admin@hr.com / admin123");
         log.info("Manager: eng.manager@hr.com / manager123");
         log.info("Employees: emp01@hr.com - emp07@hr.com (password: employee123)");
@@ -228,28 +262,29 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    private void seedLeaves(List<Employee> employees) {
+    private List<Leave> seedLeaves(List<Employee> employees) {
         LocalDate today = LocalDate.now();
         Random rnd = new Random(42);
+        List<Leave> saved = new ArrayList<>();
 
-        for (int i = 1; i < employees.size(); i++) {
+        for (int i = 0; i < employees.size(); i++) {
             Employee emp = employees.get(i);
-            double leaveRoll = rnd.nextDouble();
-            if (leaveRoll > 0.5) continue;
 
-            String type = switch (rnd.nextInt(3)) {
+            if (i > 4 && rnd.nextDouble() > 0.5) continue;
+
+            String type = switch (i % 3) {
                 case 0 -> "annual";
-                case 1 -> "sick";
-                default -> "personal";
+                case 1 -> "personal";
+                default -> "sick";
             };
-            LocalDate start = today.minusDays(15 + rnd.nextInt(60));
+            LocalDate start = today.minusDays(10 + rnd.nextInt(60));
             int days = 1 + rnd.nextInt(3);
             LocalDate end = start.plusDays(days);
 
             String status;
-            if (i == 1) {
+            if (i == 1 || i == 3 || i == 4) {
                 status = "pending";
-            } else if (i == 2) {
+            } else if (i == 5) {
                 status = "rejected";
             } else {
                 status = rnd.nextBoolean() ? "approved" : "pending";
@@ -269,8 +304,107 @@ public class DataSeeder implements CommandLineRunner {
                     .rejectionReason("rejected".equals(status) ? "Thiếu nhân sự trong khoảng thời gian này" : null)
                     .build();
             leaveRepository.save(leave);
+            saved.add(leave);
         }
 
+        return saved;
+    }
+
+    private static final BigDecimal PERSONAL_DEDUCTION = new BigDecimal("15500000");
+    private static final BigDecimal BHXH_RATE = new BigDecimal("0.08");
+    private static final BigDecimal BHYT_RATE = new BigDecimal("0.015");
+    private static final BigDecimal BHTN_RATE = new BigDecimal("0.01");
+    private static final BigDecimal CONG_DOAN_RATE = new BigDecimal("0.01");
+
+    private static final BigDecimal[] PIT_BRACKET_LIMITS = {
+        new BigDecimal("5000000"), new BigDecimal("10000000"),
+        new BigDecimal("18000000"), new BigDecimal("32000000"),
+        BigDecimal.valueOf(Long.MAX_VALUE)
+    };
+    private static final BigDecimal[] PIT_BRACKET_RATES = {
+        new BigDecimal("0.05"), new BigDecimal("0.10"),
+        new BigDecimal("0.20"), new BigDecimal("0.30"),
+        new BigDecimal("0.35")
+    };
+
+    private BigDecimal calculatePIT(BigDecimal taxableIncome) {
+        if (taxableIncome.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
+        BigDecimal remaining = taxableIncome;
+        BigDecimal prev = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
+        for (int i = 0; i < PIT_BRACKET_LIMITS.length; i++) {
+            BigDecimal bracket = PIT_BRACKET_LIMITS[i].subtract(prev);
+            if (remaining.compareTo(bracket) <= 0) {
+                total = total.add(remaining.multiply(PIT_BRACKET_RATES[i]));
+                break;
+            }
+            total = total.add(bracket.multiply(PIT_BRACKET_RATES[i]));
+            remaining = remaining.subtract(bracket);
+            prev = PIT_BRACKET_LIMITS[i];
+        }
+        return total.setScale(0, RoundingMode.DOWN);
+    }
+
+    private void seedPayrolls(List<Employee> employees) {
+        LocalDate prev = LocalDate.now().minusMonths(1);
+        int month = prev.getMonthValue();
+        int year = prev.getYear();
+
+        for (int i = 0; i < employees.size(); i++) {
+            Employee emp = employees.get(i);
+            BigDecimal salary = emp.getSalary();
+
+            BigDecimal si = salary.multiply(BHXH_RATE).setScale(0, RoundingMode.DOWN);
+            BigDecimal hi = salary.multiply(BHYT_RATE).setScale(0, RoundingMode.DOWN);
+            BigDecimal ui = salary.multiply(BHTN_RATE).setScale(0, RoundingMode.DOWN);
+            BigDecimal cd = salary.multiply(CONG_DOAN_RATE).setScale(0, RoundingMode.DOWN);
+            BigDecimal totalInsurance = si.add(hi).add(ui).add(cd);
+            BigDecimal pit = calculatePIT(salary.subtract(PERSONAL_DEDUCTION).subtract(totalInsurance));
+            BigDecimal totalDeductions = totalInsurance.add(pit);
+
+            boolean paid = i % 2 == 0;
+            Payroll payroll = Payroll.builder()
+                    .employee(emp)
+                    .month(month)
+                    .year(year)
+                    .basicSalary(salary)
+                    .bonus(BigDecimal.ZERO)
+                    .socialInsurance(si)
+                    .healthInsurance(hi)
+                    .unemploymentInsurance(ui)
+                    .unionDues(cd)
+                    .pit(pit)
+                    .totalDeductions(totalDeductions)
+                    .netPay(salary.subtract(totalDeductions))
+                    .status(paid ? "paid" : "draft")
+                    .paidAt(paid ? Instant.now() : null)
+                    .build();
+            payrollRepository.save(payroll);
+        }
+    }
+
+    private void seedNotifications(List<Employee> employees, List<Leave> leaves) {
+        for (int i = 0; i < employees.size(); i++) {
+            Employee emp = employees.get(i);
+            Leave related = leaves.stream()
+                    .filter(l -> l.getEmployee().getId().equals(emp.getId()))
+                    .findFirst()
+                    .orElse(null);
+            boolean read = i % 3 == 0;
+            String status = related != null ? related.getStatus() : "approved";
+
+            Notification notification = Notification.builder()
+                    .user(emp.getUser())
+                    .title("Cập nhật đơn nghỉ phép")
+                    .message("Đơn nghỉ phép " + (status.equals("rejected") ? "đã bị từ chối" :
+                            status.equals("pending") ? "đang chờ phê duyệt" : "đã được phê duyệt"))
+                    .type("leave")
+                    .relatedId(related != null ? related.getId() : null)
+                    .relatedModel("leave")
+                    .isRead(read)
+                    .build();
+            notificationRepository.save(notification);
+        }
     }
 
     private User createUser(String email, String password, String role, String name) {
