@@ -46,10 +46,7 @@ public class NotificationService {
 
     @Transactional
     public void markAllRead(String userId) {
-        List<Notification> unread = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream().filter(n -> !Boolean.TRUE.equals(n.getIsRead())).toList();
-        unread.forEach(n -> n.setIsRead(true));
-        notificationRepository.saveAll(unread);
+        notificationRepository.markAllReadByUserId(userId);
     }
 
     @Transactional

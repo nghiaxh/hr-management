@@ -2,6 +2,7 @@ package com.hrmanagement.notification.repository;
 
 import com.hrmanagement.notification.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,4 +14,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
     long countByUserIdAndIsReadFalse(@Param("userId") String userId);
+
+    @Modifying
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user.id = :userId AND n.isRead = false")
+    int markAllReadByUserId(@Param("userId") String userId);
 }
