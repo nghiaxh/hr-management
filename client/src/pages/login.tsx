@@ -9,9 +9,9 @@ import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Eye, EyeSlash, CircleNotch } from '@phosphor-icons/react';
 
 const DEMO_ACCOUNTS = [
-  { role: 'admin', email: 'admin@hr.com', password: 'admin123' },
-  { role: 'manager', email: 'eng.manager@hr.com', password: 'manager123' },
-  { role: 'employee', email: 'emp01@hr.com', password: 'employee123' },
+  { name: 'Admin', email: 'admin@hr.com', password: 'admin123' },
+  { name: 'Minh Tuấn', email: 'eng.manager@hr.com', password: 'manager123' },
+  { name: 'Trần Anh', email: 'emp01@hr.com', password: 'employee123' },
 ];
 
 export default function LoginPage() {
@@ -19,15 +19,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingRole, setLoadingRole] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const signIn = async (email: string, password: string, role?: string) => {
     setError('');
-    setLoading(true);
+    if (role) setLoadingRole(role);
+    else setLoading(true);
     try {
       await login(email, password);
       navigate('/leaves');
@@ -36,19 +37,23 @@ export default function LoginPage() {
       setError(message);
     } finally {
       setLoading(false);
+      setLoadingRole(null);
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    signIn(email, password);
+  };
+
+  const busy = loading || loadingRole !== null;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative">
+    <div className="min-h-screen flex items-center justify-center bg-surface-secondary relative">
       <div className="w-full max-w-md mx-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <Card>
-          <CardHeader className="text-center pb-4 flex flex-col items-center gap-2">
-            <img src="/favicon.svg" alt="" className="h-12 w-12 rounded-2xl shadow-soft" />
-            <div className="space-y-1">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('app.name')}</h1>
-              <p className="text-sm text-muted">{t('login.sign_in_to_account')}</p>
-            </div>
+        <Card className="overflow-hidden">
+          <CardHeader className="text-center pb-4">
+            <p className="text-sm text-muted">{t('login.sign_in_to_account')}</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,24 +75,36 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={busy}>
                 {loading ? <><CircleNotch className="h-4 w-4 mr-2 animate-spin" />{t('login.signing_in')}</> : t('login.sign_in')}
               </Button>
             </form>
-            <div className="mt-6 p-3 rounded-lg bg-surface-secondary/60 border border-separator">
-              <p className="text-xs font-medium text-muted mb-2">{t('login.demo_accounts')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {DEMO_ACCOUNTS.map((account) => (
-                  <Button
-                    key={account.role}
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => { setEmail(account.email); setPassword(account.password); }}
-                    className="text-xs font-medium capitalize"
-                  >
-                    {account.role}
-                  </Button>
-                ))}
+
+            <div className="mt-6 rounded-lg border border-separator overflow-hidden">
+              <p className="px-3 py-2 text-xs font-medium text-muted border-b border-separator bg-surface-secondary">
+                {t('login.demo_accounts')}
+              </p>
+              <div className="divide-y divide-separator">
+                {DEMO_ACCOUNTS.map((account, index) => {
+                  const active = loadingRole === String(index);
+                  return (
+                    <button
+                      key={account.email}
+                      type="button"
+                      onClick={() => signIn(account.email, account.password, String(index))}
+                      disabled={busy}
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-left hover:bg-surface-secondary disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="block text-sm font-medium text-foreground truncate">{account.name}</span>
+                          {active && <CircleNotch className="h-3.5 w-3.5 animate-spin text-accent shrink-0" />}
+                        </span>
+                        <span className="block text-xs text-muted truncate">{account.email}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </CardContent>

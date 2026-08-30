@@ -1,6 +1,8 @@
 import { useLocation, Link } from 'react-router';
 import { useTranslation } from '../../context/language-context';
-import { List, CaretRight } from '@phosphor-icons/react';
+import { useTheme } from '../../hooks/use-theme';
+import { Button } from '../../components/ui/button';
+import { List, CaretRight, Sun, Moon } from '@phosphor-icons/react';
 
 const breadcrumbMap: Record<string, string> = {
   '/employees': 'nav.employees',
@@ -13,10 +15,6 @@ const breadcrumbMap: Record<string, string> = {
   '/payroll/manage': 'nav.payroll_management',
   '/notifications': 'nav.notifications',
   '/profile': 'user.profile',
-  '/org-chart': 'org_chart.title',
-  '/performance-reviews': 'nav.performance_reviews',
-  '/recruitment': 'nav.job_postings',
-  '/settings': 'settings',
 };
 
 function getBreadcrumbs(pathname: string, t: (key: string) => string) {
@@ -42,6 +40,7 @@ interface TopHeaderProps {
 
 export function TopHeader({ onMenuToggle }: TopHeaderProps) {
   const { t } = useTranslation();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
 
   if (location.pathname === '/login') return null;
@@ -49,13 +48,13 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
   const breadcrumbs = getBreadcrumbs(location.pathname, t);
 
   return (
-    <header className="h-12 border-b border-separator bg-background flex items-center gap-3 px-3 md:px-6 shrink-0">
+    <header className="h-14 border-b border-separator bg-background flex items-center gap-3 px-3 md:px-6 shrink-0">
       <button
         onClick={onMenuToggle}
         className="md:hidden p-2 -ml-1.5 rounded-lg hover:bg-surface-secondary transition-colors cursor-pointer"
         aria-label="Open menu"
       >
-        <List className="h-4 w-4" />
+        <List className="h-5 w-5" />
       </button>
 
       <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 text-sm text-muted flex-1 min-w-0">
@@ -74,6 +73,16 @@ export function TopHeader({ onMenuToggle }: TopHeaderProps) {
       <span className="md:hidden text-sm font-semibold flex-1 truncate text-foreground">
         {breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].label : ''}
       </span>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onPress={toggleTheme}
+        aria-label={isDark ? t('settings.light') : t('settings.dark')}
+        title={isDark ? t('settings.light') : t('settings.dark')}
+      >
+        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </Button>
     </header>
   );
 }
