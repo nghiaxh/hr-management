@@ -14,7 +14,7 @@ import java.time.Instant;
 public class PayrollResponse {
     @JsonProperty("id")
     private String id;
-    private Object employeeId;
+    private PayrollEmployeeSummary employeeId;
     private Integer month;
     private Integer year;
     private BigDecimal basicSalary;

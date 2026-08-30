@@ -2,6 +2,7 @@ package com.hrmanagement.employee.controller;
 
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.util.SecurityUtil;
+import com.hrmanagement.employee.dto.BulkDeleteRequest;
 import com.hrmanagement.employee.dto.CreateEmployeeRequest;
 import com.hrmanagement.employee.dto.EmployeeResponse;
 import com.hrmanagement.employee.service.EmployeeService;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -65,8 +65,8 @@ public class EmployeeController {
     }
 
     @PostMapping("/bulk-delete")
-    public ResponseEntity<Map<String, Object>> bulkDelete(@RequestBody Map<String, List<String>> body) {
-        return ResponseEntity.ok(employeeService.bulkDelete(body.get("ids")));
+    public ResponseEntity<Map<String, Object>> bulkDelete(@RequestBody BulkDeleteRequest request) {
+        return ResponseEntity.ok(employeeService.bulkDelete(request.getIds()));
     }
 
     @PutMapping("/{id}")

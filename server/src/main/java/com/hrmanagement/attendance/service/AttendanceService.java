@@ -5,6 +5,8 @@ import com.hrmanagement.attendance.entity.Attendance;
 import com.hrmanagement.attendance.repository.AttendanceRepository;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
+import com.hrmanagement.employee.dto.EmployeeSummary;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
@@ -20,13 +22,20 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class AttendanceService {
 
+    private static final LocalTime LATE_THRESHOLD = LocalTime.of(9, 0);
+    private static final double HALF_DAY_HOURS = 4.0;
+    private static final double FULL_DAY_HOURS = 8.0;
+
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final CurrentUserPolicy currentUserPolicy;
 
     public AttendanceService(AttendanceRepository attendanceRepository,
-                             EmployeeRepository employeeRepository) {
+                             EmployeeRepository employeeRepository,
+                             CurrentUserPolicy currentUserPolicy) {
         this.attendanceRepository = attendanceRepository;
         this.employeeRepository = employeeRepository;
+        this.currentUserPolicy = currentUserPolicy;
     }
 
     public List<AttendanceResponse> findAll(LocalDate from, LocalDate to, String employeeId, String status,
@@ -34,7 +43,7 @@ public class AttendanceService {
         List<Attendance> records;
 
         if ("employee".equals(userRole)) {
-            Optional<Employee> emp = employeeRepository.findByUserId(userId);
+            Optional<Employee> emp = currentUserPolicy.currentEmployee(userId);
             if (emp.isEmpty()) return List.of();
             if (from != null && to != null) {
                 records = attendanceRepository.findByEmployeeIdAndDateBetween(emp.get().getId(), from, to);
@@ -42,10 +51,8 @@ public class AttendanceService {
                 records = attendanceRepository.findByEmployeeId(emp.get().getId());
             }
         } else if ("manager".equals(userRole)) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) return List.of();
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
-                    .stream().map(Employee::getId).toList();
+            List<String> deptEmpIds = currentUserPolicy.departmentEmployeeIds(userId);
+            if (deptEmpIds.isEmpty()) return List.of();
             if (employeeId != null && !employeeId.isBlank()) {
                 if (!deptEmpIds.contains(employeeId)) return List.of();
                 if (from != null && to != null) {
@@ -82,7 +89,7 @@ public class AttendanceService {
 
     @Transactional
     public AttendanceResponse checkIn(String userId) {
-        Employee emp = employeeRepository.findByUserId(userId)
+        Employee emp = currentUserPolicy.currentEmployee(userId)
                 .orElseThrow(() -> new NotFoundException("Employee profile not found"));
 
         LocalDate today = LocalDate.now();
@@ -92,7 +99,7 @@ public class AttendanceService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        String status = now.toLocalTime().isAfter(LocalTime.of(9, 0)) ? "late" : "present";
+        String status = now.toLocalTime().isAfter(LATE_THRESHOLD) ? "late" : "present";
 
         Attendance record = Attendance.builder()
                 .employee(emp)
@@ -106,7 +113,7 @@ public class AttendanceService {
 
     @Transactional
     public AttendanceResponse checkOut(String id, String userId) {
-        Employee emp = employeeRepository.findByUserId(userId)
+        Employee emp = currentUserPolicy.currentEmployee(userId)
                 .orElseThrow(() -> new NotFoundException("Employee profile not found"));
 
         Attendance record = attendanceRepository.findById(id)
@@ -119,9 +126,9 @@ public class AttendanceService {
 
         record.setCheckOut(LocalDateTime.now());
         double hours = java.time.Duration.between(record.getCheckIn(), record.getCheckOut()).toMinutes() / 60.0;
-        if (hours < 4) {
+        if (hours < HALF_DAY_HOURS) {
             record.setStatus("half-day");
-        } else if ("late".equals(record.getStatus()) && hours >= 8) {
+        } else if ("late".equals(record.getStatus()) && hours >= FULL_DAY_HOURS) {
             record.setStatus("present");
         }
         attendanceRepository.save(record);
@@ -139,12 +146,7 @@ public class AttendanceService {
 
         if (a.getEmployee() != null) {
             Employee emp = a.getEmployee();
-            resp.setEmployeeId(java.util.Map.of(
-                    "id", emp.getId(),
-                    "firstName", emp.getFirstName(),
-                    "lastName", emp.getLastName(),
-                    "position", emp.getPosition()
-            ));
+            resp.setEmployeeId(new EmployeeSummary(emp.getId(), emp.getFirstName(), emp.getLastName(), emp.getPosition()));
         }
         return resp;
     }

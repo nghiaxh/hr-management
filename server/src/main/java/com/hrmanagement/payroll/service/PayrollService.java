@@ -2,9 +2,11 @@ package com.hrmanagement.payroll.service;
 
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
+import com.hrmanagement.payroll.dto.PayrollEmployeeSummary;
 import com.hrmanagement.payroll.dto.PayrollResponse;
 import com.hrmanagement.payroll.dto.ProcessPayrollRequest;
 import com.hrmanagement.payroll.entity.Payroll;
@@ -28,10 +30,13 @@ public class PayrollService {
 
     private final PayrollRepository payrollRepository;
     private final EmployeeRepository employeeRepository;
+    private final CurrentUserPolicy currentUserPolicy;
 
-    public PayrollService(PayrollRepository payrollRepository, EmployeeRepository employeeRepository) {
+    public PayrollService(PayrollRepository payrollRepository, EmployeeRepository employeeRepository,
+                          CurrentUserPolicy currentUserPolicy) {
         this.payrollRepository = payrollRepository;
         this.employeeRepository = employeeRepository;
+        this.currentUserPolicy = currentUserPolicy;
     }
 
     public PaginatedResponse<PayrollResponse> findAll(Integer month, Integer year, String employeeId,
@@ -41,16 +46,14 @@ public class PayrollService {
         Page<Payroll> payrollPage;
 
         if ("employee".equals(userRole)) {
-            Optional<Employee> emp = employeeRepository.findByUserId(userId);
+            Optional<Employee> emp = currentUserPolicy.currentEmployee(userId);
             if (emp.isEmpty()) return PaginatedResponse.of(List.of(), page, limit, 0);
             payrollPage = payrollRepository.findByEmployeeId(emp.get().getId(), pageRequest);
         } else if ("manager".equals(userRole)) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
+            List<String> deptEmpIds = currentUserPolicy.departmentEmployeeIds(userId);
+            if (deptEmpIds.isEmpty()) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
-                    .stream().map(Employee::getId).toList();
             payrollPage = payrollRepository.findByEmployeeIdIn(deptEmpIds, pageRequest);
         } else {
             if (employeeId != null && !employeeId.isBlank()) {
@@ -186,13 +189,8 @@ public class PayrollService {
 
         if (p.getEmployee() != null) {
             Employee emp = p.getEmployee();
-            resp.setEmployeeId(java.util.Map.of(
-                    "id", emp.getId(),
-                    "firstName", emp.getFirstName(),
-                    "lastName", emp.getLastName(),
-                    "position", emp.getPosition(),
-                    "salary", emp.getSalary()
-            ));
+            resp.setEmployeeId(new PayrollEmployeeSummary(emp.getId(), emp.getFirstName(), emp.getLastName(),
+                    emp.getPosition(), emp.getSalary()));
         }
         return resp;
     }

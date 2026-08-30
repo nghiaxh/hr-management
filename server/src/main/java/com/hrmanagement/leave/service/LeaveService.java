@@ -6,9 +6,12 @@ import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
+import com.hrmanagement.employee.dto.EmployeeSummary;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
+import com.hrmanagement.leave.dto.ApproverSummary;
 import com.hrmanagement.leave.dto.CreateLeaveRequest;
 import com.hrmanagement.leave.dto.LeaveResponse;
 import com.hrmanagement.leave.dto.UpdateLeaveStatusRequest;
@@ -21,31 +24,34 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
 public class LeaveService {
+    private static final int MAX_LEAVE_DAYS = 30;
+
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final LeaveBalanceService leaveBalanceService;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final CurrentUserPolicy currentUserPolicy;
 
     public LeaveService(LeaveRepository leaveRepository,
             EmployeeRepository employeeRepository,
             LeaveBalanceService leaveBalanceService,
             NotificationService notificationService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CurrentUserPolicy currentUserPolicy) {
         this.leaveRepository = leaveRepository;
         this.employeeRepository = employeeRepository;
         this.leaveBalanceService = leaveBalanceService;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.currentUserPolicy = currentUserPolicy;
     }
 
     public PaginatedResponse<LeaveResponse> findAll(String status, String employeeId, String type,
@@ -54,7 +60,7 @@ public class LeaveService {
         Page<Leave> leavePage;
 
         if ("employee".equals(userRole)) {
-            Optional<Employee> emp = employeeRepository.findByUserId(userId);
+            Optional<Employee> emp = currentUserPolicy.currentEmployee(userId);
             if (emp.isEmpty()) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
@@ -65,12 +71,10 @@ public class LeaveService {
                 leavePage = leaveRepository.findByEmployeeId(empId, pageRequest);
             }
         } else if ("manager".equals(userRole)) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
+            List<String> deptEmpIds = currentUserPolicy.departmentEmployeeIds(userId);
+            if (deptEmpIds.isEmpty()) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
-            List<String> deptEmpIds = employeeRepository.findByDepartmentId(mgrEmp.get().getDepartment().getId())
-                    .stream().map(Employee::getId).toList();
 
             if (status != null && !status.isBlank()) {
                 leavePage = leaveRepository.findByEmployeeIdInAndStatus(deptEmpIds, status, pageRequest);
@@ -103,18 +107,14 @@ public class LeaveService {
                 .orElseThrow(() -> new NotFoundException("Leave not found"));
 
         if ("employee".equals(userRole)) {
-            Optional<Employee> emp = employeeRepository.findByUserId(userId);
+            Optional<Employee> emp = currentUserPolicy.currentEmployee(userId);
             if (emp.isEmpty() || !emp.get().getId().equals(leave.getEmployee().getId())) {
                 throw new UnauthorizedException("Access denied");
             }
         } else if ("manager".equals(userRole)) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null) {
-                throw new UnauthorizedException("Access denied");
-            }
+            Optional<Employee> mgrEmp = currentUserPolicy.currentEmployee(userId);
             Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployee().getId());
-            if (leaveEmp.isEmpty() || leaveEmp.get().getDepartment() == null ||
-                    !leaveEmp.get().getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
+            if (mgrEmp.isEmpty() || !currentUserPolicy.isSameDepartment(mgrEmp.get(), leaveEmp.orElse(null))) {
                 throw new UnauthorizedException("Access denied");
             }
         }
@@ -123,16 +123,16 @@ public class LeaveService {
 
     @Transactional
     public LeaveResponse create(CreateLeaveRequest dto, String userId) {
-        Employee emp = employeeRepository.findByUserId(userId)
+        Employee emp = currentUserPolicy.currentEmployee(userId)
                 .orElseThrow(() -> new NotFoundException("Employee profile not found"));
 
         if (dto.getEndDate().isBefore(dto.getStartDate())) {
             throw new BadRequestException("endDate must be >= startDate");
         }
 
-        long days = ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate()) + 1;
-        if (days > 30) {
-            throw new BadRequestException("Leave cannot exceed 30 days");
+        long days = countDays(dto.getStartDate(), dto.getEndDate());
+        if (days > MAX_LEAVE_DAYS) {
+            throw new BadRequestException("Leave cannot exceed " + MAX_LEAVE_DAYS + " days");
         }
 
         List<Leave> overlaps = leaveRepository.findOverlapping(emp.getId(), dto.getStartDate(), dto.getEndDate());
@@ -164,11 +164,9 @@ public class LeaveService {
         }
 
         if ("manager".equals(SecurityUtil.getCurrentUserRole())) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
+            Optional<Employee> mgrEmp = currentUserPolicy.currentEmployee(userId);
             Optional<Employee> leaveEmp = employeeRepository.findById(leave.getEmployee().getId());
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null ||
-                    leaveEmp.isEmpty() || leaveEmp.get().getDepartment() == null ||
-                    !leaveEmp.get().getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
+            if (mgrEmp.isEmpty() || !currentUserPolicy.isSameDepartment(mgrEmp.get(), leaveEmp.orElse(null))) {
                 throw new NotFoundException("Leave not found");
             }
         }
@@ -189,34 +187,18 @@ public class LeaveService {
 
         leaveRepository.save(leave);
 
-        if ("approved".equals(dto.getStatus())) {
-            long days = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1;
-            try {
-                leaveBalanceService.deduct(leave.getEmployee().getId(), leave.getType(), days);
-            } catch (Exception e) {
-                // Rollback status if deduction fails
-                leave.setStatus("pending");
-                leaveRepository.save(leave);
-                throw new BadRequestException("Insufficient leave balance: " + e.getMessage());
-            }
+        String userOwnerId = emp.getUser() != null ? emp.getUser().getId() : userId;
+        String leaveTypeName = leaveTypeName(leave.getType());
 
-            String userOwnerId = emp.getUser() != null ? emp.getUser().getId() : userId;
-            String leaveTypeName = switch (leave.getType()) {
-                case "annual" -> "phép năm";
-                case "sick" -> "ốm";
-                default -> "cá nhân";
-            };
+        if ("approved".equals(dto.getStatus())) {
+            long days = countDays(leave.getStartDate(), leave.getEndDate());
+            leaveBalanceService.deduct(leave.getEmployee().getId(), leave.getType(), days);
+
             notificationService.create(userOwnerId, "Đơn nghỉ phép đã duyệt",
                     "Đơn nghỉ phép " + leaveTypeName + " (" + leave.getStartDate() + " - " + leave.getEndDate()
                             + ") đã được duyệt.",
                     "leave_approved", leave.getId(), "Leave");
         } else if ("rejected".equals(dto.getStatus())) {
-            String userOwnerId = emp.getUser() != null ? emp.getUser().getId() : userId;
-            String leaveTypeName = switch (leave.getType()) {
-                case "annual" -> "phép năm";
-                case "sick" -> "ốm";
-                default -> "cá nhân";
-            };
             String reason = dto.getRejectionReason() != null ? " Lý do: " + dto.getRejectionReason() : "";
             notificationService.create(userOwnerId, "Đơn nghỉ phép bị từ chối",
                     "Đơn nghỉ phép " + leaveTypeName + " của bạn đã bị từ chối." + reason,
@@ -224,6 +206,18 @@ public class LeaveService {
         }
 
         return toResponse(leave);
+    }
+
+    private String leaveTypeName(String type) {
+        return switch (type) {
+            case "annual" -> "phép năm";
+            case "sick" -> "ốm";
+            default -> "cá nhân";
+        };
+    }
+
+    private long countDays(java.time.LocalDate start, java.time.LocalDate end) {
+        return ChronoUnit.DAYS.between(start, end) + 1;
     }
 
     private LeaveResponse toResponse(Leave leave) {
@@ -239,18 +233,13 @@ public class LeaveService {
 
         if (leave.getEmployee() != null) {
             Employee emp = leave.getEmployee();
-            resp.setEmployeeId(Map.of(
-                    "id", emp.getId(),
-                    "firstName", emp.getFirstName(),
-                    "lastName", emp.getLastName(),
-                    "position", emp.getPosition()));
+            resp.setEmployeeId(new EmployeeSummary(emp.getId(), emp.getFirstName(), emp.getLastName(), emp.getPosition()));
         }
 
         if (leave.getApprovedBy() != null) {
-            resp.setApprovedBy(Map.of(
-                    "id", leave.getApprovedBy().getId(),
-                    "email", leave.getApprovedBy().getEmail(),
-                    "name", leave.getApprovedBy().getName() != null ? leave.getApprovedBy().getName() : ""));
+            User approver = leave.getApprovedBy();
+            resp.setApprovedBy(new ApproverSummary(approver.getId(), approver.getEmail(),
+                    approver.getName() != null ? approver.getName() : ""));
         }
 
         return resp;

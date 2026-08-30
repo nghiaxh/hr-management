@@ -1,6 +1,7 @@
 package com.hrmanagement.leavebalance.controller;
 
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
@@ -16,19 +17,22 @@ import java.util.Optional;
 public class LeaveBalanceController {
 
     private final LeaveBalanceService leaveBalanceService;
+    private final CurrentUserPolicy currentUserPolicy;
     private final EmployeeRepository employeeRepository;
 
     public LeaveBalanceController(LeaveBalanceService leaveBalanceService,
+                                  CurrentUserPolicy currentUserPolicy,
                                   EmployeeRepository employeeRepository) {
         this.leaveBalanceService = leaveBalanceService;
+        this.currentUserPolicy = currentUserPolicy;
         this.employeeRepository = employeeRepository;
     }
 
     @GetMapping("/my")
     public ResponseEntity<LeaveBalanceResponse> findMyBalance() {
         String userId = SecurityUtil.getCurrentUserId();
-        Employee emp = employeeRepository.findByUserId(userId)
-                .orElseThrow(() -> new com.hrmanagement.common.exception.NotFoundException("Employee profile not found"));
+        Employee emp = currentUserPolicy.currentEmployee(userId)
+                .orElseThrow(() -> new NotFoundException("Employee profile not found"));
         return ResponseEntity.ok(leaveBalanceService.findByEmployee(emp.getId()));
     }
 
@@ -38,26 +42,23 @@ public class LeaveBalanceController {
         String userId = SecurityUtil.getCurrentUserId();
 
         Employee targetEmp = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new com.hrmanagement.common.exception.NotFoundException("Employee not found"));
+                .orElseThrow(() -> new NotFoundException("Employee not found"));
 
         if ("admin".equals(userRole)) {
             return ResponseEntity.ok(leaveBalanceService.findByEmployee(employeeId));
         }
 
         if ("manager".equals(userRole)) {
-            Optional<Employee> mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null &&
-                    targetEmp.getDepartment() != null &&
-                    mgrEmp.get().getDepartment().getId().equals(targetEmp.getDepartment().getId())) {
+            Optional<Employee> mgrEmp = currentUserPolicy.currentEmployee(userId);
+            if (mgrEmp.isPresent() && currentUserPolicy.isSameDepartment(mgrEmp.get(), targetEmp)) {
                 return ResponseEntity.ok(leaveBalanceService.findByEmployee(employeeId));
             }
-            throw new com.hrmanagement.common.exception.NotFoundException("Employee not found");
+            throw new NotFoundException("Employee not found");
         }
 
-        Optional<Employee> self = employeeRepository.findByUserId(userId);
-        if (self.isPresent() && self.get().getId().equals(employeeId)) {
+        if (currentUserPolicy.isSelf(userId, targetEmp)) {
             return ResponseEntity.ok(leaveBalanceService.findByEmployee(employeeId));
         }
-        throw new com.hrmanagement.common.exception.NotFoundException("Employee not found");
+        throw new NotFoundException("Employee not found");
     }
 }

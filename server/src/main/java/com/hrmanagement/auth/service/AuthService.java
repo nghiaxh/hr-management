@@ -7,7 +7,7 @@ import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.ConflictException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
-import org.springframework.http.ResponseEntity;
+import com.hrmanagement.employee.repository.EmployeeRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,32 +21,20 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
     private final PasswordEncoder passwordEncoder;
+    private final EmployeeRepository employeeRepository;
 
     public AuthService(UserRepository userRepository,
                    PasswordEncoder passwordEncoder,
-                   @Value("${jwt.expiration}") long jwtExpiration) {
+                   EmployeeRepository employeeRepository,
+                   @Value("${session.expiration}") long sessionExpiration) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtExpiration = jwtExpiration;
+        this.employeeRepository = employeeRepository;
+        this.sessionExpiration = sessionExpiration;
     }
 
-    public AuthResponse register(RegisterRequest dto) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new ConflictException("Email already exists");
-        }
-
-        User user = User.builder()
-                .email(dto.getEmail())
-                .passwordHash(passwordEncoder.encode(dto.getPassword()))
-                .role("employee")
-                .build();
-        userRepository.save(user);
-
-        return new AuthResponse(user, buildSessionToken(user));
-    }
+    private final long sessionExpiration;
 
     public AuthResponse login(LoginRequest dto) {
         User user = userRepository.findByEmail(dto.getEmail())
@@ -61,22 +49,16 @@ public class AuthService {
         if (session != null) {
             session.setAttribute("userId", user.getId());
             session.setAttribute("userRole", user.getRole());
-            session.setMaxInactiveInterval((int) (jwtExpiration / 1000));
+            session.setMaxInactiveInterval((int) (sessionExpiration / 1000));
         }
 
-        String token = buildSessionToken(user);
-        return new AuthResponse(user, token);
+        return new AuthResponse(user, employeeRepository.existsByUserId(user.getId()));
     }
 
     public Map<String, Object> getMe(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        return Map.of(
-                "id", user.getId(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "name", user.getName() != null ? user.getName() : ""
-        );
+        return toProfileMap(user);
     }
 
     public Map<String, Object> updateProfile(String userId, ProfileUpdateRequest dto) {
@@ -93,12 +75,7 @@ public class AuthService {
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         userRepository.save(user);
 
-        return Map.of(
-                "id", user.getId(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "name", user.getName() != null ? user.getName() : ""
-        );
+        return toProfileMap(user);
     }
 
     public Map<String, String> changePassword(String userId, String currentPassword, String newPassword) {
@@ -112,19 +89,17 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Invalidate all sessions for this user on password change
-        invalidateUserSessions(user.getId());
-
         return Map.of("message", "Password changed successfully");
     }
 
-    private void invalidateUserSessions(String userId) {
-        // Spring Session provides SessionRepository for this
-        // Could be implemented to clear sessions for a specific user
-    }
-
-    private String buildSessionToken(User user) {
-        return "session:" + user.getId();
+    private Map<String, Object> toProfileMap(User user) {
+        return Map.of(
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "name", user.getName() != null ? user.getName() : "",
+                "hasEmployeeProfile", employeeRepository.existsByUserId(user.getId())
+        );
     }
 
     private HttpSession getCurrentHttpSession(boolean create) {

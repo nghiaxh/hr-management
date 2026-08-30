@@ -3,37 +3,36 @@ package com.hrmanagement.auth.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hrmanagement.auth.entity.User;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
+@Getter
 public class AuthResponse {
-    @Getter private UserInfo user;
-    @Getter private String token;
+    private final UserInfo user;
 
-    public AuthResponse(User user, String token) {
+    public AuthResponse(User user, boolean hasEmployeeProfile) {
         this.user = new UserInfo(
                 user.getId(),
                 user.getEmail(),
                 user.getRole(),
-                user.getName()
+                user.getName(),
+                hasEmployeeProfile
         );
-        this.token = token;
     }
 
-@NoArgsConstructor
-@Getter
-public static class UserInfo {
+    @Getter
+    public static class UserInfo {
         @JsonProperty("id")
-        private String id;
-        private String email;
-        private String role;
-        private String name;
+        private final String id;
+        private final String email;
+        private final String role;
+        private final String name;
+        private final boolean hasEmployeeProfile;
 
-        public UserInfo(String id, String email, String role, String name) {
+        public UserInfo(String id, String email, String role, String name, boolean hasEmployeeProfile) {
             this.id = id;
             this.email = email;
             this.role = role;
             this.name = name;
+            this.hasEmployeeProfile = hasEmployeeProfile;
         }
     }
 }

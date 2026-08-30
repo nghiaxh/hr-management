@@ -3,6 +3,7 @@ package com.hrmanagement.employee.service;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.department.entity.Department;
 import com.hrmanagement.department.repository.DepartmentRepository;
@@ -10,8 +11,10 @@ import com.hrmanagement.employee.dto.CreateEmployeeRequest;
 import com.hrmanagement.employee.dto.EmployeeResponse;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
+import com.hrmanagement.auth.dto.UserSummary;
 import com.hrmanagement.auth.entity.User;
 import com.hrmanagement.auth.repository.UserRepository;
+import com.hrmanagement.department.dto.DepartmentSummary;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,13 +34,16 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final CurrentUserPolicy currentUserPolicy;
 
     public EmployeeService(EmployeeRepository employeeRepository,
             DepartmentRepository departmentRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CurrentUserPolicy currentUserPolicy) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
+        this.currentUserPolicy = currentUserPolicy;
     }
 
     public PaginatedResponse<EmployeeResponse> findAll(String search, String departmentId, int page, int limit,
@@ -47,17 +53,18 @@ public class EmployeeService {
         String effectiveDeptId = departmentId;
 
         if ("employee".equals(userRole)) {
-            Optional<Employee> self = employeeRepository.findByUserId(userId);
+            Optional<Employee> self = currentUserPolicy.currentEmployee(userId);
             if (self.isEmpty()) {
                 return PaginatedResponse.of(List.of(), page, limit, 0);
             }
             var responses = List.of(toResponse(self.get()));
             return PaginatedResponse.of(responses, page, limit, 1);
         } else if ("manager".equals(userRole)) {
-            var mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
-                effectiveDeptId = mgrEmp.get().getDepartment().getId();
+            Department dept = currentUserPolicy.currentDepartment(userId);
+            if (dept == null) {
+                return PaginatedResponse.of(List.of(), page, limit, 0);
             }
+            effectiveDeptId = dept.getId();
         }
 
         if (effectiveDeptId != null && search != null && !search.isBlank()) {
@@ -79,14 +86,12 @@ public class EmployeeService {
                 .orElseThrow(() -> new NotFoundException("Employee not found"));
 
         if ("employee".equals(userRole)) {
-            if (emp.getUser() == null || !emp.getUser().getId().equals(userId)) {
+            if (!currentUserPolicy.isSelf(userId, emp)) {
                 throw new NotFoundException("Employee not found");
             }
         } else if ("manager".equals(userRole)) {
-            var mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isEmpty() || mgrEmp.get().getDepartment() == null ||
-                    emp.getDepartment() == null ||
-                    !emp.getDepartment().getId().equals(mgrEmp.get().getDepartment().getId())) {
+            var mgrEmp = currentUserPolicy.currentEmployee(userId);
+            if (mgrEmp.isEmpty() || !currentUserPolicy.isSameDepartment(mgrEmp.get(), emp)) {
                 throw new NotFoundException("Employee not found");
             }
         }
@@ -179,15 +184,17 @@ public class EmployeeService {
         SecurityUtil.requireRoles("admin", "manager");
         String effectiveDeptId = null;
         if ("manager".equals(userRole)) {
-            var mgrEmp = employeeRepository.findByUserId(userId);
-            if (mgrEmp.isPresent() && mgrEmp.get().getDepartment() != null) {
-                effectiveDeptId = mgrEmp.get().getDepartment().getId();
+            Department dept = currentUserPolicy.currentDepartment(userId);
+            if (dept != null) {
+                effectiveDeptId = dept.getId();
             }
         }
 
         List<Employee> employees;
         if (effectiveDeptId != null) {
             employees = employeeRepository.findByDepartmentId(effectiveDeptId);
+        } else if ("manager".equals(userRole)) {
+            employees = List.of();
         } else {
             employees = employeeRepository.findAll();
         }
@@ -201,17 +208,21 @@ public class EmployeeService {
             String email = e.getUser() != null ? e.getUser().getEmail() : "";
             String hireDate = e.getHireDate() != null ? e.getHireDate().toString() : "";
             writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",%s,\"%s\",\"%s\",\"%s\",\"%s\"%n",
-                    e.getFirstName(), e.getLastName(), e.getPosition(),
-                    deptName, e.getSalary(), email,
-                    e.getPhone() != null ? e.getPhone() : "",
-                    e.getContractType() != null ? e.getContractType() : "",
-                    hireDate);
+                    csv(e.getFirstName()), csv(e.getLastName()), csv(e.getPosition()),
+                    csv(deptName), csv(e.getSalary()), csv(email),
+                    csv(e.getPhone() != null ? e.getPhone() : ""),
+                    csv(e.getContractType() != null ? e.getContractType() : ""),
+                    csv(hireDate));
         }
         writer.flush();
     }
 
-    public Employee findByUserId(String userId) {
-        return employeeRepository.findByUserId(userId).orElse(null);
+    private String csv(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String s = String.valueOf(value);
+        return s.replace("\"", "\"\"");
     }
 
     public EmployeeResponse getMyEmployee(String userId) {
@@ -235,17 +246,13 @@ public class EmployeeService {
         resp.setUpdatedAt(emp.getUpdatedAt());
 
         if (emp.getUser() != null) {
-            resp.setUserId(Map.of(
-                    "id", emp.getUser().getId(),
-                    "email", emp.getUser().getEmail(),
-                    "role", emp.getUser().getRole(),
-                    "name", emp.getUser().getName() != null ? emp.getUser().getName() : ""));
+            User user = emp.getUser();
+            resp.setUserId(new UserSummary(user.getId(), user.getEmail(), user.getRole(),
+                    user.getName() != null ? user.getName() : ""));
         }
 
         if (emp.getDepartment() != null) {
-            resp.setDepartmentId(Map.of(
-                    "id", emp.getDepartment().getId(),
-                    "name", emp.getDepartment().getName()));
+            resp.setDepartmentId(new DepartmentSummary(emp.getDepartment().getId(), emp.getDepartment().getName()));
         }
 
         return resp;

@@ -14,6 +14,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, String> {
     @Query("SELECT e FROM Employee e WHERE e.user.id = :userId")
     Optional<Employee> findByUserId(@Param("userId") String userId);
 
+    @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.user.id = :userId")
+    boolean existsByUserId(@Param("userId") String userId);
+
     @Query("SELECT e FROM Employee e WHERE e.department.id = :departmentId")
     Page<Employee> findByDepartmentId(@Param("departmentId") String departmentId, Pageable pageable);
 
@@ -31,7 +34,4 @@ public interface EmployeeRepository extends JpaRepository<Employee, String> {
 
     @Query("SELECT e FROM Employee e WHERE e.department.id = :departmentId")
     List<Employee> findByDepartmentId(@Param("departmentId") String departmentId);
-
-    @Query("SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
-    long countByDepartmentId(@Param("departmentId") String departmentId);
 }

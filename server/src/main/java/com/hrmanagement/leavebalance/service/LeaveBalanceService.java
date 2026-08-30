@@ -23,27 +23,18 @@ public class LeaveBalanceService {
         this.employeeRepository = employeeRepository;
     }
 
+    @Transactional
     public LeaveBalanceResponse findByEmployee(String employeeId) {
-        LeaveBalance balance = leaveBalanceRepository.findByEmployeeId(employeeId)
-                .orElseGet(() -> {
-                    Employee emp = employeeRepository.findById(employeeId)
-                            .orElseThrow(() -> new NotFoundException("Employee not found"));
-                    LeaveBalance newBalance = LeaveBalance.builder()
-                            .employee(emp)
-                            .build();
-                    return leaveBalanceRepository.save(newBalance);
-                });
+        LeaveBalance balance = getOrCreateBalance(employeeId);
+        if (balance.getId() == null) {
+            balance = leaveBalanceRepository.save(balance);
+        }
         return toResponse(balance);
     }
 
     @Transactional
     public void deduct(String employeeId, String type, long days) {
-        LeaveBalance balance = leaveBalanceRepository.findByEmployeeId(employeeId)
-                .orElseGet(() -> {
-                    Employee emp = employeeRepository.findById(employeeId)
-                            .orElseThrow(() -> new NotFoundException("Employee not found"));
-                    return leaveBalanceRepository.save(LeaveBalance.builder().employee(emp).build());
-                });
+        LeaveBalance balance = getOrCreateBalance(employeeId);
 
         switch (type) {
             case "annual" -> {
@@ -77,5 +68,14 @@ public class LeaveBalanceService {
                 b.getSickTotal(), b.getSickUsed(),
                 b.getPersonalTotal(), b.getPersonalUsed()
         );
+    }
+
+    private LeaveBalance getOrCreateBalance(String employeeId) {
+        return leaveBalanceRepository.findByEmployeeId(employeeId)
+                .orElseGet(() -> {
+                    Employee emp = employeeRepository.findById(employeeId)
+                            .orElseThrow(() -> new NotFoundException("Employee not found"));
+                    return LeaveBalance.builder().employee(emp).build();
+                });
     }
 }

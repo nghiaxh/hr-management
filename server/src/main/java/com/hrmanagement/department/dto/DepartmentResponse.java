@@ -1,6 +1,7 @@
 package com.hrmanagement.department.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hrmanagement.auth.dto.UserSummary;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ public class DepartmentResponse {
     private String id;
     private String name;
     private String description;
-    private Object managerId;
+    private UserSummary managerId;
     @JsonProperty("createdAt")
     private Instant createdAt;
     @JsonProperty("updatedAt")

@@ -1,6 +1,7 @@
 package com.hrmanagement.department.service;
 
 import com.hrmanagement.auth.entity.User;
+import com.hrmanagement.auth.dto.UserSummary;
 import com.hrmanagement.auth.repository.UserRepository;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.NotFoundException;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -124,12 +124,9 @@ public class DepartmentService {
         resp.setUpdatedAt(dept.getUpdatedAt());
 
         if (dept.getManager() != null) {
-            resp.setManagerId(Map.of(
-                "id", dept.getManager().getId(),
-                "email", dept.getManager().getEmail(),
-                "role", dept.getManager().getRole(),
-                "name", dept.getManager().getName() != null ? dept.getManager().getName() : ""
-            ));
+            User manager = dept.getManager();
+            resp.setManagerId(new UserSummary(manager.getId(), manager.getEmail(), manager.getRole(),
+                    manager.getName() != null ? manager.getName() : ""));
         }
         return resp;
     }

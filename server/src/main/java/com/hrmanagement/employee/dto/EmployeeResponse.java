@@ -1,6 +1,8 @@
 package com.hrmanagement.employee.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hrmanagement.auth.dto.UserSummary;
+import com.hrmanagement.department.dto.DepartmentSummary;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,8 +17,8 @@ import java.time.LocalDate;
 public class EmployeeResponse {
     @JsonProperty("id")
     private String id;
-    private Object userId;
-    private Object departmentId;
+    private UserSummary userId;
+    private DepartmentSummary departmentId;
     private String firstName;
     private String lastName;
     private String position;
