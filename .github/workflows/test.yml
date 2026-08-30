@@ -14,8 +14,8 @@ jobs:
       run:
         working-directory: server
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           java-version: 25
           distribution: 'temurin'
@@ -45,9 +45,9 @@ jobs:
         working-directory: server
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: 25
           distribution: 'temurin'
@@ -59,8 +59,6 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/hr_management_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_0900_ai_ci
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
-          JWT_SECRET: d25XbIV7YtNsoq8G1iu34fglBUehkMTDaSJWy90EcLCpwxzF
-          JWT_EXPIRATION: 86400000
 
   client-tests:
     name: Client Tests
@@ -71,9 +69,9 @@ jobs:
         working-directory: client
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: 'npm'
@@ -92,9 +90,9 @@ jobs:
         working-directory: client
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: 'npm'
