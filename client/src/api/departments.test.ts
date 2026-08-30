@@ -7,11 +7,6 @@ describe('departmentsApi', () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it('getOne returns a department by id', async () => {
-    const result = await departmentsApi.getOne('dept-1');
-    expect(result.id).toBe('dept-1');
-  });
-
   it('create sends department data', async () => {
     const result = await departmentsApi.create({ name: 'HR', description: 'Human Resources' });
     expect(result).toHaveProperty('id');

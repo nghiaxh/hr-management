@@ -8,12 +8,6 @@ describe('authApi', () => {
     expect(result.user.email).toBe('admin@example.com');
   });
 
-  it('register returns user', async () => {
-    const result = await authApi.register('new@example.com', 'password123');
-    expect(result).toHaveProperty('user');
-    expect(result.user.role).toBe('employee');
-  });
-
   it('getMe returns current user', async () => {
     const result = await authApi.getMe();
     expect(result).toHaveProperty('id');

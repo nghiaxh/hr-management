@@ -32,6 +32,7 @@ describe('AuthContext', () => {
   });
 
   it('loads user from session on mount', async () => {
+    document.cookie = 'JSESSIONID=abc123; path=/';
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(
@@ -46,7 +47,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('loading').textContent).toBe('loaded');
   });
 
-  it('shows no user when session restore fails', async () => {
+  it('skips session restore when no session cookie exists', async () => {
     render(
       <AuthProvider>
         <TestComponent />
@@ -54,14 +55,14 @@ describe('AuthContext', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('user').textContent).toBe('no-user');
+      expect(screen.getByTestId('loading').textContent).toBe('loaded');
     });
-    expect(authApi.getMe).toHaveBeenCalled();
+    expect(screen.getByTestId('user').textContent).toBe('no-user');
+    expect(authApi.getMe).not.toHaveBeenCalled();
   });
 
   it('login sets user from the response without an extra profile fetch', async () => {
     vi.mocked(authApi.login).mockResolvedValue({
-      token: 'new-token',
       user: { id: '1', email: 'test@example.com', role: 'admin' },
     });
 
@@ -79,6 +80,7 @@ describe('AuthContext', () => {
   });
 
   it('logout clears cookie and user', async () => {
+    document.cookie = 'JSESSIONID=abc123; path=/';
     vi.mocked(authApi.getMe).mockResolvedValue({ id: '1', email: 'a@b.com', role: 'employee' });
 
     render(

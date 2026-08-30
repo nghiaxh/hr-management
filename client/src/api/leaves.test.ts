@@ -14,12 +14,6 @@ describe('leavesApi', () => {
     expect(result.data.every((l: { status: string }) => l.status === 'pending')).toBe(true);
   });
 
-  it('getOne returns a leave by id', async () => {
-    const result = await leavesApi.getOne('leave-1');
-    expect(result).toHaveProperty('id');
-    expect(result.id).toBe('leave-1');
-  });
-
   it('create sends leave data', async () => {
     const result = await leavesApi.create({
       type: 'annual',

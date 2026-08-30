@@ -6,6 +6,7 @@ import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.department.entity.Department;
 import com.hrmanagement.employee.entity.Employee;
@@ -53,7 +54,8 @@ class LeaveServiceTest {
     @BeforeEach
     void setUp() {
         leaveService = new LeaveService(leaveRepository, employeeRepository,
-                leaveBalanceService, notificationService, userRepository);
+                leaveBalanceService, notificationService, userRepository,
+                new CurrentUserPolicy(employeeRepository));
 
         dept = new Department();
         dept.setId("dept-1");

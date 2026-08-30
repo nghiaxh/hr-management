@@ -1,12 +1,15 @@
 package com.hrmanagement.auth.service;
 
-import com.hrmanagement.auth.dto.*;
+import com.hrmanagement.auth.dto.AuthResponse;
+import com.hrmanagement.auth.dto.LoginRequest;
+import com.hrmanagement.auth.dto.ProfileUpdateRequest;
 import com.hrmanagement.auth.entity.User;
 import com.hrmanagement.auth.repository.UserRepository;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.ConflictException;
 import com.hrmanagement.common.exception.NotFoundException;
 import com.hrmanagement.common.exception.UnauthorizedException;
+import com.hrmanagement.employee.repository.EmployeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,57 +30,31 @@ class AuthServiceTest {
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private EmployeeRepository employeeRepository;
 
     private AuthService authService;
 
-    private static final String JWT_SECRET = "xPJb1efX8tSZHdjsqpkwzC2m6vQaoWrUMuB3l4DN0OGRAyYn0123456789";
-    private static final long JWT_EXPIRATION = 86400000L;
+    private static final long SESSION_EXPIRATION = 86400000L;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, passwordEncoder, JWT_EXPIRATION);
+        authService = new AuthService(userRepository, passwordEncoder, employeeRepository, SESSION_EXPIRATION);
     }
 
     @Test
-    void register_createsUserAndReturnsToken() {
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId("new-id");
-            return u;
-        });
-
-        AuthResponse result = authService.register(new RegisterRequest("test@example.com", "password123"));
-
-        assertNotNull(result);
-        assertNotNull(result.getToken());
-        assertFalse(result.getToken().contains("encoded"), "token must not leak the password hash");
-        assertEquals("test@example.com", result.getUser().getEmail());
-        assertEquals("employee", result.getUser().getRole());
-        verify(userRepository).save(any(User.class));
-    }
-
-    @Test
-    void register_throwsOnDuplicateEmail() {
-        when(userRepository.existsByEmail("dup@example.com")).thenReturn(true);
-
-        assertThrows(ConflictException.class,
-                () -> authService.register(new RegisterRequest("dup@example.com", "password123")));
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    void login_returnsTokenForValidCredentials() {
+    void login_returnsUserForValidCredentials() {
         User user = User.builder().id("u1").email("a@b.com").passwordHash("encoded").role("admin").build();
         when(userRepository.findByEmail("a@b.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("pass", "encoded")).thenReturn(true);
+        when(employeeRepository.existsByUserId("u1")).thenReturn(true);
 
         AuthResponse result = authService.login(new LoginRequest("a@b.com", "pass"));
 
         assertNotNull(result);
         assertEquals("a@b.com", result.getUser().getEmail());
-        assertFalse(result.getToken().contains("encoded"), "token must not leak the password hash");
+        assertEquals("admin", result.getUser().getRole());
+        assertEquals(true, result.getUser().isHasEmployeeProfile());
     }
 
     @Test

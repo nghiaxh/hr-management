@@ -4,6 +4,7 @@ import com.hrmanagement.attendance.dto.AttendanceResponse;
 import com.hrmanagement.attendance.entity.Attendance;
 import com.hrmanagement.attendance.repository.AttendanceRepository;
 import com.hrmanagement.common.exception.BadRequestException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.department.entity.Department;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
@@ -32,7 +33,8 @@ class AttendanceServiceTest {
 
     @BeforeEach
     void setUp() {
-        attendanceService = new AttendanceService(attendanceRepository, employeeRepository);
+        attendanceService = new AttendanceService(attendanceRepository, employeeRepository,
+                new CurrentUserPolicy(employeeRepository));
         Department dept = new Department();
         dept.setId("dept-1");
         emp = Employee.builder().id("emp-1").department(dept)

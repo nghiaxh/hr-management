@@ -37,12 +37,4 @@ class AuthControllerTest {
                 .content("{\"email\":\"a@b.com\",\"password\":\"pass\"}"))
                 .andExpect(status().isOk());
     }
-
-    @Test
-    void register_returns201() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"a@b.com\",\"password\":\"password123\"}"))
-                .andExpect(status().isOk());
-    }
 }

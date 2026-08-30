@@ -3,24 +3,14 @@ import { render, screen } from '@testing-library/react';
 import { PageHeader } from './page-header';
 
 describe('PageHeader', () => {
-  it('renders title and description', () => {
-    render(<PageHeader title="Employees" description="Manage your team" />);
-    expect(screen.getByText('Employees')).toBeInTheDocument();
-    expect(screen.getByText('Manage your team')).toBeInTheDocument();
-  });
-
-  it('renders without description', () => {
-    render(<PageHeader title="Dashboard" />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-  });
-
-  it('renders actions when provided', () => {
-    render(
-      <PageHeader
-        title="Employees"
-        action={<button>Add New</button>}
-      />
-    );
+  it('renders the action button', () => {
+    render(<PageHeader action={<button>Add New</button>} />);
     expect(screen.getByText('Add New')).toBeInTheDocument();
+  });
+
+  it('renders nothing when no action is provided', () => {
+    render(<PageHeader />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(document.querySelector('.mb-6')).toBeNull();
   });
 });

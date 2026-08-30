@@ -80,15 +80,11 @@ class NotificationServiceTest {
 
     @Test
     void markAllRead_marksAllUnread() {
-        Notification n2 = Notification.builder().id("notif-2").user(user).isRead(false).build();
-        when(notificationRepository.findByUserIdOrderByCreatedAtDesc("user-1"))
-                .thenReturn(List.of(notification, n2));
-        when(notificationRepository.saveAll(any())).thenAnswer(i -> i.getArgument(0));
+        when(notificationRepository.markAllReadByUserId("user-1")).thenReturn(2);
 
         notificationService.markAllRead("user-1");
 
-        assertTrue(notification.getIsRead());
-        assertTrue(n2.getIsRead());
+        verify(notificationRepository).markAllReadByUserId("user-1");
     }
 
     @Test

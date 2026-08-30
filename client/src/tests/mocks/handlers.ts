@@ -116,11 +116,7 @@ const paginatedWrapper = (data: unknown[]) => ({
 export const handlers = [
   // Auth
   http.post(`${API_BASE}/auth/login`, () => {
-    return HttpResponse.json({ token: 'fake-jwt-token', user: mockUser });
-  }),
-
-  http.post(`${API_BASE}/auth/register`, () => {
-    return HttpResponse.json({ token: 'fake-jwt-token', user: mockUser });
+    return HttpResponse.json({ user: mockUser });
   }),
 
   http.get(`${API_BASE}/auth/me`, () => {
@@ -182,12 +178,6 @@ export const handlers = [
     return HttpResponse.json(paginatedWrapper(data));
   }),
 
-  http.get(`${API_BASE}/leaves/:id`, ({ params }) => {
-    const leave = mockLeaves.find(l => l.id === params.id);
-    if (!leave) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(leave);
-  }),
-
   http.post(`${API_BASE}/leaves`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json({ id: 'leave-new', ...body, status: 'pending' }, { status: 201 });
@@ -244,12 +234,6 @@ export const handlers = [
     return HttpResponse.json(mockDepartments);
   }),
 
-  http.get(`${API_BASE}/departments/:id`, ({ params }) => {
-    const dept = mockDepartments.find(d => d.id === params.id);
-    if (!dept) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(dept);
-  }),
-
   http.post(`${API_BASE}/departments`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json({ id: 'dept-new', ...body }, { status: 201 });
@@ -284,7 +268,7 @@ export const handlers = [
   }),
 
   // Leave Balance
-  http.get(`${API_BASE}/leave-balance/:employeeId`, () => {
+  http.get(`${API_BASE}/leave-balance/my`, () => {
     return HttpResponse.json(mockLeaveBalance);
   }),
 ];

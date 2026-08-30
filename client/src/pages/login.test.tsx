@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
 import LoginPage from './login';
 import { AuthProvider } from '../context/auth-context';
-import { LanguageProvider } from '../context/language-context';
 import { authApi } from '../api/auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -19,13 +18,11 @@ function renderLogin() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <LoginPage />
-          </BrowserRouter>
-        </AuthProvider>
-      </LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <LoginPage />
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
@@ -55,6 +52,18 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Thông tin đăng nhập không hợp lệ/i)).toBeInTheDocument();
+    });
+  });
+
+  it('logs in directly when a demo account is clicked', async () => {
+    vi.mocked(authApi.login).mockResolvedValue({ user: { id: '1', email: 'admin@hr.com', role: 'admin' } });
+    const user = userEvent.setup();
+
+    renderLogin();
+    await user.click(screen.getByRole('button', { name: /admin@hr\.com/i }));
+
+    await waitFor(() => {
+      expect(authApi.login).toHaveBeenCalledWith('admin@hr.com', 'admin123');
     });
   });
 });

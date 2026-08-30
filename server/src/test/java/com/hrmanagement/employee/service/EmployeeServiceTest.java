@@ -5,6 +5,7 @@ import com.hrmanagement.auth.repository.UserRepository;
 import com.hrmanagement.common.dto.PaginatedResponse;
 import com.hrmanagement.common.exception.BadRequestException;
 import com.hrmanagement.common.exception.NotFoundException;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.department.entity.Department;
 import com.hrmanagement.department.repository.DepartmentRepository;
@@ -44,7 +45,8 @@ class EmployeeServiceTest {
 
     @BeforeEach
     void setUp() {
-        employeeService = new EmployeeService(employeeRepository, departmentRepository, userRepository);
+        employeeService = new EmployeeService(employeeRepository, departmentRepository, userRepository,
+                new CurrentUserPolicy(employeeRepository));
         user = User.builder().id("user-1").email("e@b.com").role("employee").name("Emp").build();
         dept = new Department();
         dept.setId("dept-1");

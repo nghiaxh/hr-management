@@ -1,6 +1,7 @@
 package com.hrmanagement.payroll.service;
 
 import com.hrmanagement.common.dto.PaginatedResponse;
+import com.hrmanagement.common.policy.CurrentUserPolicy;
 import com.hrmanagement.common.util.SecurityUtil;
 import com.hrmanagement.employee.entity.Employee;
 import com.hrmanagement.employee.repository.EmployeeRepository;
@@ -37,7 +38,8 @@ class PayrollServiceTest {
 
     @BeforeEach
     void setUp() {
-        payrollService = new PayrollService(payrollRepository, employeeRepository);
+        payrollService = new PayrollService(payrollRepository, employeeRepository,
+                new CurrentUserPolicy(employeeRepository));
         emp = Employee.builder().id("emp-1").salary(new BigDecimal("15000000"))
                 .firstName("Jane").lastName("Doe").position("Engineer").build();
         payroll = Payroll.builder()
